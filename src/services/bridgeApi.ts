@@ -27,6 +27,8 @@ export interface AddDatabaseParams {
   password?: string;
   notes?: string;
   tags?: string[];
+  ssl?: boolean;
+  sslmode?: string;
 }
 
 export interface UpdateDatabaseParams {
@@ -85,7 +87,7 @@ class BridgeApiService {
           throw new Error(`Missing required field: ${field}`);
         }
       }
-
+      console.log("Adding database with params:", params);
       const result = await bridgeRequest("db.add", params);
 
       if (!result?.ok) {

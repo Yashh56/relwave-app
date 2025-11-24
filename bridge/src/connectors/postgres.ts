@@ -10,11 +10,19 @@ export type PGConfig = {
   password?: string;
   database?: string;
   ssl?: boolean;
+  sslmode?: string;
 };
 
 /** test connection quickly */
 export async function testConnection(cfg: PGConfig) {
-  const client = new Client(cfg);
+  const client = new Client({
+    host: cfg.host,
+    port: cfg.port,
+    user: cfg.user,
+    ssl: cfg.ssl || undefined,
+    password: cfg.password || undefined,
+    database: cfg.database || undefined,
+  });
   try {
     await client.connect();
     await client.end();
@@ -173,7 +181,7 @@ export async function listTables(connection: PGConfig) {
     port: connection.port,
     user: connection.user,
     password: connection.password || undefined,
-    database: connection.database,
+    database: connection.database || undefined,
     ssl: connection.ssl || undefined,
   });
 

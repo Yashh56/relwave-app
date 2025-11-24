@@ -16,7 +16,6 @@ const CONFIG_FOLDER =
 
 const CONFIG_FILE = path.join(CONFIG_FOLDER, "databases.json");
 
-
 type DBMeta = {
   id: string;
   name: string;
@@ -27,6 +26,8 @@ type DBMeta = {
   credentialId?: string;
   notes?: string;
   tags?: string[];
+  ssl?: boolean;
+  sslmode?: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -36,12 +37,12 @@ async function ensureConfigDir() {
   if (!fsSync.existsSync(CONFIG_FOLDER)) {
     await fs.mkdir(CONFIG_FOLDER, { recursive: true });
   }
-  
+
   // Create empty config file if it doesn't exist
   if (!fsSync.existsSync(CONFIG_FILE)) {
     await fs.writeFile(
-      CONFIG_FILE, 
-      JSON.stringify({ version: 1, databases: [] }, null, 2), 
+      CONFIG_FILE,
+      JSON.stringify({ version: 1, databases: [] }, null, 2),
       "utf-8"
     );
   }
@@ -80,6 +81,8 @@ export async function addDB(payload: {
   port: number;
   user: string;
   database: string;
+  ssl?: boolean;
+  sslmode?: string;
   password?: string;
   notes?: string;
   tags?: string[];
@@ -95,6 +98,8 @@ export async function addDB(payload: {
     port: payload.port,
     user: payload.user,
     database: payload.database,
+    ssl: payload.ssl,
+    sslmode: payload.sslmode,
     credentialId,
     notes: payload.notes,
     tags: payload.tags || [],

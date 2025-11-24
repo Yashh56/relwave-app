@@ -180,6 +180,7 @@ export function registerDbHandlers(rpc: Rpc, logger: any) {
         port: db.port,
         user: db.user,
         password: pwd ?? undefined,
+        ssl: db.ssl,
         database: db.database,
       };
       const tables = await listTables(conn);
