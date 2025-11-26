@@ -244,3 +244,30 @@ export function streamQueryCancelable(
 
   return { promise, cancel };
 }
+
+export async function getDBStats(connection: PGConfig) {
+  const client = createClient(connection);
+  try {
+    await client.connect();
+    const res = await client.query(`
+      SELECT
+    (SELECT COUNT(*)
+     FROM information_schema.tables
+     WHERE table_schema = current_schema()) AS total_tables,
+    pg_size_pretty(pg_database_size(current_database())) AS total_db_size,
+    (pg_database_size(current_database()) / (1024.0 * 1024.0)) AS total_db_size_mb;`);
+    await client.end();
+    return res.rows?.[0];
+  } catch (error) {
+    // 5. CRITICAL: Handle the error (log it and re-throw it or return null/undefined)
+    console.error("Error fetching database stats:", error);
+    // Attempt to close the client even if an error occurred during connection/query
+    try {
+      await client.end();
+    } catch (endError) {
+      console.error("Error closing client after failure:", endError);
+    }
+    // Re-throw the error so the calling function knows something went wrong
+    throw error;
+  }
+}

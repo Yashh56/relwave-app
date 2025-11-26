@@ -317,6 +317,19 @@ class BridgeApiService {
     }
   }
 
+  async getDatabaseStats(id: string): Promise<any[]> {
+    try {
+      if (!id) {
+        throw new Error("Database ID is required");
+      }
+      const result = await bridgeRequest("db.getStats", { id });
+      return result?.data || {};
+    } catch (error: any) {
+      console.error("Failed to get database stats:", error);
+      throw new Error(`Failed to get database stats: ${error.message}`);
+    }
+  }
+
   // ------------------------------------
   // 4. BRIDGE UTILITY METHODS
   // ------------------------------------

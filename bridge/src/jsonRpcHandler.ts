@@ -20,6 +20,7 @@ import {
   testConnection,
   fetchTableData,
   streamQueryCancelable,
+  getDBStats,
 } from "./connectors/postgres";
 import * as dbStore from "./services/dbStore";
 import { SessionManager } from "./sessionManager";
@@ -431,6 +432,38 @@ export function registerDbHandlers(
     } catch (e: any) {
       logger?.error({ e }, "db.listTables failed");
       rpc.sendError(id, { code: "IO_ERROR", message: String(e) });
+    }
+  });
+
+  rpcRegister("db.getStats", async (params: any, id: number | string) => {
+    try {
+     const { id: dbId } = params || {};
+      if (!dbId)
+        return rpc.sendError(id, {
+          code: "BAD_REQUEST",
+          message: "Missing id",
+        });
+      const db = await dbStore.getDB(dbId);
+      if (!db)
+        return rpc.sendError(id, {
+          code: "NOT_FOUND",
+          message: "DB not found",
+        });
+      const pwd = await dbStore.getPasswordFor(db);
+      const conn = {
+        host: db.host,
+        port: db.port,
+        user: db.user,
+        password: pwd ?? undefined,
+        ssl: db.ssl,
+        database: db.database,
+      };
+      const stats = await getDBStats(conn);
+      rpc.sendResponse(id, { ok: true, data: stats }); 
+    
+    } catch (error) {
+      logger?.error({ error }, "db.getStats failed");
+      rpc.sendError(id, { code: "IO_ERROR", message: String(error) });
     }
   });
 
