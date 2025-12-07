@@ -1,40 +1,57 @@
 import { Link } from "react-router-dom";
 import { Button } from "../ui/button";
-import { ArrowLeft, GitBranch, Layers, RefreshCw, Download, Settings, Server } from "lucide-react";
+import { ArrowLeft, GitBranch, Layers, RefreshCw, Download, Settings, Server, Loader2 } from "lucide-react";
 
 interface DatabasePageHeaderProps {
     dbId: string;
     databaseName: string;
     onRefresh: () => void;
     onBackup: () => void;
+    loading?: boolean;
 }
 
-const DatabasePageHeader: React.FC<DatabasePageHeaderProps> = ({ dbId, databaseName, onRefresh, onBackup }) => (
-    <header className="border-b border-gray-200 dark:border-primary/10 bg-white/80 dark:bg-black/40 backdrop-blur-md sticky top-0 z-50">
+const DatabasePageHeader: React.FC<DatabasePageHeaderProps> = ({
+    dbId,
+    databaseName,
+    onRefresh,
+    onBackup,
+    loading = false
+}) => (
+    <header className="border-b border-border/50 bg-card/50 backdrop-blur-xl sticky top-0 z-50 shadow-sm">
         <div className="container mx-auto px-4 py-3 flex items-center justify-between h-16">
 
             {/* Left Section: Back Button & Database Name/Status */}
             <div className="flex items-center gap-3">
                 <Link to="/">
-                    {/* Highlighting the Back button slightly less */}
-                    <Button variant="ghost" size="icon" className="text-gray-500 hover:bg-gray-100 dark:text-gray-400 dark:hover:bg-gray-800 transition-colors">
+                    <Button
+                        variant="ghost"
+                        size="icon"
+                        // Updated to use theme-consistent classes
+                        className="text-muted-foreground hover:bg-accent transition-colors"
+                    >
                         <ArrowLeft className="h-5 w-5" />
                     </Button>
                 </Link>
 
                 {/* Database Title Block */}
                 <div className="flex items-center gap-2">
-                    <Server className="h-6 w-6 text-cyan-600 dark:text-cyan-400" />
+                    {/* Removed gradient, using solid cyan accent */}
+                    <div className="p-2 bg-cyan-500 rounded-lg shadow-md">
+                        <Server className="h-5 w-5 text-white" />
+                    </div>
                     <div>
-                        {/* Title is simpler, relying on surrounding design for impact */}
-                        <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                            {databaseName}
-                        </h1>
-                        {/* Sub-title/Status uses a subtle pill for better look */}
-                        <span className="text-xs font-medium text-green-700 dark:text-green-400 bg-green-100/50 dark:bg-green-900/40 px-2 py-0.5 rounded-full inline-flex items-center">
-                            PostgreSQL | Connected
+                        <div className="flex items-center gap-2">
+                            <h1 className="text-xl font-semibold text-foreground">
+                                {databaseName}
+                            </h1>
+                            {loading && (
+                                <Loader2 className="h-4 w-4 text-cyan-500 animate-spin" />
+                            )}
+                        </div>
+                        <span className="text-xs font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-100/50 dark:bg-emerald-900/40 px-2 py-0.5 rounded-full inline-flex items-center">
+                            <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full mr-1.5 animate-pulse"></span>
+                            Connected
                         </span>
-
                     </div>
                 </div>
             </div>
@@ -42,19 +59,20 @@ const DatabasePageHeader: React.FC<DatabasePageHeaderProps> = ({ dbId, databaseN
             {/* Right Section: Navigation Links & Actions */}
             <div className="flex items-center gap-4">
 
-                {/* 1. Primary Navigation Links (Look like header tabs) */}
+                {/* 1. Primary Navigation Links */}
                 <nav className="hidden md:flex items-center space-x-2">
                     {[
-                        // Assuming you want the main page to be /data or the default route
-                        { path: `/${dbId}/query-builder`, icon: GitBranch, label: "Data & Query" }, // This should link to the main DatabaseDetail page
-                        { path: `/${dbId}/schema-explorer`, icon: Layers, label: "Schema Explorer" },
-                        { path: `/${dbId}/er-diagram`, icon: Settings, label: "ER Diagram" }, // Changed 'Builder' to 'Monitoring' for utility look
+                        { path: `/database/${dbId}/query-builder`, icon: GitBranch, label: "Data & Query" },
+                        { path: `/database/${dbId}/schema-explorer`, icon: Layers, label: "Schema Explorer" },
+                        { path: `/database/${dbId}/er-diagram`, icon: Settings, label: "ER Diagram" },
                     ].map(({ path, icon: Icon, label }) => (
                         <Link key={path} to={path}>
                             <Button
-                                variant="ghost" // Use ghost for clean navigation
+                                variant="ghost"
                                 size="sm"
-                                className="text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                                // Updated to use theme-consistent classes
+                                className="text-muted-foreground hover:bg-accent transition-colors"
+                                disabled={loading}
                             >
                                 <Icon className="h-4 w-4 mr-2" />
                                 {label}
@@ -64,28 +82,31 @@ const DatabasePageHeader: React.FC<DatabasePageHeaderProps> = ({ dbId, databaseN
                 </nav>
 
                 {/* Vertical Separator */}
-                <div className="h-6 w-px bg-gray-200 dark:bg-gray-700 hidden md:block" />
+                <div className="h-6 w-px bg-border hidden md:block" />
 
-                {/* 2. Utility Actions (Grouped and clean) */}
+                {/* 2. Utility Actions */}
                 <div className="flex items-center gap-2">
-                    {/* Backup: Primary action, slightly more emphasis */}
+                    {/* Backup Button: Removed gradient, using solid cyan with accent shadow */}
                     <Button
                         size="sm"
                         onClick={onBackup}
-                        className="bg-cyan-500 hover:bg-cyan-600 dark:bg-cyan-600 dark:hover:bg-cyan-700 text-white transition-colors"
+                        disabled={loading}
+                        className="bg-cyan-500 hover:bg-cyan-600 text-white transition-all shadow-md shadow-cyan-500/30 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                         <Download className="h-4 w-4 mr-2" />
                         Backup
                     </Button>
 
-                    {/* Refresh: Secondary utility action */}
+                    {/* Refresh Button */}
                     <Button
                         variant="outline"
                         size="sm"
                         onClick={onRefresh}
-                        className="border-gray-300 dark:border-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                        disabled={loading}
+                        // Updated to use theme-consistent classes
+                        className="border-border text-foreground hover:bg-accent transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        <RefreshCw className="h-4 w-4" />
+                        <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
                     </Button>
                 </div>
             </div>
@@ -94,9 +115,3 @@ const DatabasePageHeader: React.FC<DatabasePageHeaderProps> = ({ dbId, databaseN
 );
 
 export default DatabasePageHeader;
-
-
-
-//  { path: `/${dbId}/query-builder`, icon: GitBranch, label: "Builder" },
-//                         { path: `/${dbId}/er-diagram`, icon: BarChart3, label: "ER Diagram" },
-//                         { path: `/${dbId}/schema-explorer`, icon: Layers, label: "Schema Explorer" },

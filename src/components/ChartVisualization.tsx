@@ -25,8 +25,8 @@ import { Download, BarChart3, LineChart as LineChartIcon, PieChart as PieChartIc
 import { toPng, toSvg } from "html-to-image";
 import { toast } from "sonner";
 
-// Adjusted COLORS for better dark mode visibility and consistency
-const COLORS = ["#4DEDF9", "#A855F7", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6"];
+// Adjusted COLORS for a vibrant, yet professional palette, optimized for light/dark contrast
+const COLORS = ["#06B6D4", "#A855F7", "#10B981", "#F59E0B", "#EF4444", "#52525B"]; // Cyan, Violet, Emerald, Amber, Red, Gray
 
 interface ChartVisualizationProps {
   data: Array<Record<string, any>>;
@@ -41,16 +41,17 @@ export const ChartVisualization = ({ data }: ChartVisualizationProps) => {
   const columns = data.length > 0 ? Object.keys(data[0]) : [];
 
   const handleExport = async (format: "png" | "svg") => {
-    // Note: html-to-image usually requires setting a transparent background 
-    // to capture the complex dark mode styles correctly, or setting the 
-    // background explicitly in the final component. Keeping white for compatibility.
     const chartElement = document.getElementById("chart-container");
     if (!chartElement) return;
 
     try {
+      // Determine background based on current theme (simple detection based on dark class presence)
+      const isDarkMode = chartElement.closest('.dark');
+      const backgroundColor = isDarkMode ? "#050505" : "#FFFFFF"; // Use app background
+
       const dataUrl = format === "png"
-        ? await toPng(chartElement, { quality: 0.95, backgroundColor: "#111827" }) // Use a dark background for export consistency
-        : await toSvg(chartElement, { backgroundColor: "#111827" });
+        ? await toPng(chartElement, { quality: 0.95, backgroundColor })
+        : await toSvg(chartElement, { backgroundColor });
 
       const link = document.createElement("a");
       link.download = `chart-${Date.now()}.${format}`;
@@ -60,13 +61,14 @@ export const ChartVisualization = ({ data }: ChartVisualizationProps) => {
       toast.success(`Chart exported as ${format.toUpperCase()}`);
     } catch (error) {
       toast.error("Failed to export chart");
+      console.error(error);
     }
   };
 
   const renderChart = () => {
     if (!xAxis || !yAxis) {
       return (
-        <div className="flex flex-col items-center justify-center h-[400px] text-gray-500">
+        <div className="flex flex-col items-center justify-center h-[400px] text-muted-foreground">
           <BarChart3 className="h-10 w-10 mb-3" />
           <p className="text-lg font-semibold">Configure axes to generate chart</p>
           <p className="text-sm">Select both X and Y columns to plot your data.</p>
@@ -79,13 +81,16 @@ export const ChartVisualization = ({ data }: ChartVisualizationProps) => {
       y: Number(row[yAxis]) || 0,
     }));
 
-    // Recharts styling props for dark theme
+    // Dynamically set Recharts theme based on the presence of the 'dark' class on the body (or parent container)
+    // This is a proxy for the actual theme setting.
+    const isDarkMode = document.body.classList.contains('dark');
+
     const rechartsTheme = {
-      stroke: "#E5E7EB", // light gray for axes/grid
-      gridStroke: "#374151", // darker gray for grid lines
-      tooltipBg: "#1F2937", // dark background for tooltip
-      tooltipBorder: "#4B5563", // subtle border for tooltip
-      lineStroke: COLORS[0], // primary color for lines/bars
+      stroke: isDarkMode ? "#E5E7EB" : "#1F2937", // Axes/Tick color
+      gridStroke: isDarkMode ? "#374151" : "#E5E7EB", // Grid line color
+      tooltipBg: isDarkMode ? "#1F2937" : "#FFFFFF", // Tooltip background
+      tooltipBorder: isDarkMode ? "#4B5563" : "#D1D5DB", // Tooltip border
+      lineStroke: COLORS[0], // Primary color for lines/bars
     };
 
 
@@ -106,7 +111,7 @@ export const ChartVisualization = ({ data }: ChartVisualizationProps) => {
                 }}
               />
               <Legend wrapperStyle={{ color: rechartsTheme.stroke, paddingTop: '10px' }} />
-              <Bar dataKey="y" fill={rechartsTheme.lineStroke} name={yAxis}>
+              <Bar dataKey="y" name={yAxis}>
                 {/* Individual coloring for aesthetic appeal */}
                 {chartData.map((_entry, index) => (
                   <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -194,21 +199,21 @@ export const ChartVisualization = ({ data }: ChartVisualizationProps) => {
   };
 
   return (
-    // Applied consistent dark card styling
-    <Card className="bg-gray-900/50 border border-primary/10 rounded-xl shadow-2xl">
-      <CardHeader className="border-b border-primary/10 pb-4">
+    // Applied clean card styling: bg-card, border-border, shadow-elevated
+    <Card className="bg-card border border-border rounded-xl shadow-elevated">
+      <CardHeader className="border-b border-border pb-4">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <CardTitle className="text-xl text-white">Chart Visualization</CardTitle>
-            <CardDescription className="text-gray-400">Generate charts from your query results</CardDescription>
+            <CardTitle className="text-xl text-foreground">Chart Visualization</CardTitle>
+            <CardDescription className="text-muted-foreground">Generate charts from your query results</CardDescription>
           </div>
-          {/* Export Buttons: Using subtle primary hover */}
+          {/* Export Buttons: Using standard outline style with theme hover */}
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={() => handleExport("png")} className="border-gray-700  hover:bg-gray-200 transition-colors">
+            <Button variant="outline" size="sm" onClick={() => handleExport("png")} className="border-border hover:bg-accent transition-colors">
               <Download className="h-4 w-4 mr-2" />
               Export PNG
             </Button>
-            <Button variant="outline" size="sm" onClick={() => handleExport("svg")} className="border-gray-700  hover:bg-gray-200 transition-colors">
+            <Button variant="outline" size="sm" onClick={() => handleExport("svg")} className="border-border hover:bg-accent transition-colors">
               <Download className="h-4 w-4 mr-2" />
               Export SVG
             </Button>
@@ -221,17 +226,18 @@ export const ChartVisualization = ({ data }: ChartVisualizationProps) => {
 
           {/* Chart Type Select */}
           <div className="space-y-2">
-            <Label className="text-gray-300">Chart Type</Label>
+            <Label className="text-muted-foreground">Chart Type</Label>
             <Select value={chartType} onValueChange={(val: any) => setChartType(val)}>
-              <SelectTrigger className="bg-gray-800/70 border-primary/20 text-white focus:border-cyan-500">
+              {/* Select Trigger: Uses bg-input, focus:border-primary */}
+              <SelectTrigger className="bg-input border-border text-foreground focus:border-primary">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent className="bg-card border-primary/20 text-white">
+              <SelectContent className="bg-popover border-border text-foreground">
                 <SelectItem value="bar">
                   <div className="flex items-center gap-2 text-cyan-400"> <BarChart3 className="h-4 w-4" /> Bar Chart </div>
                 </SelectItem>
                 <SelectItem value="line">
-                  <div className="flex items-center gap-2 text-fuchsia-400"> <LineChartIcon className="h-4 w-4" /> Line Chart </div>
+                  <div className="flex items-center gap-2 text-violet-400"> <LineChartIcon className="h-4 w-4" /> Line Chart </div>
                 </SelectItem>
                 <SelectItem value="pie">
                   <div className="flex items-center gap-2 text-emerald-400"> <PieChartIcon className="h-4 w-4" /> Pie Chart </div>
@@ -245,12 +251,13 @@ export const ChartVisualization = ({ data }: ChartVisualizationProps) => {
 
           {/* X Axis Select */}
           <div className="space-y-2">
-            <Label className="text-gray-300">X Axis</Label>
+            <Label className="text-muted-foreground">X Axis</Label>
             <Select value={xAxis} onValueChange={setXAxis}>
-              <SelectTrigger className="bg-gray-800/70 border-primary/20 text-white focus:border-cyan-500">
+              {/* Select Trigger: Uses bg-input, focus:border-primary */}
+              <SelectTrigger className="bg-input border-border text-foreground focus:border-primary">
                 <SelectValue placeholder="Select column" />
               </SelectTrigger>
-              <SelectContent className="bg-card border-primary/20 text-white">
+              <SelectContent className="bg-popover border-border text-foreground">
                 {columns.map((col) => (
                   <SelectItem key={col} value={col}> {col} </SelectItem>
                 ))}
@@ -260,12 +267,13 @@ export const ChartVisualization = ({ data }: ChartVisualizationProps) => {
 
           {/* Y Axis Select */}
           <div className="space-y-2">
-            <Label className="text-gray-300">Y Axis</Label>
+            <Label className="text-muted-foreground">Y Axis</Label>
             <Select value={yAxis} onValueChange={setYAxis}>
-              <SelectTrigger className="bg-gray-800/70 border-primary/20 text-white focus:border-cyan-500">
+              {/* Select Trigger: Uses bg-input, focus:border-primary */}
+              <SelectTrigger className="bg-input border-border text-foreground focus:border-primary">
                 <SelectValue placeholder="Select column" />
               </SelectTrigger>
-              <SelectContent className="bg-card border-primary/20 text-white">
+              <SelectContent className="bg-popover border-border text-foreground">
                 {columns.map((col) => (
                   <SelectItem key={col} value={col}> {col} </SelectItem>
                 ))}
@@ -275,22 +283,22 @@ export const ChartVisualization = ({ data }: ChartVisualizationProps) => {
 
           {/* Chart Title Input */}
           <div className="space-y-2">
-            <Label className="text-gray-300">Chart Title</Label>
+            <Label className="text-muted-foreground">Chart Title</Label>
             <Input
               value={chartTitle}
               onChange={(e) => setChartTitle(e.target.value)}
               placeholder="Enter title"
-              className="bg-gray-800/70 border-primary/20 text-white focus:border-cyan-500"
+              // Input: Uses bg-input, focus:border-primary
+              className="bg-input border-border text-foreground focus:border-primary"
             />
           </div>
         </div>
 
         {/* Chart Display Area - High contrast container */}
-        <div id="chart-container" className="bg-gray-900 border border-primary/20 rounded-xl p-6 shadow-xl relative min-h-[400px]">
-          <h3 className="text-lg font-semibold text-center mb-4 text-white">{chartTitle}</h3>
+        {/* Ensure chart container uses theme colors for high contrast */}
+        <div id="chart-container" className="bg-background border border-border rounded-xl p-6 shadow-xl relative min-h-[400px]">
+          <h3 className="text-lg font-semibold text-center mb-4 text-foreground">{chartTitle}</h3>
           {renderChart()}
-          {/* Overlay to ensure chart is visible even if parent has transparency */}
-          <div className="absolute inset-0 bg-gray-900/10 -z-10 rounded-xl"></div>
         </div>
       </CardContent>
     </Card>
