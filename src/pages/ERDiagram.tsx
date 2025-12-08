@@ -36,36 +36,41 @@ type BackendColumn = Omit<ColumnDetails, 'type'> & { type: string, foreignKeyRef
 
 type BackendTable = Omit<TableSchemaDetails, 'columns'> & { columns: BackendColumn[] };
 
+// --- CONSTANTS ---
+// Using a specific cyan shade for ReactFlow elements where Tailwind utility classes are hard to apply directly
+const PRIMARY_CYAN = "#06B6D4"; // Tailwind cyan-500
 
 // --- CUSTOM NODE COMPONENT ---
 
 const TableNode: React.FC<{ data: TableNodeData }> = ({ data }) => {
   return (
     <div
-      className="min-w-[200px] shadow-lg border-2 border-blue-500/20 rounded-lg bg-white dark:bg-gray-800"
+      // Use bg-card and border-primary/20 for themed look
+      className="min-w-[200px] shadow-lg border-2 border-primary/20 rounded-lg bg-card"
     >
-      <div className="bg-blue-600 text-white px-4 py-2 font-mono font-bold flex items-center gap-2 rounded-t-lg">
+      {/* Header uses solid primary color */}
+      <div className="dark:bg-secondary dark:text-white px-4 py-2 font-mono font-bold flex items-center gap-2 rounded-t-[6px]">
         <Database className="h-4 w-4" />
         {data.label}
       </div>
-      <div className="divide-y divide-gray-200 dark:divide-gray-700 bg-white dark:bg-gray-900 rounded-b-lg">
+      {/* Divider uses border color */}
+      <div className="divide-y divide-border bg-primary/10 dark:bg-card rounded-b-lg">
         {data.columns.map((col, idx) => (
           <div
             key={`${data.label}-${col.name}`}
-            // Use the column name as the source handle ID
             id={`${data.label}-${col.name}`}
             className="px-4 py-2 text-sm font-mono flex justify-between gap-4"
           >
             <span
               className={col.isPrimaryKey
-                ? "text-blue-700 dark:text-blue-400 font-semibold"
-                : "text-gray-700 dark:text-gray-200"
+                ? "text-primary font-semibold"
+                : "text-foreground"
               }
             >
               {col.name}
               {col.isPrimaryKey && " 🔑"}
             </span>
-            <span className="text-gray-500 dark:text-gray-400">
+            <span className="text-muted-foreground">
               {col.type}
               {col.isForeignKey && " 🔗"}
             </span>
@@ -126,44 +131,30 @@ const transformSchemaToER = (schema: DatabaseSchemaDetails): TransformedERData =
 
         if (column.isForeignKey && column.foreignKeyRef) {
 
-          // foreignKeyRef can be "targetTable.targetColumn" or "targetTable" or "schema.targetTable.targetColumn"
-          // We assume for simple cases it's just "targetTable.targetColumn" and in the same schema.
-
           const parts = column.foreignKeyRef.split(".");
           let targetSchemaName: string;
           let targetTableName: string;
           let targetColumnName: string | undefined;
 
           if (parts.length === 3) {
-            // Format: schema.table.column
             [targetSchemaName, targetTableName, targetColumnName] = parts;
           } else if (parts.length === 2) {
-            // Format: table.column (assumed to be in the current schema)
             targetSchemaName = schemaGroup.name;
             [targetTableName, targetColumnName] = parts;
           } else if (parts.length === 1) {
-            // Format: table (assumed to be in the current schema, referencing its PK)
             targetSchemaName = schemaGroup.name;
             targetTableName = parts[0];
-            targetColumnName = undefined; // Will rely on ReactFlow to find PK handle if targetHandle is omitted
+            targetColumnName = undefined;
           } else {
-            return; // Skip if ref is invalid
+            return;
           }
 
-          // Crucial: The target ID must match a node ID exactly
           const targetNodeId = `${targetSchemaName}.${targetTableName}`;
 
-          // Check if the target node exists to prevent orphaned edges
           if (nodes.some(n => n.id === targetNodeId)) {
 
-            // To ensure the edge connects to the specific column on the node, 
-            // the source and target handles must match the IDs of the column elements.
-            // In TableNode, the column element ID is set as: `${data.label}-${col.name}` 
-            // e.g., 'Employees-EmployeeID'
             const sourceHandleId = `${table.name}-${column.name}`;
 
-            // The target handle should be the target table name and the column it references.
-            // If targetColumnName is undefined, ReactFlow will connect to the center of the node.
             const targetHandleId = targetColumnName ? `${targetTableName}-${targetColumnName}` : undefined;
 
 
@@ -174,14 +165,16 @@ const transformSchemaToER = (schema: DatabaseSchemaDetails): TransformedERData =
               sourceHandle: sourceHandleId,
               targetHandle: targetHandleId,
               animated: false,
-              style: { stroke: "#3b82f6", strokeWidth: 2 },
+              // Use solid cyan color for edges and markers
+              style: { stroke: PRIMARY_CYAN, strokeWidth: 2 },
               markerEnd: {
                 type: MarkerType.ArrowClosed,
-                color: "#3b82f6",
+                color: PRIMARY_CYAN,
                 width: 15,
                 height: 15,
               },
               label: col.name,
+              // Use muted colors for edge labels
               labelStyle: { fontSize: 10, fontWeight: 500, fill: '#6b7280', backgroundColor: 'rgba(255,255,255,0.7)' },
               type: 'smoothstep',
             });
@@ -209,6 +202,7 @@ const ERDiagramContent: React.FC = () => {
   const [nodes, setNodes, onNodesChange] = useNodesState<TableNodeData>([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
 
+  // Fit view function (for manual control, though fitView prop handles initial fit)
   const fitView = useCallback(() => {
     if (reactFlowInstance) {
       reactFlowInstance.fitView({ padding: 0.2 });
@@ -225,10 +219,8 @@ const ERDiagramContent: React.FC = () => {
 
       try {
         const result = await bridgeApi.getSchema(dbId);
-        console.log(result)
 
         if (result) {
-          // Check for schemas and tables before proceeding
           if (result.schemas && result.schemas.some(s => s.tables && s.tables.length > 0)) {
             setSchemaData(result);
             const { nodes: newNodes, edges: newEdges } = transformSchemaToER(result);
@@ -236,8 +228,6 @@ const ERDiagramContent: React.FC = () => {
             setNodes(newNodes);
             setEdges(newEdges);
 
-            // Rely on ReactFlow's internal fitView on the component mount/update
-            // fitView(); // Optionally call here, but avoid setTimeout which causes issues
           } else {
             setError("Schema data found, but no tables to render.");
           }
@@ -254,7 +244,7 @@ const ERDiagramContent: React.FC = () => {
     };
 
     fetchSchemaAndSetupDiagram();
-  }, [dbId, setNodes, setEdges]); // Removed fitView dependency as it's not being called manually here
+  }, [dbId, setNodes, setEdges]);
 
 
   // --- Export Logic ---
@@ -271,7 +261,6 @@ const ERDiagramContent: React.FC = () => {
       let dataUrl: string;
       const filename = `er-diagram-${schemaData?.name || 'export'}-${Date.now()}`;
 
-      // Ensure background is transparent or white for export clarity, overriding dark mode
       const options = {
         quality: 0.95,
         backgroundColor: '#ffffff', // Use a white background for better visibility in exports
@@ -304,7 +293,7 @@ const ERDiagramContent: React.FC = () => {
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
+      <div className="h-screen flex items-center justify-center bg-background dark:bg-[#050505]">
         <Loader />
       </div>
     );
@@ -312,15 +301,19 @@ const ERDiagramContent: React.FC = () => {
 
   if (error || !schemaData || nodes.length === 0) {
     return (
-      <div className="h-screen flex items-center justify-center bg-gray-50 dark:bg-gray-950">
-        <div className="text-center p-8 border border-red-500/30 rounded-xl bg-red-900/10 text-red-600 dark:text-red-400">
+      <div className="h-screen flex items-center justify-center bg-background dark:bg-[#050505]">
+        {/* Error Box: Use destructive/error colors and clean styling */}
+        <div className="text-center p-8 border border-destructive/30 rounded-xl bg-destructive/10 text-destructive">
           <Database className="h-8 w-8 mx-auto mb-4" />
           <h2 className="text-xl font-bold mb-2">Diagram Unavailable</h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+          <p className="text-sm text-muted-foreground">
             {error || "No tables or schemas found to render the ER diagram."}
           </p>
           <Link to={`/${dbId}`}>
-            <button className="mt-4 px-4 py-2 border rounded-lg text-sm bg-blue-600 text-white hover:bg-blue-700">
+            <button
+              // Solid primary button (cyan accent)
+              className="mt-4 px-4 py-2 rounded-lg text-sm bg-primary text-white hover:bg-primary/90 shadow-md shadow-primary/30"
+            >
               Go Back
             </button>
           </Link>
@@ -332,23 +325,24 @@ const ERDiagramContent: React.FC = () => {
   // --- Main Diagram Render ---
 
   return (
-    <div className="h-screen bg-gray-50 dark:bg-gray-950 flex flex-col">
+    <div className="h-screen bg-background dark:bg-[#050505] flex flex-col">
 
-      {/* Header */}
-      <header className="border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 shadow-sm z-10 shrink-0">
+      {/* Header: Use card/backdrop styling */}
+      <header className="border-b border-border/50 bg-card/50 backdrop-blur-xl shadow-sm z-10 shrink-0">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
               <Link to={`/${dbId}`}>
                 <button
-                  className="p-2 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-colors"
+                  // Use ghost style with theme hover
+                  className="p-2 text-muted-foreground hover:bg-accent rounded-lg transition-colors"
                 >
                   <ArrowLeft className="h-5 w-5" />
                 </button>
               </Link>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-white">ER Diagram</h1>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <h1 className="text-2xl font-bold text-foreground">ER Diagram</h1>
+                <p className="text-sm text-muted-foreground">
                   {schemaData.name} - Entity Relationship Diagram
                 </p>
               </div>
@@ -361,7 +355,8 @@ const ERDiagramContent: React.FC = () => {
                 <button
                   key={btn.format}
                   onClick={() => handleExport(btn.format)}
-                  className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors flex items-center gap-2 text-sm font-medium text-gray-700 dark:text-gray-200"
+                  // Use outline button style with theme colors
+                  className="px-4 py-2 border border-border rounded-lg hover:bg-accent transition-colors flex items-center gap-2 text-sm font-medium text-foreground"
                 >
                   <Download className="h-4 w-4" />
                   Export {btn.label}
@@ -380,7 +375,7 @@ const ERDiagramContent: React.FC = () => {
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
           nodeTypes={nodeTypes}
-          fitView // Ensures diagram fits on load
+          fitView
           minZoom={0.1}
           maxZoom={4}
           defaultViewport={{ x: 0, y: 0, zoom: 1 }}
@@ -389,30 +384,32 @@ const ERDiagramContent: React.FC = () => {
             variant={BackgroundVariant.Dots}
             gap={16}
             size={1}
+            // Use a subtle gray background color for the dots
             color="#94a3b8"
-            className="dark:bg-gray-950"
+            className="dark:bg-[#050505]"
           />
           <Controls
-            className="dark:border-gray-700 dark:bg-gray-800 dark:text-gray-200"
-            showFitView={true} // Keep showFitView true to allow manual fitting
+            // Style controls using theme tokens
+            className="dark:border-border dark:bg-card dark:text-foreground"
+            showFitView={true}
           />
         </ReactFlow>
       </div>
 
       {/* Info Panel (Footer) */}
-      <div className="border-t border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 px-6 py-3 shrink-0">
-        <div className="container mx-auto flex items-center justify-between text-sm text-gray-700 dark:text-gray-400">
+      <div className="border-t border-border bg-card px-6 py-3 shrink-0">
+        <div className="container mx-auto flex items-center justify-between text-sm text-muted-foreground">
           <div className="flex items-center gap-6">
             <span className="flex items-center gap-2">
-              <Database className="h-4 w-4 text-gray-500 dark:text-gray-500" />
+              <Database className="h-4 w-4 text-muted-foreground" />
               {nodes.length} Tables
             </span>
             <span className="flex items-center gap-2">
-              <span className="text-gray-500 dark:text-gray-500">🔗</span>
+              <span className="text-muted-foreground">🔗</span>
               {edges.length} Relations
             </span>
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-500">
+          <div className="text-xs text-muted-foreground">
             Drag to pan • Scroll to zoom • Click and drag nodes to rearrange
           </div>
         </div>

@@ -5,9 +5,10 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { bridgeApi, TableRow } from "@/services/bridgeApi";
-import DatabasePageHeader from "@/components/databaseDetails/header";
+
 import QueryContentTabs from "@/components/databaseDetails/QueryContentTabs";
 import TableSelectorDropdown from "@/components/databaseDetails/TableSidebar";
+import DatabasePageHeader from "@/components/databaseDetails/DatabasePageHeader";
 
 export interface TableInfo {
   schema: string;
@@ -35,8 +36,6 @@ const DatabaseDetail = () => {
   const [loading, setLoading] = useState(true);
   const [loadingTables, setLoadingTables] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
-  // Query execution states
   const [tableData, setTableData] = useState<TableRow[]>([]);
   const [rowCount, setRowCount] = useState<number>(0);
   const [querySessionId, setQuerySessionId] = useState<string | null>(null);
@@ -321,7 +320,6 @@ const DatabaseDetail = () => {
 
   return (
     <div className="min-h-screen bg-background dark:bg-[#050505] text-foreground">
-      {/* Assuming DatabasePageHeader uses the standard card/backdrop styling */}
       <DatabasePageHeader
         dbId={dbId || ''}
         databaseName={databaseName}
@@ -332,10 +330,7 @@ const DatabaseDetail = () => {
 
       <div className="container mx-auto px-4 py-8">
         <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-foreground">
-              Data View
-            </h2>
+          <div className="flex items-center justify-end">
             <TableSelectorDropdown
               tables={tables}
               selectedTable={selectedTable}
