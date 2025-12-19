@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
-import { bridgeApi, type DatabaseConnection } from "@/services/bridgeApi";
+import { bridgeApi } from "@/services/bridgeApi";
 import { useBridgeQuery } from "@/hooks/useBridgeQuery";
 import DashboardContent from "@/components/DashboardContent";
 import BridgeNotInitLoader from "@/components/bridge/BridgeNotInitLoader";
 import BridgeFailed from "@/components/bridge/BridgeFailed";
 import Header from "@/components/header";
 import { bytesToMBString } from "@/lib/bytesToMB";
+import { DatabaseConnection } from "@/types/database";
 
 const INITIAL_FORM_DATA = {
   name: "",
@@ -33,7 +34,8 @@ const Index = () => {
   const [statsLoading, setStatsLoading] = useState(false);
   const [stats, setStats] = useState({ totalRows: 0, size: 0, totalTables: 0 });
   const [formData, setFormData] = useState(INITIAL_FORM_DATA);
-
+  // const [status, setStatus] = useState<'connected' | 'disconnected'>('disconnected');
+  const [status, setStatus] = useState(new Map<string, string>([]))
   // --- Load databases ---
   const loadDatabases = useCallback(async () => {
     if (!bridgeReady) return;
@@ -71,7 +73,19 @@ const Index = () => {
   useEffect(() => {
     if (!bridgeReady) return;  // <-- don't fetch yet
     loadDatabases();
-  }, [bridgeReady]);
+    async function fetchStatus() {
+      try {
+        const res = await bridgeApi.testAllConnections();
+        console.log(res);
+        res.map((r) => {
+          setStatus(prev => new Map(prev).set(r.id, r.result.status))
+        })
+      } catch (error) {
+        console.log(error)
+      }
+    }
+    fetchStatus();
+  }, [bridgeReady, loadDatabases]);
 
 
   // --- Refresh handler ---
@@ -124,6 +138,7 @@ const Index = () => {
   const handleTestConnection = async (id: string, name: string) => {
     try {
       const result = await bridgeApi.testConnection(id);
+      console.log(result);
       if (result.ok) {
         toast.success("Connection successful", { description: `Successfully connected to ${name}` });
       } else {
@@ -169,6 +184,7 @@ const Index = () => {
         filteredDatabases={filteredDatabases}
         setIsDialogOpen={setIsDialogOpen}
         statsLoading={statsLoading}
+        status={status}
       />
     </div>
   );

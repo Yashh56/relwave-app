@@ -44,6 +44,7 @@ export interface UpdateDatabaseParams {
 
 export interface ConnectionTestResult {
     ok: boolean;
+    status: 'connected' | 'disconnected';
     message?: string;
 }
 
@@ -99,17 +100,17 @@ export interface DatabaseStats {
 }
 
 export interface TableInfo {
-  schema: string;
-  name: string;
-  type: string;
+    schema: string;
+    name: string;
+    type: string;
 }
 
 export interface SelectedTable {
-  schema: string;
-  name: string;
+    schema: string;
+    name: string;
 }
 
 export interface QueryProgress {
-  rows: number;
-  elapsed: number;
+    rows: number;
+    elapsed: number;
 }

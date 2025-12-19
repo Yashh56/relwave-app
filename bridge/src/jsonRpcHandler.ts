@@ -84,15 +84,8 @@ export function registerDbHandlers(
   );
   rpcRegister("db.get", (p, id) => databaseHandlers.handleGetDatabase(p, id));
   rpcRegister("db.add", (p, id) => databaseHandlers.handleAddDatabase(p, id));
-  // rpcRegister("db.update", (p, id) =>
-  //   databaseHandlers.handleUpdateDatabase(p, id)
-  // );
-  rpcRegister("db.delete", (p, id) =>
-    databaseHandlers.handleDeleteDatabase(p, id)
-  );
-  rpcRegister("db.connectTest", (p, id) =>
-    databaseHandlers.handleTestConnection(p, id)
-  );
+  rpcRegister("db.delete", (p, id) => databaseHandlers.handleDeleteDatabase(p, id));
+  rpcRegister("db.connectTest", (p, id) => databaseHandlers.handleTestConnection(p, id));
 
   // ==========================================
   // DATABASE METADATA HANDLERS

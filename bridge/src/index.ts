@@ -130,7 +130,7 @@ rpc.on("request", async (req: any) => {
         // params: { config: PGConfig | connectionString }
         const cfg = params?.config;
         const res = await testConnection(cfg);
-        rpc.sendResponse(id, { ok: res.ok, message: res.message });
+        rpc.sendResponse(id, { ok: res.ok, message: res.message, status: res.status });
         break;
       }
 

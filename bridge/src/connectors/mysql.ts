@@ -36,13 +36,13 @@ export function createPoolConfig(cfg: MySQLConfig): MySQLConfig & PoolOptions {
 
 export async function testConnection(
   cfg: MySQLConfig
-): Promise<{ ok: boolean; message?: string }> {
+): Promise<{ ok: boolean; message?: string; status: 'connected' | 'disconnected' }> {
   let connection;
   try {
     connection = await mysql.createConnection(cfg);
-    return { ok: true };
+    return { ok: true, status: 'connected', message: "Connection successful" };
   } catch (err) {
-    return { ok: false, message: (err as Error).message };
+    return { ok: false, message: (err as Error).message, status: 'disconnected' };
   } finally {
     if (connection) {
       try {
@@ -231,7 +231,7 @@ export function streamQueryCancelable(
     cancelled = true;
 
     if (backendPid) {
-      await mysqlKillQuery(cfg, backendPid).catch(() => {});
+      await mysqlKillQuery(cfg, backendPid).catch(() => { });
     }
 
     query?.emit("error", new Error("Cancelled"));
@@ -407,8 +407,7 @@ export async function listTables(
     }
 
     console.log(
-      `[MySQL] Executing listTables query for schema: ${
-        schemaName || "DATABASE()"
+      `[MySQL] Executing listTables query for schema: ${schemaName || "DATABASE()"
       }`
     );
     const startTime = Date.now();

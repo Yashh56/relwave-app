@@ -78,10 +78,10 @@ export class QueryExecutor {
 
   async testConnection(conn: DatabaseConfig, dbType: DBType): Promise<any> {
     if (dbType === DBType.MYSQL) {
-      return this.mysql.testConnection(conn);
+      return await this.mysql.testConnection(conn);
     } else {
-      await this.postgres.testConnection(conn);
-      return { ok: true };
+      return await this.postgres.testConnection(conn);
+
     }
   }
 

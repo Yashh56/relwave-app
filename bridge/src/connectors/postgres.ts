@@ -29,14 +29,14 @@ function createClient(cfg: PGConfig): Client {
 }
 
 /** test connection quickly */
-export async function testConnection(cfg: PGConfig) {
+export async function testConnection(cfg: PGConfig): Promise<{ ok: boolean; message?: string; status: 'connected' | 'disconnected' }> {
   const client = createClient(cfg);
   try {
     await client.connect();
     await client.end();
-    return { ok: true };
+    return { ok: true, status: 'connected', message: "Connection successful" };
   } catch (err: any) {
-    return { ok: false, message: err.message || String(err) };
+    return { ok: false, message: err.message || String(err), status: 'disconnected' };
   }
 }
 
@@ -56,7 +56,7 @@ export async function pgCancel(cfg: PGConfig, targetPid: number) {
   } catch (err) {
     try {
       await c.end();
-    } catch (e) {}
+    } catch (e) { }
     throw err;
   }
 }
@@ -133,7 +133,7 @@ export async function listTables(connection: PGConfig, schemaName?: string) {
   } catch (err) {
     try {
       await client.end();
-    } catch (e) {}
+    } catch (e) { }
     throw err;
   }
 }
@@ -191,7 +191,7 @@ export function streamQueryCancelable(
             flush().catch((e) => {
               try {
                 reject(e);
-              } catch {}
+              } catch { }
             });
           }
         });
@@ -220,7 +220,7 @@ export function streamQueryCancelable(
       } finally {
         try {
           await client.end();
-        } catch (e) {}
+        } catch (e) { }
       }
     }
   })();
@@ -320,7 +320,7 @@ export async function listSchemas(connection: PGConfig) {
   } catch (err) {
     try {
       await client.end();
-    } catch (e) {}
+    } catch (e) { }
     throw err;
   }
 }
