@@ -208,10 +208,26 @@ class BridgeApiService {
       }
 
       const result = await bridgeRequest("db.connectTest", { id });
+      console.log(result);
       return result?.data || { ok: false, message: "Unknown error" };
     } catch (error: any) {
       console.error("Failed to test connection:", error);
-      return { ok: false, message: error.message };
+      return { ok: false, message: error.message, status: 'disconnected' };
+    }
+  }
+
+  async testAllConnections(): Promise<{ id: string; result: ConnectionTestResult }[]> {
+    try {
+      const databases = await this.listDatabases();
+      const results: { id: string; result: ConnectionTestResult }[] = [];
+      for (const db of databases) {
+        const testResult = await this.testConnection(db.id);
+        results.push({ id: db.id, result: testResult });
+      }
+      return results;
+    } catch (error) {
+      console.log(error)
+      return [];
     }
   }
 
@@ -230,7 +246,7 @@ class BridgeApiService {
       return result?.data || { ok: false, message: "Unknown error" };
     } catch (error: any) {
       console.error("Failed to test connection:", error);
-      return { ok: false, message: error.message };
+      return { ok: false, message: error.message, status: 'disconnected' };
     }
   }
 
@@ -268,7 +284,6 @@ class BridgeApiService {
   async getTotalDatabaseStats(): Promise<DatabaseStats> {
     try {
       const result = await bridgeRequest("db.getTotalStats", {});
-      console.log(result);
       return result?.data || { row: 0, size: 0, tables: 0 };
     } catch (error) {
       console.log(error);

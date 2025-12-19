@@ -16,6 +16,7 @@ interface DashboardContentProps {
     loading: boolean;
     statsLoading: boolean;
     searchQuery: string;
+    status: Map<string, string>;
     setSearchQuery: (query: string) => void;
     handleDeleteDatabase: (id: string, name: string) => void;
     handleTestConnection: (id: string, name: string) => void;
@@ -36,7 +37,8 @@ const DashboardContent = ({
     handleDeleteDatabase,
     handleTestConnection,
     filteredDatabases,
-    setIsDialogOpen
+    setIsDialogOpen,
+    status,
 }: DashboardContentProps) => {
     return (
         <main className="grow overflow-y-auto">
@@ -48,6 +50,7 @@ const DashboardContent = ({
                     totalSize={totalSize}
                     totalRows={totalRows}
                     statsLoading={loading}
+
                 />
 
                 <div className="mb-8">
@@ -78,7 +81,7 @@ const DashboardContent = ({
                                         id={db.id}
                                         name={db.name}
                                         type={db.type}
-                                        status="connected"
+                                        status={status}
                                         host={`${db.host}:${db.port}`}
                                         onDelete={() => handleDeleteDatabase(db.id, db.name)}
                                         onTest={() => handleTestConnection(db.id, db.name)}
