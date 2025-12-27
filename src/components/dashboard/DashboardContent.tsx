@@ -1,9 +1,9 @@
 import {StatsOverview} from './StatsOverview';
 import { Database, Plus, Search } from 'lucide-react';
-import { Input } from './ui/input';
+import { Input } from '@/components/ui/input';
 import { DatabaseCard } from './DatabaseCard';
-import { Button } from './ui/button';
-import { Spinner } from './ui/spinner';
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { DatabaseConnection } from '@/types/database';
 
 interface DashboardContentProps {

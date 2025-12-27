@@ -1,9 +1,9 @@
 import ReactFlow, { Background, BackgroundVariant, Controls } from "reactflow"
-import { Card, CardTitle, CardContent, CardHeader } from "../ui/card"
-import { Button } from "../ui/button"
+import { Card, CardTitle, CardContent, CardHeader } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
 import { Play } from "lucide-react"
-import { Badge } from "../ui/badge"
-import { DataTable } from "../DataTable"
+import { Badge } from "@/components/ui/badge"
+import { DataTable } from "@/components/common/DataTable"
 import { TableRow } from "@/types/database"
 
 

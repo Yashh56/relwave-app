@@ -1,6 +1,6 @@
 import { Spinner } from "@/components/ui/spinner"
 
-const BridgeNotInitLoader = () => {
+const BridgeLoader = () => {
     return (
         <div className="h-screen bg-background flex items-center justify-center">
             <div className="text-center">
@@ -12,4 +12,4 @@ const BridgeNotInitLoader = () => {
     )
 }
 
-export default BridgeNotInitLoader
+export default BridgeLoader

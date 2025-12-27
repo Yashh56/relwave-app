@@ -1,6 +1,6 @@
-import { ScrollArea } from '../ui/scroll-area';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { ChevronDown, ChevronRight, Copy, Database, Download, Eye, FileCode, Key, Layers, Link2, Table } from 'lucide-react';
-import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '../ui/context-menu';
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { Badge } from "@/components/ui/badge";
 import { ColumnDetails, DatabaseSchemaDetails, SchemaGroup, TableSchemaDetails } from '@/types/database';
 

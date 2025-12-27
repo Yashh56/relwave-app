@@ -13,8 +13,8 @@ import {
     useReactFlow
 } from "reactflow";
 import { toast } from "sonner";
-import { transformSchemaToER } from "../../lib/schemaTransformer";
-import { Spinner } from "../ui/spinner";
+import { transformSchemaToER } from "@/lib/schemaTransformer";
+import { Spinner } from "@/components/ui/spinner";
 import { useBridgeQuery } from "@/hooks/useBridgeQuery";
 import { ColumnDetails, DatabaseSchemaDetails } from "@/types/database";
 

@@ -50,7 +50,7 @@ const COLORS = [
 const ChartRendererComponent = ({
     chartType,
     xAxis,
-    yAxis,
+    yAxis: _yAxis,
     data,
 }: ChartRendererProps) => {
 

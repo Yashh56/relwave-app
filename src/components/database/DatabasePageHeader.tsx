@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
-import { Button } from "../ui/button";
+import { Button } from "@/components/ui/button";
 import { ArrowLeft, GitBranch, Layers, RefreshCw, Download, Settings, Database } from "lucide-react";
-import { Spinner } from "../ui/spinner";
+import { Spinner } from "@/components/ui/spinner";
 
 interface DatabasePageHeaderProps {
     dbId: string;

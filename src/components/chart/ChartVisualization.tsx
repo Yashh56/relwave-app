@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Download, Loader2, BarChart3, ImageIcon, FileCode } from "lucide-react";
 import { toPng, toSvg } from "html-to-image";
 import { toast } from "sonner";
-import { ChartConfigPanel } from "./chart/ChartConfigPanel";
-import { ChartRenderer } from "./chart/ChartRenderer";
+import { ChartConfigPanel } from "./ChartConfigPanel";
+import { ChartRenderer } from "./ChartRenderer";
 import { ColumnDetails, SelectedTable } from "@/types/database";
 import { bridgeApi } from "@/services/bridgeApi";
 

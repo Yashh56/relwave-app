@@ -2,10 +2,10 @@ import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
 import { bridgeApi } from "@/services/bridgeApi";
 import { useBridgeQuery } from "@/hooks/useBridgeQuery";
-import DashboardContent from "@/components/DashboardContent";
-import BridgeNotInitLoader from "@/components/bridge/BridgeNotInitLoader";
-import BridgeFailed from "@/components/bridge/BridgeFailed";
-import Header from "@/components/header";
+import DashboardContent from "@/components/dashboard/DashboardContent";
+import BridgeLoader from "@/components/feedback/BridgeLoader";
+import BridgeFailed from "@/components/feedback/BridgeFailed";
+import Header from "@/components/common/Header";
 import { bytesToMBString } from "@/lib/bytesToMB";
 import { DatabaseConnection } from "@/types/database";
 
@@ -153,7 +153,7 @@ const Index = () => {
   );
 
   // --- Render based on bridge state ---
-  if (bridgeLoading) return <BridgeNotInitLoader />;
+  if (bridgeLoading) return <BridgeLoader />;
   if (!bridgeReady) return <BridgeFailed />;
 
   return (

@@ -1,11 +1,11 @@
 import { FC } from "react";
 import { QueryProgress, SelectedTable } from "@/types/database";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "../ui/tabs";
-import { Card, CardDescription, CardTitle } from "../ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Card, CardDescription, CardTitle } from "@/components/ui/card";
 import { Table2, Code, BarChart } from "lucide-react";
-import { ChartVisualization } from "../ChartVisualization";
-import Data from "./Data";
-import Editor from "./Editor";
+import { ChartVisualization } from "@/components/chart/ChartVisualization";
+import DataTab from "./DataTab";
+import EditorTab from "./EditorTab";
 import { TableRow } from "@/types/database";
 
 
@@ -55,7 +55,7 @@ const QueryContentTabs: FC<QueryContentTabsProps> = ({
                 </TabsList>
 
                 <TabsContent value="data" className="space-y-4">
-                    <Data
+                    <DataTab
                         selectedTable={selectedTable}
                         isExecuting={isExecuting}
                         tableData={tableData}
@@ -64,7 +64,7 @@ const QueryContentTabs: FC<QueryContentTabsProps> = ({
                 </TabsContent>
 
                 <TabsContent value="editor" className="space-y-4">
-                    <Editor
+                    <EditorTab
                         isExecuting={isExecuting}
                         rowCount={rowCount}
                         query={query}

@@ -5,11 +5,11 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import { bridgeApi } from "@/services/bridgeApi";
-import QueryContentTabs from "@/components/databaseDetails/QueryContentTabs";
-import TableSelectorDropdown from "@/components/databaseDetails/TableSidebar";
-import DatabasePageHeader from "@/components/databaseDetails/DatabasePageHeader";
+import QueryContentTabs from "@/components/database/QueryContentTabs";
+import TableSelector from "@/components/database/TableSelector";
+import DatabasePageHeader from "@/components/database/DatabasePageHeader";
 import { useBridgeQuery } from "@/hooks/useBridgeQuery";
-import BridgeNotInitLoader from "@/components/bridge/BridgeNotInitLoader";
+import BridgeLoader from "@/components/feedback/BridgeLoader";
 import { Spinner } from "@/components/ui/spinner";
 import { QueryProgress, SelectedTable, TableInfo, TableRow } from "@/types/database";
 
@@ -37,7 +37,7 @@ const DatabaseDetail = () => {
   }, [bridgeReady]);
 
   if (bridgeLoading) {
-    return <BridgeNotInitLoader />;
+    return <BridgeLoader />;
   }
 
 
@@ -322,7 +322,7 @@ const DatabaseDetail = () => {
       <div className="container mx-auto px-4 py-6">
         <div className="space-y-4">
           <div className="flex items-center justify-end">
-            <TableSelectorDropdown
+            <TableSelector
               tables={tables}
               selectedTable={selectedTable}
               loading={loading}

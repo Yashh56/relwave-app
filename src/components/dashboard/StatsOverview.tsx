@@ -1,5 +1,5 @@
 import { DatabaseConnection } from '@/types/database'
-import { Card, CardContent } from './ui/card'
+import { Card, CardContent } from '@/components/ui/card'
 import { Database, Activity, Table2, HardDrive, Layers } from 'lucide-react'
 
 export interface StatsOverviewProps {

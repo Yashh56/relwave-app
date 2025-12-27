@@ -1,4 +1,4 @@
-// src/components/databaseDetails/TableSelectorDropdown.tsx
+// src/components/database/TableSelector.tsx
 import { Table2, Database } from "lucide-react";
 import {
     Select,
@@ -9,17 +9,17 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { Spinner } from "../ui/spinner";
+import { Spinner } from "@/components/ui/spinner";
 import { SelectedTable, TableInfo } from "@/types/database";
 
-interface TableSelectorDropdownProps {
+interface TableSelectorProps {
     tables: TableInfo[];
     selectedTable: SelectedTable | null;
     loading: boolean;
     onTableSelect: (tableName: string, schemaName: string) => void;
 }
 
-const TableSelectorDropdown: React.FC<TableSelectorDropdownProps> = ({
+const TableSelector: React.FC<TableSelectorProps> = ({
     tables,
     selectedTable,
     loading,
@@ -101,4 +101,4 @@ const TableSelectorDropdown: React.FC<TableSelectorDropdownProps> = ({
     );
 };
 
-export default TableSelectorDropdown;
+export default TableSelector;

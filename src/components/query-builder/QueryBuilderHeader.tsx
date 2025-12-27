@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom'
-import { Button } from '../ui/button'
+import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react'
 
-const Header = ({ id }: { id: string }) => {
+const QueryBuilderHeader = ({ id }: { id: string }) => {
     return (
         <header className="border-b bg-card/50 backdrop-blur">
             <div className="container mx-auto px-4 py-4">
@@ -21,4 +21,4 @@ const Header = ({ id }: { id: string }) => {
         </header>)
 }
 
-export default Header
+export default QueryBuilderHeader

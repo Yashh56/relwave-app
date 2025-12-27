@@ -1,8 +1,8 @@
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../ui/card'
-import { Button } from '../ui/button'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { Loader2, Play, RefreshCw, X, Code2, Clock } from 'lucide-react'
-import { Textarea } from '../ui/textarea'
-import { DataTable } from '../DataTable'
+import { Textarea } from '@/components/ui/textarea'
+import { DataTable } from '@/components/common/DataTable'
 import { QueryProgress } from '@/types/database'
 import { TableRow } from '@/types/database'
 
@@ -19,7 +19,7 @@ interface EditorProps {
     onCancelQuery: () => void;
 }
 
-const Editor = ({
+const EditorTab = ({
     isExecuting,
     rowCount,
     query,
@@ -152,4 +152,4 @@ SELECT * FROM users WHERE role = 'Admin';
     )
 }
 
-export default Editor
+export default EditorTab

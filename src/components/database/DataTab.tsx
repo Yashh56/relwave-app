@@ -1,6 +1,6 @@
-import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '../ui/card'
+import { Card, CardHeader, CardContent, CardTitle, CardDescription } from '@/components/ui/card'
 import { RefreshCw } from 'lucide-react'
-import { DataTable } from '../DataTable'
+import { DataTable } from '@/components/common/DataTable'
 import { SelectedTable, TableRow } from '@/types/database';
 
 
@@ -12,7 +12,7 @@ interface DataProps {
 }
 
 
-const Data: React.FC<DataProps> = ({ selectedTable, isExecuting, tableData, rowCount }) => {
+const DataTab: React.FC<DataProps> = ({ selectedTable, isExecuting, tableData, rowCount }) => {
     const tableName = selectedTable ? `${selectedTable.schema}.${selectedTable.name}` : "No table selected";
 
     return (
@@ -39,4 +39,4 @@ const Data: React.FC<DataProps> = ({ selectedTable, isExecuting, tableData, rowC
     )
 }
 
-export default Data
+export default DataTab
