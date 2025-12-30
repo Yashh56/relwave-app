@@ -2,9 +2,9 @@ import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "sonner";
 import { useBridgeQuery } from "@/hooks/useBridgeQuery";
 import { useDatabaseDetails } from "@/hooks/useDatabaseDetails";
+import { useExport } from "@/hooks/useExport";
 import BridgeLoader from "@/components/feedback/BridgeLoader";
 import { Spinner } from "@/components/ui/spinner";
 import {
@@ -44,14 +44,11 @@ const DatabaseDetail = () => {
     bridgeReady: bridgeReady ?? false,
   });
 
-  const handleBackup = () => {
-    toast.info("Initiating database backup...", { duration: 3000 });
-    setTimeout(() => {
-      toast.success("Backup created successfully", {
-        description: "Your database backup is ready for download.",
-      });
-    }, 2000);
-  };
+  // Export hook - exports all tables to CSV or JSON
+  const { exportAllTables, isExporting } = useExport({
+    dbId: dbId || "",
+    databaseName: databaseName || "database",
+  });
 
   if (bridgeLoading) {
     return <BridgeLoader />;
@@ -104,8 +101,9 @@ const DatabaseDetail = () => {
         dbId={dbId || ""}
         databaseName={databaseName}
         onRefresh={fetchTables}
-        onBackup={handleBackup}
+        onExport={exportAllTables}
         loading={loadingTables}
+        exportLoading={isExporting}
       />
 
       <div className="container mx-auto px-4 py-6">
