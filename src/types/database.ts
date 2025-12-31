@@ -73,19 +73,88 @@ export interface ColumnDetails {
     nullable: boolean;
     isPrimaryKey: boolean;
     isForeignKey: boolean;
-    isUnique: boolean; // Note: Requires extra backend query, mocked to false for simplicity
+    isUnique: boolean;
     defaultValue: string | null;
+    ordinalPosition?: number;
+    maxLength?: number | null;
+}
+
+export interface PrimaryKeyInfo {
+    table_schema: string;
+    table_name: string;
+    column_name: string;
+    ordinal_position: number;
+}
+
+export interface ForeignKeyInfo {
+    constraint_name: string;
+    source_schema: string;
+    source_table: string;
+    source_column: string;
+    target_schema: string;
+    target_table: string;
+    target_column: string;
+    update_rule: string;
+    delete_rule: string;
+    ordinal_position: number;
+}
+
+export interface IndexInfo {
+    table_name: string;
+    index_name: string;
+    column_name: string;
+    is_unique: boolean;
+    is_primary: boolean;
+    index_type: string;
+    predicate: string | null;
+    ordinal_position: number;
+}
+
+export interface UniqueConstraintInfo {
+    constraint_name: string;
+    table_schema: string;
+    table_name: string;
+    column_name: string;
+    ordinal_position: number;
+}
+
+export interface CheckConstraintInfo {
+    constraint_name: string;
+    table_schema: string;
+    table_name: string;
+    definition?: string;
+    check_clause?: string;
+}
+
+export interface EnumTypeInfo {
+    schema_name: string;
+    enum_name: string;
+    enum_value: string;
+}
+
+export interface SequenceInfo {
+    sequence_name: string;
+    sequence_schema: string;
+    table_name: string | null;
+    column_name: string | null;
 }
 
 export interface TableSchemaDetails {
     name: string;
     type: "BASE TABLE" | "VIEW" | string;
     columns: ColumnDetails[];
+    primaryKeys?: PrimaryKeyInfo[];
+    foreignKeys?: ForeignKeyInfo[];
+    indexes?: IndexInfo[];
+    uniqueConstraints?: UniqueConstraintInfo[];
+    checkConstraints?: CheckConstraintInfo[];
 }
 
 export interface SchemaGroup {
     name: string;
     tables: TableSchemaDetails[];
+    enumTypes?: EnumTypeInfo[];
+    sequences?: SequenceInfo[];
 }
 
 export interface DatabaseSchemaDetails {

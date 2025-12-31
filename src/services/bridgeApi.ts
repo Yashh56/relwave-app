@@ -320,22 +320,6 @@ class BridgeApiService {
   }
 
   /**
-   * List all schemas in a database
-   */
-  async listSchemas(id: string): Promise<{ name: string }[]> {
-    try {
-      if (!id) {
-        throw new Error("Database ID is required.");
-      }
-      const result = await bridgeRequest("db.listSchemas", { id });
-      return result?.data || [];
-    } catch (error: any) {
-      console.error("Failed to list schemas:", error);
-      throw new Error(`Failed to list schemas: ${error.message}`);
-    }
-  }
-
-  /**
    * Get table column details
    */
   async getTableDetails(id: string, schemaName: string, tableName: string): Promise<any[]> {
@@ -365,7 +349,6 @@ class BridgeApiService {
         schemaName,
         tableName,
       });
-
       return result?.primaryKeys[0].column_name || result?.primaryKeys[0].COLUMN_NAME || result.primaryKeys[0] || "";
     } catch (error: any) {
       console.error("Failed to fetch primary keys:", error);
