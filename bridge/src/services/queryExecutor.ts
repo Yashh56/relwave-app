@@ -145,42 +145,55 @@ export class QueryExecutor {
     if (dbType === DBType.MYSQL) {
       const schemas = await mysqlConnector.listSchemas(conn);
 
-      // Process schemas in parallel
+      // Process schemas in parallel with batch queries
       const finalSchemas = await parallelMap(schemas, async (schema) => {
-        const tablesInSchema = await mysqlConnector.listTables(conn, schema.name);
+        try {
+          // Get tables list
+          const tablesInSchema = await mysqlConnector.listTables(conn, schema.name);
 
-        // Process tables in parallel within each schema
-        const finalTables = await parallelMap(tablesInSchema, async (table) => {
-          const tableDetails = await mysqlConnector.getTableDetails(
-            conn,
-            table.schema,
-            table.name
-          );
-          const columns = tableDetails.map((col) => ({
-            name: col.name,
-            type: col.type,
-            nullable: !col.not_nullable,
-            isPrimaryKey: col.is_primary_key === true,
-            isForeignKey: col.is_foreign_key === true,
-            defaultValue: col.default_value || null,
-            isUnique: false,
-          }));
+          // Use batch query to get all metadata at once
+          const batchData = await mysqlConnector.getSchemaMetadataBatch(conn, schema.name);
+
+          const finalTables = tablesInSchema.map((table) => {
+            const tableData = batchData.tables.get(table.name);
+
+            const columns = tableData?.columns.map((col) => ({
+              name: col.name,
+              type: col.type,
+              nullable: !col.not_nullable,
+              isPrimaryKey: col.is_primary_key === true,
+              isForeignKey: col.is_foreign_key === true,
+              defaultValue: col.default_value || null,
+              isUnique: false,
+            })) || [];
+
+            return {
+              name: table.name,
+              type: table.type,
+              columns: columns,
+              primaryKeys: tableData?.primaryKeys || [],
+              foreignKeys: tableData?.foreignKeys || [],
+              indexes: tableData?.indexes || [],
+              uniqueConstraints: tableData?.uniqueConstraints || [],
+              checkConstraints: tableData?.checkConstraints || [],
+            };
+          });
+
           return {
-            name: table.name,
-            type: table.type,
-            columns: columns,
+            name: schema.name,
+            tables: finalTables,
+            enumColumns: batchData.enumColumns,
+            autoIncrements: batchData.autoIncrements,
           };
-        });
-
-        return {
-          name: schema.name,
-          tables: finalTables,
-        };
+        } catch (e: any) {
+          console.warn(`Skipping schema ${schema.name} due to error: ${e.message}`);
+          return null;
+        }
       });
 
       return {
         name: conn.database,
-        schemas: finalSchemas,
+        schemas: finalSchemas.filter(Boolean), // Remove null entries from failed schemas
       };
     } else {
       // PostgreSQL - Use optimized batch query
