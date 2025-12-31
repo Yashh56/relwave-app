@@ -2,11 +2,51 @@ import * as postgresConnector from "../connectors/postgres";
 import * as mysqlConnector from "../connectors/mysql";
 import { DBType, Rpc, QueryParams, DatabaseConfig } from "../types";
 
+// Concurrency limit for parallel processing
+const PARALLEL_LIMIT = 5;
+
+/**
+ * Process items in parallel with concurrency limit
+ */
+async function parallelMap<T, R>(
+  items: T[],
+  fn: (item: T) => Promise<R>,
+  limit: number = PARALLEL_LIMIT
+): Promise<R[]> {
+  const results: R[] = [];
+  const executing: Promise<void>[] = [];
+
+  for (const item of items) {
+    const p = fn(item).then((result) => {
+      results.push(result);
+    });
+
+    executing.push(p);
+
+    if (executing.length >= limit) {
+      await Promise.race(executing);
+      // Remove completed promises
+      for (let i = executing.length - 1; i >= 0; i--) {
+        const status = await Promise.race([
+          executing[i].then(() => 'fulfilled'),
+          Promise.resolve('pending')
+        ]);
+        if (status === 'fulfilled') {
+          executing.splice(i, 1);
+        }
+      }
+    }
+  }
+
+  await Promise.all(executing);
+  return results;
+}
+
 export class QueryExecutor {
   constructor(
     public postgres = postgresConnector,
     public mysql = mysqlConnector
-  ) {}
+  ) { }
 
   async executeQuery(
     params: QueryParams,
@@ -105,14 +145,12 @@ export class QueryExecutor {
     if (dbType === DBType.MYSQL) {
       const schemas = await mysqlConnector.listSchemas(conn);
 
-      const finalSchemas = [];
-      for (const schema of schemas) {
-        const tablesInSchema = await mysqlConnector.listTables(
-          conn,
-          schema.name
-        );
-        const finalTables = [];
-        for (const table of tablesInSchema) {
+      // Process schemas in parallel
+      const finalSchemas = await parallelMap(schemas, async (schema) => {
+        const tablesInSchema = await mysqlConnector.listTables(conn, schema.name);
+
+        // Process tables in parallel within each schema
+        const finalTables = await parallelMap(tablesInSchema, async (table) => {
           const tableDetails = await mysqlConnector.getTableDetails(
             conn,
             table.schema,
@@ -127,43 +165,40 @@ export class QueryExecutor {
             defaultValue: col.default_value || null,
             isUnique: false,
           }));
-          finalTables.push({
+          return {
             name: table.name,
             type: table.type,
             columns: columns,
-          });
-        }
-        finalSchemas.push({
+          };
+        });
+
+        return {
           name: schema.name,
           tables: finalTables,
-        });
-      }
-      const responseData = {
+        };
+      });
+
+      return {
         name: conn.database,
         schemas: finalSchemas,
       };
-      return responseData;
     } else {
+      // PostgreSQL - Use optimized batch query
       const schemas = await postgresConnector.listSchemas(conn);
 
-      const finalSchemas = [];
-
-      for (const schema of schemas) {
+      // Process schemas in parallel with batch queries
+      const finalSchemas = await parallelMap(schemas, async (schema) => {
         try {
-          const tablesInSchema = await postgresConnector.listTables(
-            conn,
-            schema.name
-          );
-          const finalTables = [];
+          // Get tables list
+          const tablesInSchema = await postgresConnector.listTables(conn, schema.name);
 
-          for (const table of tablesInSchema) {
-            const tableDetails = await postgresConnector.getTableDetails(
-              conn,
-              table.schema,
-              table.name
-            );
+          // Use batch query to get all metadata at once
+          const batchData = await postgresConnector.getSchemaMetadataBatch(conn, schema.name);
 
-            const columns = tableDetails.map((col) => ({
+          const finalTables = tablesInSchema.map((table) => {
+            const tableData = batchData.tables.get(table.name);
+
+            const columns = tableData?.columns.map((col) => ({
               name: col.name,
               type: col.type,
               nullable: !col.not_nullable,
@@ -171,32 +206,36 @@ export class QueryExecutor {
               isForeignKey: col.is_foreign_key === true,
               defaultValue: col.default_value || null,
               isUnique: false,
-            }));
+            })) || [];
 
-            finalTables.push({
+            return {
               name: table.name,
               type: table.type,
               columns: columns,
-            });
-          }
+              primaryKeys: tableData?.primaryKeys || [],
+              foreignKeys: tableData?.foreignKeys || [],
+              indexes: tableData?.indexes || [],
+              uniqueConstraints: tableData?.uniqueConstraints || [],
+              checkConstraints: tableData?.checkConstraints || [],
+            };
+          });
 
-          finalSchemas.push({
+          return {
             name: schema.name,
             tables: finalTables,
-          });
-        } catch (e) {
-          // Log and skip schemas that cause errors
-          console.warn(
-            `Skipping schema ${schema.name} due to error: ${e.message}`
-          );
+            enumTypes: batchData.enumTypes,
+            sequences: batchData.sequences,
+          };
+        } catch (e: any) {
+          console.warn(`Skipping schema ${schema.name} due to error: ${e.message}`);
+          return null;
         }
-      }
+      });
 
-      const responseData = {
+      return {
         name: conn.database,
-        schemas: finalSchemas,
+        schemas: finalSchemas.filter(Boolean), // Remove null entries from failed schemas
       };
-      return responseData;
     }
   }
 }

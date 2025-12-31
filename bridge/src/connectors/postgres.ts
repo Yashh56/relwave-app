@@ -63,16 +63,75 @@ type ColumnDetail = {
   is_foreign_key: boolean;
 };
 
+type ForeignKeyInfo = {
+  constraint_name: string;
+  source_schema: string;
+  source_table: string;
+  source_column: string;
+  target_schema: string;
+  target_table: string;
+  target_column: string;
+  update_rule: string;
+  delete_rule: string;
+  ordinal_position: number;
+};
+
+type IndexInfo = {
+  table_name: string;
+  index_name: string;
+  column_name: string;
+  is_unique: boolean;
+  is_primary: boolean;
+  index_type: string;
+  predicate: string | null;
+  ordinal_position: number;
+};
+
+type UniqueConstraintInfo = {
+  constraint_name: string;
+  table_schema: string;
+  table_name: string;
+  column_name: string;
+  ordinal_position: number;
+};
+
+type CheckConstraintInfo = {
+  constraint_name: string;
+  table_schema: string;
+  table_name: string;
+  definition: string;
+};
+
+type EnumInfo = {
+  schema_name: string;
+  enum_name: string;
+  enum_value: string;
+};
+
+type SequenceInfo = {
+  sequence_name: string;
+  sequence_schema: string;
+  table_name: string | null;
+  column_name: string | null;
+};
+
 /**
  * PostgreSQL Cache Manager - handles all caching for Postgres connector
  */
 export class PostgresCacheManager {
+
   // Cache stores for different data types
   private tableListCache = new Map<string, CacheEntry<TableInfo[]>>();
   private primaryKeysCache = new Map<string, CacheEntry<PrimaryKeyInfo[]>>();
   private dbStatsCache = new Map<string, CacheEntry<DBStats>>();
   private schemasCache = new Map<string, CacheEntry<SchemaInfo[]>>();
   private tableDetailsCache = new Map<string, CacheEntry<ColumnDetail[]>>();
+  private foreignKeysCache = new Map<string, CacheEntry<ForeignKeyInfo[]>>();
+  private indexesCache = new Map<string, CacheEntry<IndexInfo[]>>();
+  private uniqueCache = new Map<string, CacheEntry<UniqueConstraintInfo[]>>();
+  private checksCache = new Map<string, CacheEntry<CheckConstraintInfo[]>>();
+  private enumsCache = new Map<string, CacheEntry<EnumInfo[]>>();
+  private sequencesCache = new Map<string, CacheEntry<SequenceInfo[]>>();
 
   /**
    * Generate cache key from config
@@ -108,7 +167,6 @@ export class PostgresCacheManager {
     const key = schema ? this.getSchemaKey(cfg, schema) : this.getConfigKey(cfg);
     const entry = this.tableListCache.get(key);
     if (this.isValid(entry)) {
-      console.log(`[Postgres Cache] HIT: tableList for ${key}`);
       return entry!.data;
     }
     return null;
@@ -117,7 +175,6 @@ export class PostgresCacheManager {
   setTableList(cfg: PGConfig, data: TableInfo[], schema?: string): void {
     const key = schema ? this.getSchemaKey(cfg, schema) : this.getConfigKey(cfg);
     this.tableListCache.set(key, { data, timestamp: Date.now(), ttl: CACHE_TTL });
-    console.log(`[Postgres Cache] SET: tableList for ${key}`);
   }
 
   // ============ PRIMARY KEYS CACHE ============
@@ -125,7 +182,6 @@ export class PostgresCacheManager {
     const key = this.getTableKey(cfg, schema, table);
     const entry = this.primaryKeysCache.get(key);
     if (this.isValid(entry)) {
-      console.log(`[Postgres Cache] HIT: primaryKeys for ${key}`);
       return entry!.data;
     }
     return null;
@@ -134,7 +190,6 @@ export class PostgresCacheManager {
   setPrimaryKeys(cfg: PGConfig, schema: string, table: string, data: PrimaryKeyInfo[]): void {
     const key = this.getTableKey(cfg, schema, table);
     this.primaryKeysCache.set(key, { data, timestamp: Date.now(), ttl: CACHE_TTL });
-    console.log(`[Postgres Cache] SET: primaryKeys for ${key}`);
   }
 
   // ============ DB STATS CACHE ============
@@ -142,7 +197,6 @@ export class PostgresCacheManager {
     const key = this.getConfigKey(cfg);
     const entry = this.dbStatsCache.get(key);
     if (this.isValid(entry)) {
-      console.log(`[Postgres Cache] HIT: dbStats for ${key}`);
       return entry!.data;
     }
     return null;
@@ -151,7 +205,6 @@ export class PostgresCacheManager {
   setDBStats(cfg: PGConfig, data: DBStats): void {
     const key = this.getConfigKey(cfg);
     this.dbStatsCache.set(key, { data, timestamp: Date.now(), ttl: STATS_CACHE_TTL });
-    console.log(`[Postgres Cache] SET: dbStats for ${key}`);
   }
 
   // ============ SCHEMAS CACHE ============
@@ -159,7 +212,6 @@ export class PostgresCacheManager {
     const key = this.getConfigKey(cfg);
     const entry = this.schemasCache.get(key);
     if (this.isValid(entry)) {
-      console.log(`[Postgres Cache] HIT: schemas for ${key}`);
       return entry!.data;
     }
     return null;
@@ -168,7 +220,6 @@ export class PostgresCacheManager {
   setSchemas(cfg: PGConfig, data: SchemaInfo[]): void {
     const key = this.getConfigKey(cfg);
     this.schemasCache.set(key, { data, timestamp: Date.now(), ttl: SCHEMA_CACHE_TTL });
-    console.log(`[Postgres Cache] SET: schemas for ${key}`);
   }
 
   // ============ TABLE DETAILS CACHE ============
@@ -176,7 +227,6 @@ export class PostgresCacheManager {
     const key = this.getTableKey(cfg, schema, table);
     const entry = this.tableDetailsCache.get(key);
     if (this.isValid(entry)) {
-      console.log(`[Postgres Cache] HIT: tableDetails for ${key}`);
       return entry!.data;
     }
     return null;
@@ -185,17 +235,106 @@ export class PostgresCacheManager {
   setTableDetails(cfg: PGConfig, schema: string, table: string, data: ColumnDetail[]): void {
     const key = this.getTableKey(cfg, schema, table);
     this.tableDetailsCache.set(key, { data, timestamp: Date.now(), ttl: CACHE_TTL });
-    console.log(`[Postgres Cache] SET: tableDetails for ${key}`);
+  }
+
+  // ============ FOREIGN KEYS CACHE ============
+  getForeignKeys(cfg: PGConfig, schema: string, table: string): ForeignKeyInfo[] | null {
+    const key = this.getTableKey(cfg, schema, table);
+    const entry = this.foreignKeysCache.get(key);
+    if (this.isValid(entry)) {
+      return entry!.data;
+    }
+    return null;
+  }
+
+  setForeignKeys(cfg: PGConfig, schema: string, table: string, data: ForeignKeyInfo[]): void {
+    const key = this.getTableKey(cfg, schema, table);
+    this.foreignKeysCache.set(key, { data, timestamp: Date.now(), ttl: CACHE_TTL });
+  }
+
+  // ============ INDEXES CACHE ============
+  getIndexes(cfg: PGConfig, schema: string, table: string): IndexInfo[] | null {
+    const key = this.getTableKey(cfg, schema, table);
+    const entry = this.indexesCache.get(key);
+    if (this.isValid(entry)) {
+      return entry!.data;
+    }
+    return null;
+  }
+
+  setIndexes(cfg: PGConfig, schema: string, table: string, data: IndexInfo[]): void {
+    const key = this.getTableKey(cfg, schema, table);
+    this.indexesCache.set(key, { data, timestamp: Date.now(), ttl: CACHE_TTL });
+  }
+
+  // ============ UNIQUE CONSTRAINTS CACHE ============
+  getUnique(cfg: PGConfig, schema: string, table: string): UniqueConstraintInfo[] | null {
+    const key = this.getTableKey(cfg, schema, table);
+    const entry = this.uniqueCache.get(key);
+    if (this.isValid(entry)) {
+      return entry!.data;
+    }
+    return null;
+  }
+
+  setUnique(cfg: PGConfig, schema: string, table: string, data: UniqueConstraintInfo[]): void {
+    const key = this.getTableKey(cfg, schema, table);
+    this.uniqueCache.set(key, { data, timestamp: Date.now(), ttl: CACHE_TTL });
+  }
+
+  // ============ CHECK CONSTRAINTS CACHE ============
+  getChecks(cfg: PGConfig, schema: string, table: string): CheckConstraintInfo[] | null {
+    const key = this.getTableKey(cfg, schema, table);
+    const entry = this.checksCache.get(key);
+    if (this.isValid(entry)) {
+      return entry!.data;
+    }
+    return null;
+  }
+
+  setChecks(cfg: PGConfig, schema: string, table: string, data: CheckConstraintInfo[]): void {
+    const key = this.getTableKey(cfg, schema, table);
+    this.checksCache.set(key, { data, timestamp: Date.now(), ttl: CACHE_TTL });
+  }
+
+  // ============ ENUMS CACHE ============
+  getEnums(cfg: PGConfig, schema: string): EnumInfo[] | null {
+    const key = this.getSchemaKey(cfg, schema);
+    const entry = this.enumsCache.get(key);
+    if (this.isValid(entry)) {
+      return entry!.data;
+    }
+    return null;
+  }
+
+  setEnums(cfg: PGConfig, schema: string, data: EnumInfo[]): void {
+    const key = this.getSchemaKey(cfg, schema);
+    this.enumsCache.set(key, { data, timestamp: Date.now(), ttl: CACHE_TTL });
+  }
+
+  // ============ SEQUENCES CACHE ============
+  getSequences(cfg: PGConfig, schema: string): SequenceInfo[] | null {
+    const key = this.getSchemaKey(cfg, schema);
+    const entry = this.sequencesCache.get(key);
+    if (this.isValid(entry)) {
+      return entry!.data;
+    }
+    return null;
+  }
+
+  setSequences(cfg: PGConfig, schema: string, data: SequenceInfo[]): void {
+    const key = this.getSchemaKey(cfg, schema);
+    this.sequencesCache.set(key, { data, timestamp: Date.now(), ttl: CACHE_TTL });
   }
 
   // ============ CACHE MANAGEMENT ============
-  
+
   /**
    * Clear all caches for a specific database connection
    */
   clearForConnection(cfg: PGConfig): void {
     const configKey = this.getConfigKey(cfg);
-    
+
     // Clear all entries that start with this config key
     for (const [key] of this.tableListCache) {
       if (key.startsWith(configKey)) this.tableListCache.delete(key);
@@ -206,11 +345,27 @@ export class PostgresCacheManager {
     for (const [key] of this.tableDetailsCache) {
       if (key.startsWith(configKey)) this.tableDetailsCache.delete(key);
     }
-    
+    for (const [key] of this.foreignKeysCache) {
+      if (key.startsWith(configKey)) this.foreignKeysCache.delete(key);
+    }
+    for (const [key] of this.indexesCache) {
+      if (key.startsWith(configKey)) this.indexesCache.delete(key);
+    }
+    for (const [key] of this.uniqueCache) {
+      if (key.startsWith(configKey)) this.uniqueCache.delete(key);
+    }
+    for (const [key] of this.checksCache) {
+      if (key.startsWith(configKey)) this.checksCache.delete(key);
+    }
+    for (const [key] of this.enumsCache) {
+      if (key.startsWith(configKey)) this.enumsCache.delete(key);
+    }
+    for (const [key] of this.sequencesCache) {
+      if (key.startsWith(configKey)) this.sequencesCache.delete(key);
+    }
+
     this.dbStatsCache.delete(configKey);
     this.schemasCache.delete(configKey);
-    
-    console.log(`[Postgres Cache] Cleared all caches for ${configKey}`);
   }
 
   /**
@@ -220,7 +375,10 @@ export class PostgresCacheManager {
     const key = this.getTableKey(cfg, schema, table);
     this.primaryKeysCache.delete(key);
     this.tableDetailsCache.delete(key);
-    console.log(`[Postgres Cache] Cleared table cache for ${key}`);
+    this.foreignKeysCache.delete(key);
+    this.indexesCache.delete(key);
+    this.uniqueCache.delete(key);
+    this.checksCache.delete(key);
   }
 
   /**
@@ -232,7 +390,12 @@ export class PostgresCacheManager {
     this.dbStatsCache.clear();
     this.schemasCache.clear();
     this.tableDetailsCache.clear();
-    console.log(`[Postgres Cache] Cleared all caches`);
+    this.foreignKeysCache.clear();
+    this.indexesCache.clear();
+    this.uniqueCache.clear();
+    this.checksCache.clear();
+    this.enumsCache.clear();
+    this.sequencesCache.clear();
   }
 
   /**
@@ -244,6 +407,12 @@ export class PostgresCacheManager {
     dbStats: number;
     schemas: number;
     tableDetails: number;
+    foreignKeys: number;
+    indexes: number;
+    unique: number;
+    checks: number;
+    enums: number;
+    sequences: number;
   } {
     return {
       tableLists: this.tableListCache.size,
@@ -251,6 +420,12 @@ export class PostgresCacheManager {
       dbStats: this.dbStatsCache.size,
       schemas: this.schemasCache.size,
       tableDetails: this.tableDetailsCache.size,
+      foreignKeys: this.foreignKeysCache.size,
+      indexes: this.indexesCache.size,
+      unique: this.uniqueCache.size,
+      checks: this.checksCache.size,
+      enums: this.enumsCache.size,
+      sequences: this.sequencesCache.size,
     };
   }
 }
@@ -445,26 +620,32 @@ export async function listPrimaryKeys(connection: PGConfig, schemaName: string =
 
   const query = `
    SELECT 
-    a.attname AS column_name
+    tc.table_schema,
+    tc.table_name,
+    kcu.column_name,
+    kcu.ordinal_position
 FROM 
-    pg_index i
+    information_schema.table_constraints tc
 JOIN 
-    pg_attribute a ON a.attrelid = i.indrelid AND a.attnum = ANY(i.indkey)
+    information_schema.key_column_usage kcu
+    ON tc.constraint_name = kcu.constraint_name
 WHERE 
-    i.indrelid = $1::regclass
-AND 
-    i.indisprimary
+    tc.constraint_type = 'PRIMARY KEY'
+    AND tc.table_name = $1
+ORDER BY 
+    kcu.ordinal_position;
+
   `;
 
   try {
     await client.connect();
     const res = await client.query(query, [tableName]);
-    
+
     const result = res.rows;
-    
+
     // Cache the result
     postgresCache.setPrimaryKeys(connection, schemaName, tableName, result);
-    
+
     return result;
   } catch (err) {
     try {
@@ -473,6 +654,486 @@ AND
     throw err;
   }
 }
+
+export async function listForeignKeys(
+  connection: PGConfig,
+  schemaName: string = "public",
+  tableName: string
+) {
+  // Check cache
+  const cached = postgresCache.getForeignKeys(connection, schemaName, tableName);
+  if (cached !== null) return cached;
+
+  const client = createClient(connection);
+
+  const query = `
+    SELECT
+        tc.constraint_name,
+        tc.table_schema AS source_schema,
+        tc.table_name AS source_table,
+        kcu.column_name AS source_column,
+        ccu.table_schema AS target_schema,
+        ccu.table_name AS target_table,
+        ccu.column_name AS target_column,
+        rc.update_rule,
+        rc.delete_rule,
+        kcu.ordinal_position
+    FROM information_schema.table_constraints tc
+    JOIN information_schema.key_column_usage kcu
+        ON tc.constraint_name = kcu.constraint_name
+       AND tc.table_schema = kcu.table_schema
+    JOIN information_schema.constraint_column_usage ccu
+        ON ccu.constraint_name = tc.constraint_name
+    JOIN information_schema.referential_constraints rc
+        ON rc.constraint_name = tc.constraint_name
+    WHERE 
+        tc.constraint_type = 'FOREIGN KEY'
+        AND tc.table_schema = $2
+        AND tc.table_name = $1
+    ORDER BY 
+        tc.constraint_name,
+        kcu.ordinal_position;
+  `;
+
+  try {
+    await client.connect();
+    const res = await client.query(query, [tableName, schemaName]);
+    const result = res.rows;
+
+    postgresCache.setForeignKeys(connection, schemaName, tableName, result);
+
+    return result;
+  } catch (err) {
+    throw err;
+  } finally {
+    try {
+      await client.end();
+    } catch { }
+  }
+}
+
+
+
+export async function listIndexes(connection: PGConfig, schemaName = "public", tableName: string) {
+  const cached = postgresCache.getIndexes(connection, schemaName, tableName);
+  if (cached !== null) return cached;
+
+  const client = createClient(connection);
+
+  const query = ` SELECT
+    t.relname AS table_name,
+    i.relname AS index_name,
+    a.attname AS column_name,
+    ix.indisunique AS is_unique,
+    ix.indisprimary AS is_primary,
+    am.amname AS index_type,
+    pg_get_expr(ix.indpred, ix.indrelid) AS predicate,
+    array_position(ix.indkey, a.attnum) AS ordinal_position
+FROM pg_class t
+JOIN pg_index ix ON t.oid = ix.indrelid
+JOIN pg_class i ON i.oid = ix.indexrelid
+JOIN pg_am am ON am.oid = i.relam
+JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(ix.indkey)
+JOIN pg_namespace n ON n.oid = t.relnamespace
+WHERE
+    n.nspname = $2
+    AND t.relname = $1
+ORDER BY index_name, ordinal_position;
+`;
+
+  try {
+    await client.connect();
+    const res = await client.query(query, [tableName, schemaName]);
+    postgresCache.setIndexes(connection, schemaName, tableName, res.rows);
+    return res.rows;
+  } finally {
+    try { await client.end(); } catch { }
+  }
+}
+
+export async function listUniqueConstraints(connection: PGConfig, schemaName = "public", tableName: string) {
+  const cached = postgresCache.getUnique(connection, schemaName, tableName);
+  if (cached !== null) return cached;
+
+  const client = createClient(connection);
+  const query = `SELECT
+  tc.constraint_name,
+  tc.table_schema,
+  tc.table_name,
+  kcu.column_name,
+  kcu.ordinal_position
+FROM information_schema.table_constraints tc
+JOIN information_schema.key_column_usage kcu
+  ON tc.constraint_name = kcu.constraint_name
+  AND tc.table_schema = kcu.table_schema
+WHERE
+  tc.constraint_type = 'UNIQUE'
+  AND tc.table_schema = $2
+  AND tc.table_name = $1
+ORDER BY
+  tc.constraint_name,
+  kcu.ordinal_position;
+ `;
+
+  try {
+    await client.connect();
+    const res = await client.query(query, [tableName, schemaName]);
+    postgresCache.setUnique(connection, schemaName, tableName, res.rows);
+    return res.rows;
+  } finally {
+    try { await client.end(); } catch { }
+  }
+}
+
+export async function listCheckConstraints(connection: PGConfig, schemaName = "public", tableName: string) {
+  const cached = postgresCache.getChecks(connection, schemaName, tableName);
+  if (cached !== null) return cached;
+
+  const client = createClient(connection);
+  const query = `SELECT
+    c.conname AS constraint_name,
+    n.nspname AS table_schema,
+    t.relname AS table_name,
+    pg_get_constraintdef(c.oid) AS definition
+FROM pg_constraint c
+JOIN pg_class t ON c.conrelid = t.oid
+JOIN pg_namespace n ON n.oid = t.relnamespace
+WHERE
+    c.contype = 'c'
+    AND n.nspname = $2
+    AND t.relname = $1;
+ `;
+
+  try {
+    await client.connect();
+    const res = await client.query(query, [tableName, schemaName]);
+    postgresCache.setChecks(connection, schemaName, tableName, res.rows);
+    return res.rows;
+  } finally {
+    try { await client.end(); } catch { }
+  }
+}
+
+
+export async function listEnumTypes(connection: PGConfig, schemaName = "public") {
+  const cached = postgresCache.getEnums(connection, schemaName);
+  if (cached !== null) return cached;
+
+  const client = createClient(connection);
+  const query = `SELECT
+    n.nspname AS schema_name,
+    t.typname AS enum_name,
+    e.enumlabel AS enum_value
+FROM pg_type t
+JOIN pg_enum e ON t.oid = e.enumtypid
+JOIN pg_namespace n ON n.oid = t.typnamespace
+WHERE
+    n.nspname = $1
+ORDER BY enum_name, e.enumsortorder;
+  `;
+
+  try {
+    await client.connect();
+    const res = await client.query(query, [schemaName]);
+    postgresCache.setEnums(connection, schemaName, res.rows);
+    return res.rows;
+  } finally {
+    try { await client.end(); } catch { }
+  }
+}
+
+export async function listSequences(connection: PGConfig, schemaName = "public") {
+  const cached = postgresCache.getSequences(connection, schemaName);
+  if (cached !== null) return cached;
+
+  const client = createClient(connection);
+  const query = `SELECT
+    seq.relname AS sequence_name,
+    ns.nspname AS sequence_schema,
+    tab.relname AS table_name,
+    col.attname AS column_name
+FROM pg_class seq
+JOIN pg_namespace ns ON ns.oid = seq.relnamespace
+LEFT JOIN pg_depend dep ON dep.objid = seq.oid AND dep.deptype = 'a'
+LEFT JOIN pg_class tab ON tab.oid = dep.refobjid
+LEFT JOIN pg_attribute col ON col.attrelid = tab.oid AND col.attnum = dep.refobjsubid
+WHERE
+    seq.relkind = 'S'
+    AND ns.nspname = $1;
+ `;
+
+  try {
+    await client.connect();
+    const res = await client.query(query, [schemaName]);
+    postgresCache.setSequences(connection, schemaName, res.rows);
+    return res.rows;
+  } finally {
+    try { await client.end(); } catch { }
+  }
+}
+
+
+// ============================================
+// BATCH QUERIES FOR PERFORMANCE OPTIMIZATION
+// ============================================
+
+/**
+ * Fetch all table metadata (columns, PKs, FKs, indexes, constraints) in a single query per schema
+ * This dramatically reduces the number of database round-trips
+ */
+export async function getSchemaMetadataBatch(
+  connection: PGConfig,
+  schemaName: string
+): Promise<{
+  tables: Map<string, {
+    columns: ColumnDetail[];
+    primaryKeys: PrimaryKeyInfo[];
+    foreignKeys: ForeignKeyInfo[];
+    indexes: IndexInfo[];
+    uniqueConstraints: UniqueConstraintInfo[];
+    checkConstraints: CheckConstraintInfo[];
+  }>;
+  enumTypes: EnumInfo[];
+  sequences: SequenceInfo[];
+}> {
+  const client = createClient(connection);
+
+  try {
+    await client.connect();
+
+    // Execute all queries in parallel using a single connection
+    const [
+      columnsResult,
+      primaryKeysResult,
+      foreignKeysResult,
+      indexesResult,
+      uniqueResult,
+      checksResult,
+      enumsResult,
+      sequencesResult
+    ] = await Promise.all([
+      // All columns in schema
+      client.query(`
+        SELECT 
+          c.table_name,
+          c.column_name AS name,
+          c.data_type AS type,
+          c.is_nullable = 'NO' AS not_nullable,
+          c.column_default AS default_value,
+          c.ordinal_position,
+          c.character_maximum_length AS max_length,
+          CASE WHEN pk.column_name IS NOT NULL THEN true ELSE false END AS is_primary_key,
+          CASE WHEN fk.column_name IS NOT NULL THEN true ELSE false END AS is_foreign_key
+        FROM information_schema.columns c
+        LEFT JOIN (
+          SELECT kcu.table_name, kcu.column_name
+          FROM information_schema.table_constraints tc
+          JOIN information_schema.key_column_usage kcu 
+            ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema
+          WHERE tc.constraint_type = 'PRIMARY KEY' AND tc.table_schema = $1
+        ) pk ON c.table_name = pk.table_name AND c.column_name = pk.column_name
+        LEFT JOIN (
+          SELECT DISTINCT kcu.table_name, kcu.column_name
+          FROM information_schema.table_constraints tc
+          JOIN information_schema.key_column_usage kcu 
+            ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema
+          WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.table_schema = $1
+        ) fk ON c.table_name = fk.table_name AND c.column_name = fk.column_name
+        WHERE c.table_schema = $1
+        ORDER BY c.table_name, c.ordinal_position
+      `, [schemaName]),
+
+      // All primary keys in schema
+      client.query(`
+        SELECT tc.table_name, kcu.column_name, kcu.ordinal_position
+        FROM information_schema.table_constraints tc
+        JOIN information_schema.key_column_usage kcu
+          ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema
+        WHERE tc.constraint_type = 'PRIMARY KEY' AND tc.table_schema = $1
+        ORDER BY tc.table_name, kcu.ordinal_position
+      `, [schemaName]),
+
+      // All foreign keys in schema
+      client.query(`
+        SELECT
+          tc.constraint_name,
+          tc.table_schema AS source_schema,
+          tc.table_name AS source_table,
+          kcu.column_name AS source_column,
+          ccu.table_schema AS target_schema,
+          ccu.table_name AS target_table,
+          ccu.column_name AS target_column,
+          rc.update_rule,
+          rc.delete_rule,
+          kcu.ordinal_position
+        FROM information_schema.table_constraints tc
+        JOIN information_schema.key_column_usage kcu
+          ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema
+        JOIN information_schema.constraint_column_usage ccu
+          ON ccu.constraint_name = tc.constraint_name
+        JOIN information_schema.referential_constraints rc
+          ON rc.constraint_name = tc.constraint_name
+        WHERE tc.constraint_type = 'FOREIGN KEY' AND tc.table_schema = $1
+        ORDER BY tc.table_name, tc.constraint_name, kcu.ordinal_position
+      `, [schemaName]),
+
+      // All indexes in schema
+      client.query(`
+        SELECT
+          t.relname AS table_name,
+          i.relname AS index_name,
+          a.attname AS column_name,
+          ix.indisunique AS is_unique,
+          ix.indisprimary AS is_primary,
+          am.amname AS index_type,
+          pg_get_expr(ix.indpred, ix.indrelid) AS predicate,
+          array_position(ix.indkey, a.attnum) AS ordinal_position
+        FROM pg_class t
+        JOIN pg_index ix ON t.oid = ix.indrelid
+        JOIN pg_class i ON i.oid = ix.indexrelid
+        JOIN pg_am am ON am.oid = i.relam
+        JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = ANY(ix.indkey)
+        JOIN pg_namespace n ON n.oid = t.relnamespace
+        WHERE n.nspname = $1
+        ORDER BY t.relname, i.relname, ordinal_position
+      `, [schemaName]),
+
+      // All unique constraints in schema
+      client.query(`
+        SELECT
+          tc.constraint_name,
+          tc.table_schema,
+          tc.table_name,
+          kcu.column_name,
+          kcu.ordinal_position
+        FROM information_schema.table_constraints tc
+        JOIN information_schema.key_column_usage kcu
+          ON tc.constraint_name = kcu.constraint_name AND tc.table_schema = kcu.table_schema
+        WHERE tc.constraint_type = 'UNIQUE' AND tc.table_schema = $1
+        ORDER BY tc.table_name, tc.constraint_name, kcu.ordinal_position
+      `, [schemaName]),
+
+      // All check constraints in schema
+      client.query(`
+        SELECT
+          c.conname AS constraint_name,
+          n.nspname AS table_schema,
+          t.relname AS table_name,
+          pg_get_constraintdef(c.oid) AS check_clause
+        FROM pg_constraint c
+        JOIN pg_class t ON c.conrelid = t.oid
+        JOIN pg_namespace n ON n.oid = t.relnamespace
+        WHERE c.contype = 'c' AND n.nspname = $1
+      `, [schemaName]),
+
+      // All enum types in schema
+      client.query(`
+        SELECT
+          n.nspname AS schema_name,
+          t.typname AS enum_name,
+          e.enumlabel AS enum_value
+        FROM pg_type t
+        JOIN pg_enum e ON t.oid = e.enumtypid
+        JOIN pg_namespace n ON n.oid = t.typnamespace
+        WHERE n.nspname = $1
+        ORDER BY enum_name, e.enumsortorder
+      `, [schemaName]),
+
+      // All sequences in schema
+      client.query(`
+        SELECT
+          seq.relname AS sequence_name,
+          ns.nspname AS sequence_schema,
+          tab.relname AS table_name,
+          col.attname AS column_name
+        FROM pg_class seq
+        JOIN pg_namespace ns ON ns.oid = seq.relnamespace
+        LEFT JOIN pg_depend dep ON dep.objid = seq.oid AND dep.deptype = 'a'
+        LEFT JOIN pg_class tab ON tab.oid = dep.refobjid
+        LEFT JOIN pg_attribute col ON col.attrelid = tab.oid AND col.attnum = dep.refobjsubid
+        WHERE seq.relkind = 'S' AND ns.nspname = $1
+      `, [schemaName])
+    ]);
+
+    // Group results by table
+    const tables = new Map<string, {
+      columns: ColumnDetail[];
+      primaryKeys: PrimaryKeyInfo[];
+      foreignKeys: ForeignKeyInfo[];
+      indexes: IndexInfo[];
+      uniqueConstraints: UniqueConstraintInfo[];
+      checkConstraints: CheckConstraintInfo[];
+    }>();
+
+    // Process columns
+    for (const row of columnsResult.rows) {
+      if (!tables.has(row.table_name)) {
+        tables.set(row.table_name, {
+          columns: [],
+          primaryKeys: [],
+          foreignKeys: [],
+          indexes: [],
+          uniqueConstraints: [],
+          checkConstraints: []
+        });
+      }
+      tables.get(row.table_name)!.columns.push({
+        name: row.name,
+        type: row.type,
+        not_nullable: row.not_nullable,
+        default_value: row.default_value,
+        is_primary_key: row.is_primary_key,
+        is_foreign_key: row.is_foreign_key
+      });
+    }
+
+    // Process primary keys
+    for (const row of primaryKeysResult.rows) {
+      if (tables.has(row.table_name)) {
+        tables.get(row.table_name)!.primaryKeys.push({
+          column_name: row.column_name
+        });
+      }
+    }
+
+    // Process foreign keys
+    for (const row of foreignKeysResult.rows) {
+      if (tables.has(row.source_table)) {
+        tables.get(row.source_table)!.foreignKeys.push(row);
+      }
+    }
+
+    // Process indexes
+    for (const row of indexesResult.rows) {
+      if (tables.has(row.table_name)) {
+        tables.get(row.table_name)!.indexes.push(row);
+      }
+    }
+
+    // Process unique constraints
+    for (const row of uniqueResult.rows) {
+      if (tables.has(row.table_name)) {
+        tables.get(row.table_name)!.uniqueConstraints.push(row);
+      }
+    }
+
+    // Process check constraints
+    for (const row of checksResult.rows) {
+      if (tables.has(row.table_name)) {
+        tables.get(row.table_name)!.checkConstraints.push(row);
+      }
+    }
+
+    return {
+      tables,
+      enumTypes: enumsResult.rows,
+      sequences: sequencesResult.rows
+    };
+  } finally {
+    try { await client.end(); } catch { }
+  }
+}
+
 
 /**
  * streamQueryCancelable:
