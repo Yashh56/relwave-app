@@ -2,6 +2,12 @@ import { FC } from "react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   ArrowLeft,
   GitBranch,
   Layers,
@@ -9,15 +15,20 @@ import {
   Download,
   Settings,
   Database,
+  FileSpreadsheet,
+  FileJson,
+  ChevronDown,
 } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
+import { ExportFormat } from "@/lib/dataExport";
 
 interface DatabasePageHeaderProps {
   dbId: string;
   databaseName: string;
   onRefresh: () => void;
-  onBackup: () => void;
+  onExport: (format: ExportFormat) => void;
   loading?: boolean;
+  exportLoading?: boolean;
 }
 
 const NAV_ITEMS = [
@@ -30,8 +41,9 @@ const DatabasePageHeader: FC<DatabasePageHeaderProps> = ({
   dbId,
   databaseName,
   onRefresh,
-  onBackup,
+  onExport,
   loading = false,
+  exportLoading = false,
 }) => {
   return (
     <header className="border-b border-border bg-background/95 backdrop-blur-sm sticky top-0 z-50">
@@ -82,10 +94,34 @@ const DatabasePageHeader: FC<DatabasePageHeaderProps> = ({
           <div className="h-6 w-px bg-border hidden md:block" />
 
           <div className="flex items-center gap-1.5">
-            <Button size="sm" onClick={onBackup} disabled={loading} className="h-8">
-              <Download className="h-3.5 w-3.5 mr-1.5" />
-              Backup
-            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" disabled={loading || exportLoading} className="h-8">
+                  {exportLoading ? (
+                    <>
+                      <Spinner className="h-3.5 w-3.5 mr-1.5" />
+                      Exporting...
+                    </>
+                  ) : (
+                    <>
+                      <Download className="h-3.5 w-3.5 mr-1.5" />
+                      Export
+                      <ChevronDown className="h-3 w-3 ml-1" />
+                    </>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => onExport("csv")}>
+                  <FileSpreadsheet className="h-4 w-4 mr-2" />
+                  Export as CSV
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => onExport("json")}>
+                  <FileJson className="h-4 w-4 mr-2" />
+                  Export as JSON
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
 
             <Button
               variant="ghost"

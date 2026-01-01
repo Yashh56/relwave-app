@@ -142,7 +142,7 @@ export function useDbStats(dbId: string | undefined) {
 export function useSchemas(dbId: string | undefined) {
   return useQuery({
     queryKey: queryKeys.schemas(dbId!),
-    queryFn: () => bridgeApi.listSchemas(dbId!),
+    queryFn: () => bridgeApi.getSchema(dbId!),
     enabled: !!dbId,
     staleTime: STALE_TIMES.schemas,
   });
