@@ -14,6 +14,7 @@ import ControlPanel from "@/components/query-builder/ControlPanel";
 import VisualBuilder from "@/components/query-builder/VisualBuilder";
 import TableNode from "@/components/er-diagram/TableNode";
 import { useFullSchema } from "@/hooks/useDbQueries";
+import { useQueryHistory } from "@/hooks/useQueryHistory";
 import { Loader2 } from "lucide-react";
 import { SchemaDetails } from "@/types/schema";
 import { TableRow } from "@/types/database";
@@ -31,6 +32,8 @@ const QueryBuilder = () => {
   const [filters, setFilters] = useState<Array<{ column: string; operator: string; value: string }>>([]);
   const [sortBy, setSortBy] = useState("");
   const [groupBy, setGroupBy] = useState("");
+  const [limit, setLimit] = useState<number>(100);
+  const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
   const [generatedSQL, setGeneratedSQL] = useState("");
   const [querySessionId, setQuerySessionId] = useState<string | null>(null);
   const [isExecuting, setIsExecuting] = useState(false);
@@ -39,16 +42,19 @@ const QueryBuilder = () => {
   const [tableData, setTableData] = useState<TableRow[]>([]);
 
   // Use React Query for schema data (cached!)
-  const { 
-    data: schemaData, 
-    isLoading: loading, 
-    error: queryError 
+  const {
+    data: schemaData,
+    isLoading: loading,
+    error: queryError
   } = useFullSchema(id);
-  
-  const error = queryError ? (queryError as Error).message : 
-                (schemaData && !schemaData.schemas?.some(s => s.tables?.length)) 
-                  ? "Schema data found, but no tables to render." 
-                  : null;
+
+  // Query history hook
+  const { history, addQuery, removeQuery, clearHistory } = useQueryHistory(id || 'default');
+
+  const error = queryError ? (queryError as Error).message :
+    (schemaData && !schemaData.schemas?.some(s => s.tables?.length))
+      ? "Schema data found, but no tables to render."
+      : null;
 
   const addTable = useCallback(() => {
     if (!schemaData || !selectedTable) return;
@@ -104,15 +110,55 @@ const QueryBuilder = () => {
 
         if (exists) return eds;
 
+        const joinType = "INNER"; // Default join type
+        const joinColors = {
+          INNER: "hsl(var(--primary))",
+          LEFT: "#10B981",
+          RIGHT: "#F59E0B",
+          FULL: "#8B5CF6"
+        };
+
         return addEdge(
           {
             ...params,
+            data: { joinType },
             animated: true,
-            style: { stroke: "hsl(var(--primary))" },
+            style: { stroke: joinColors[joinType] },
+            label: joinType,
+            labelStyle: { fill: joinColors[joinType], fontWeight: 500, fontSize: 11 },
           },
           eds
         );
       });
+    },
+    [setEdges]
+  );
+
+  const updateEdgeJoinType = useCallback(
+    (edgeId: string, joinType: "INNER" | "LEFT" | "RIGHT" | "FULL") => {
+      const joinColors = {
+        INNER: "hsl(var(--primary))",
+        LEFT: "#10B981",
+        RIGHT: "#F59E0B",
+        FULL: "#8B5CF6"
+      };
+
+      setEdges((eds) =>
+        eds.map((edge) => {
+          if (edge.id === edgeId) {
+            return {
+              ...edge,
+              data: { joinType },
+              style: { stroke: joinColors[joinType] },
+              label: joinType,
+              labelStyle: { fill: joinColors[joinType], fontWeight: 500, fontSize: 11 },
+            };
+          }
+          return edge;
+        })
+      );
+
+      toast.success(`Join type updated to ${joinType}`);
     },
     [setEdges]
   );
@@ -144,7 +190,8 @@ const QueryBuilder = () => {
 
         if (!sourceNode || !targetNode) return null;
 
-        return `INNER JOIN ${targetNode.data.tableName}
+        const joinType = e.data?.joinType || "INNER";
+        return `${joinType} JOIN ${targetNode.data.tableName}
 ON ${sourceNode.data.tableName}.id = ${targetNode.data.tableName}.${sourceNode.data.tableName}_id`;
       })
       .filter(Boolean)
@@ -155,18 +202,26 @@ ON ${sourceNode.data.tableName}.id = ${targetNode.data.tableName}.${sourceNode.d
       .map((f) => `${f.column} ${f.operator} '${f.value}'`)
       .join(" AND ");
 
-    let sql = `SELECT *\nFROM ${tables[0]}`;
+    // Use selected columns or fallback to *
+    const columns = selectedColumns.length > 0 ? selectedColumns.join(", ") : "*";
+    let sql = `SELECT ${columns}\nFROM ${tables[0]}`;
 
     if (joins) sql += `\n${joins}`;
     if (whereClause) sql += `\nWHERE ${whereClause}`;
     if (groupBy) sql += `\nGROUP BY ${groupBy}`;
     if (sortBy) sql += `\nORDER BY ${sortBy}`;
+    if (limit > 0) sql += `\nLIMIT ${limit}`;
 
     sql += ";";
 
     setGeneratedSQL(sql);
+
+    // Save to history
+    const tableNames = nodes.map(n => n.data.tableName);
+    addQuery(sql, tableNames);
+
     toast.success("SQL query generated");
-  }, [nodes, edges, filters, groupBy, sortBy]);
+  }, [nodes, edges, filters, groupBy, sortBy, limit, selectedColumns, addQuery]);
 
 
 
@@ -308,10 +363,27 @@ ON ${sourceNode.data.tableName}.id = ${targetNode.data.tableName}.${sourceNode.d
               setSortBy={setSortBy}
               groupBy={groupBy}
               setGroupBy={setGroupBy}
+              limit={limit}
+              setLimit={setLimit}
+              selectedColumns={selectedColumns}
+              setSelectedColumns={setSelectedColumns}
+              queryHistory={history}
+              onLoadQuery={(sql) => {
+                setGeneratedSQL(sql);
+                toast.success("Query loaded from history");
+              }}
+              onClearHistory={clearHistory}
               Tables={schemaData}
               addFilter={addFilter}
               removeFilter={removeFilter}
               generateSQL={generateSQL}
+              availableColumns={nodes.flatMap(node =>
+                node.data.columns?.map((col: any) => ({
+                  value: `${node.data.tableName}.${col.name}`,
+                  label: `${node.data.tableName}.${col.name}`,
+                  table: node.data.tableName
+                })) || []
+              )}
             />
           )}
           {/* Middle Panel - Visual Builder */}
@@ -322,6 +394,7 @@ ON ${sourceNode.data.tableName}.id = ${targetNode.data.tableName}.${sourceNode.d
               onNodesChange={onNodesChange}
               onEdgesChange={onEdgesChange}
               onConnect={onConnect}
+              updateEdgeJoinType={updateEdgeJoinType}
               generatedSQL={generatedSQL}
               executeQuery={executeQuery}
               queryResults={tableData}
