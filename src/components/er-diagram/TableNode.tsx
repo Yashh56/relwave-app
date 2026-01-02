@@ -161,10 +161,10 @@ const TableNode: React.FC<{ data: TableNodeData }> = ({ data }) => {
                                                 <Key className="h-3 w-3 text-amber-500 shrink-0" />
                                             )}
                                             <span className={`truncate ${col.isPrimaryKey
-                                                    ? "text-amber-600 dark:text-amber-400 font-medium"
-                                                    : col.isForeignKey
-                                                        ? "text-cyan-600 dark:text-cyan-400"
-                                                        : "text-foreground"
+                                                ? "text-amber-600 dark:text-amber-400 font-medium"
+                                                : col.isForeignKey
+                                                    ? "text-cyan-600 dark:text-cyan-400"
+                                                    : "text-foreground"
                                                 }`}>
                                                 {col.name}
                                             </span>
@@ -215,7 +215,7 @@ const TableNode: React.FC<{ data: TableNodeData }> = ({ data }) => {
                                         {data.foreignKeys.length} FK
                                     </span>
                                 </TooltipTrigger>
-                                <TooltipContent side="bottom" className="bg-popover border shadow-lg">
+                                <TooltipContent side="bottom" className="bg-popover border shadow-lg text-white">
                                     <div className="text-xs space-y-1">
                                         <div className="font-semibold border-b pb-1">Foreign Keys</div>
                                         {data.foreignKeys.map(fk => (
@@ -234,7 +234,7 @@ const TableNode: React.FC<{ data: TableNodeData }> = ({ data }) => {
                                         {data.indexes.length} IDX
                                     </span>
                                 </TooltipTrigger>
-                                <TooltipContent side="bottom" className="bg-popover border shadow-lg">
+                                <TooltipContent side="bottom" className="bg-popover border shadow-lg text-white">
                                     <div className="text-xs space-y-1">
                                         <div className="font-semibold border-b pb-1">Indexes</div>
                                         {data.indexes.map(idx => (

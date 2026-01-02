@@ -1,8 +1,3 @@
-
-
-// Enhanced color palette with vibrant gradients
-
-
 interface DataProps {
     count: number | string;
     [key: string]: any;
@@ -57,21 +52,22 @@ const ChartRendererComponent = ({
     // ---- memoize heavy transforms ----
     const chartData = useMemo(() => {
         if (!data || !Array.isArray(data) || !xAxis) return [];
-
+        console.log(data)
         return data.map((item) => ({
-            name: item[xAxis] != null ? String(item[xAxis]) : "N/A",
+            // SQL query returns data with alias 'name', not the column name
+            name: item.name != null ? String(item.name) : "N/A",
             value: Number(item.count ?? item.COUNT ?? item.Count ?? 0) || 0,
         }));
     }, [data, xAxis]);
 
 
     // ---- shared axis + tooltip styles ----
-    const isDark = typeof document !== "undefined" && document.body.classList.contains("dark");
+    const isDark = typeof document !== "undefined" && document.documentElement.classList.contains("dark");
 
     const axisProps = useMemo(
         () => ({
-            stroke: isDark ? "#e5e7eb" : "#111827",
-            tick: { fill: isDark ? "#e5e7eb" : "#111827", fontSize: 12 },
+            stroke: isDark ? "#9CA3AF" : "#6B7280",
+            tick: { fill: isDark ? "#D1D5DB" : "#374151", fontSize: 12, fontWeight: 500 },
         }),
         [isDark]
     );
@@ -80,16 +76,17 @@ const ChartRendererComponent = ({
         () => ({
             backgroundColor: isDark ? "#1F2937" : "#FFFFFF",
             borderRadius: 8,
-            border: `1px solid ${COLORS[0]}`,
-            padding: "8px 10px",
-            color: isDark ? "#ffffff" : "#111827",
+            border: `1px solid ${isDark ? "#374151" : "#E5E7EB"}`,
+            padding: "8px 12px",
+            color: isDark ? "#F3F4F6" : "#111827",
+            fontSize: "13px",
         }),
         [isDark]
     );
 
     if (!xAxis || chartData.length === 0) {
         return (
-            <div className="flex items-center justify-center h-[350px] text-muted-foreground">
+            <div className="flex items-center justify-center h-[350px] text-sm text-muted-foreground">
                 Select X & Y axes to generate chart
             </div>
         );
@@ -107,7 +104,7 @@ const ChartRendererComponent = ({
                     <YAxis {...axisProps} />
                     <Tooltip contentStyle={tooltipStyle} />
                     <Legend />
-                    <Bar dataKey="value" radius={[6, 6, 0, 0]}>
+                    <Bar dataKey="value" radius={[6, 6, 0, 0]} isAnimationActive={false}>
                         {chartData.map((_, i) => (
                             <Cell key={i} fill={COLORS[i % COLORS.length]} />
                         ))}
@@ -132,9 +129,10 @@ const ChartRendererComponent = ({
                     <Line
                         dataKey="value"
                         stroke={COLORS[0]}
-                        strokeWidth={2.5}
-                        dot={{ r: 4 }}
+                        strokeWidth={2}
+                        dot={{ fill: COLORS[0], r: 4 }}
                         activeDot={{ r: 6 }}
+                        isAnimationActive={false}
                         type="monotone"
                     />
                 </LineChart>
@@ -159,6 +157,7 @@ const ChartRendererComponent = ({
                         label={({ name, percent }) =>
                             `${name} (${((percent ?? 0) * 100).toFixed(0)}%)`
                         }
+                        isAnimationActive={false}
                     >
                         {chartData.map((_, i) => (
                             <Cell key={i} fill={COLORS[i % COLORS.length]} />
@@ -183,13 +182,14 @@ const ChartRendererComponent = ({
                     <YAxis dataKey="value" {...axisProps} />
                     <Tooltip contentStyle={tooltipStyle} />
                     <Legend />
-                    <Scatter data={chartData} fill={COLORS[0]} />
+                    <Scatter data={chartData} fill={COLORS[0]} isAnimationActive={false} />
                 </ScatterChart>
             </ResponsiveContainer>
         );
     }
 
-    return null;
+    // ---- default fallback ----
+    return <div>Unsupported chart type</div>;
 };
 
-export const ChartRenderer = memo(ChartRendererComponent);
+export default ChartRendererComponent;
