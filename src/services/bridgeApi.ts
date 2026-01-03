@@ -1,4 +1,4 @@
-import { AddDatabaseParams, ColumnDetails, ConnectionTestResult, DatabaseConnection, DatabaseSchemaDetails, DatabaseStats, RunQueryParams, TableRow, UpdateDatabaseParams } from "@/types/database";
+import { AddDatabaseParams, ColumnDetails, ConnectionTestResult, CreateTableColumn, DatabaseConnection, DatabaseSchemaDetails, DatabaseStats, RunQueryParams, TableRow, UpdateDatabaseParams } from "@/types/database";
 import { bridgeRequest } from "./bridgeClient";
 
 
@@ -359,7 +359,13 @@ class BridgeApiService {
   /**
    * Create a new table in the database
    */
-  async createTable(params: { dbId: string; schemaName: string; tableName: string; columns: ColumnDetails[] }): Promise<boolean> {
+  async createTable(params: {
+    dbId: string;
+    schemaName: string;
+    tableName: string;
+    columns: CreateTableColumn[];
+    foreignKeys?: any[];
+  }): Promise<boolean> {
     try {
       if (!params.dbId || !params.schemaName || !params.tableName) {
         throw new Error("Database ID, schema name, and table name are required.");
@@ -372,8 +378,8 @@ class BridgeApiService {
         schemaName: params.schemaName,
         tableName: params.tableName,
         columns: params.columns,
+        foreignKeys: params.foreignKeys || [],
       });
-
       return result?.ok === true;
     } catch (error: any) {
       console.error("Failed to create table:", error);

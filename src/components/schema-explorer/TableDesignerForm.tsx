@@ -1,11 +1,11 @@
-import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Trash2, Plus } from "lucide-react";
-import { CreateTableColumn } from "@/types/database";
+import { Trash2, Plus, Link2 } from "lucide-react";
+import { CreateTableColumn, ForeignKeyConstraint } from "@/types/database";
+import ForeignKeyRow from "./ForeignKeyRow";
 
 const DATA_TYPES = [
     { value: "INT", label: "Integer" },
@@ -21,6 +21,10 @@ interface TableDesignerFormProps {
     onTableNameChange: (name: string) => void;
     columns: CreateTableColumn[];
     onColumnsChange: (columns: CreateTableColumn[]) => void;
+    foreignKeys: ForeignKeyConstraint[];
+    onForeignKeysChange: (foreignKeys: ForeignKeyConstraint[]) => void;
+    currentSchema: string;
+    availableTables: Array<{ schema: string; name: string }>;
 }
 
 export default function TableDesignerForm({
@@ -28,6 +32,10 @@ export default function TableDesignerForm({
     onTableNameChange,
     columns,
     onColumnsChange,
+    foreignKeys,
+    onForeignKeysChange,
+    currentSchema,
+    availableTables,
 }: TableDesignerFormProps) {
     const addColumn = () => {
         const newColumn: CreateTableColumn = {
@@ -52,6 +60,35 @@ export default function TableDesignerForm({
             return col;
         });
         onColumnsChange(updated);
+    };
+
+    const addForeignKey = () => {
+        const newForeignKey: ForeignKeyConstraint = {
+            constraint_name: "",
+            source_schema: currentSchema,
+            source_table: tableName,
+            source_column: "",
+            target_schema: currentSchema,
+            target_table: "",
+            target_column: "",
+            update_rule: "NO ACTION",
+            delete_rule: "NO ACTION",
+        };
+        onForeignKeysChange([...foreignKeys, newForeignKey]);
+    };
+
+    const removeForeignKey = (index: number) => {
+        onForeignKeysChange(foreignKeys.filter((_, i) => i !== index));
+    };
+
+    const updateForeignKey = (index: number, field: keyof ForeignKeyConstraint, value: string) => {
+        const updated = foreignKeys.map((fk, i) => {
+            if (i === index) {
+                return { ...fk, [field]: value };
+            }
+            return fk;
+        });
+        onForeignKeysChange(updated);
     };
 
     return (
@@ -203,6 +240,50 @@ export default function TableDesignerForm({
                                     </div>
                                 </div>
                             </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+
+            {/* Foreign Keys Section */}
+            <div className="space-y-3 border-t border-border/50 pt-6">
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Link2 className="h-4 w-4 text-muted-foreground" />
+                        <Label className="text-sm font-medium">Foreign Keys</Label>
+                    </div>
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={addForeignKey}
+                        className="h-8 gap-1.5"
+                        disabled={columns.length === 0}
+                    >
+                        <Plus className="h-3.5 w-3.5" />
+                        Add Foreign Key
+                    </Button>
+                </div>
+
+                {foreignKeys.length === 0 ? (
+                    <div className="border border-dashed border-border/50 rounded-lg p-6 text-center">
+                        <p className="text-sm text-muted-foreground">
+                            No foreign keys defined. Add columns first, then define relationships.
+                        </p>
+                    </div>
+                ) : (
+                    <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
+                        {foreignKeys.map((fk, index) => (
+                            <ForeignKeyRow
+                                key={index}
+                                foreignKey={fk}
+                                index={index}
+                                onUpdate={updateForeignKey}
+                                onRemove={removeForeignKey}
+                                availableColumns={columns.map((col) => col.name).filter(Boolean)}
+                                availableTables={availableTables}
+                                currentSchema={currentSchema}
+                            />
                         ))}
                     </div>
                 )}

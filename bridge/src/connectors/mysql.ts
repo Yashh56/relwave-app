@@ -1321,7 +1321,8 @@ export async function createTable(
   conn: MySQLConfig,
   schemaName: string,
   tableName: string,
-  columns: ColumnDetail[]
+  columns: ColumnDetail[],
+  foreignKeys: ForeignKeyInfo[] = []
 ) {
   const connection = await mysql.createPool(conn).getConnection();
 
@@ -1348,15 +1349,35 @@ export async function createTable(
     columnDefs.push(`PRIMARY KEY (${primaryKeys.join(", ")})`);
   }
 
-  const query = `
+  const createTableQuery = `
     CREATE TABLE IF NOT EXISTS ${quoteIdent(tableName)} (
       ${columnDefs.join(",\n")}
-    );
+    ) ENGINE=InnoDB;
   `;
 
   try {
-    await connection.query(query);
+    await connection.beginTransaction();
+
+    await connection.query(createTableQuery);
+
+    for (const fk of foreignKeys) {
+      const fkQuery = `
+    ALTER TABLE ${quoteIdent(fk.source_table)}
+    ADD CONSTRAINT ${quoteIdent(fk.constraint_name)}
+    FOREIGN KEY (${quoteIdent(fk.source_column)})
+    REFERENCES ${quoteIdent(fk.target_table)}
+      (${quoteIdent(fk.target_column)})
+    ${fk.delete_rule ? `ON DELETE ${fk.delete_rule}` : ""}
+    ${fk.update_rule ? `ON UPDATE ${fk.update_rule}` : ""};
+  `;
+      await connection.query(fkQuery);
+    }
+
+    await connection.commit();
     return true;
+  } catch (err) {
+    await connection.rollback();
+    throw err;
   } finally {
     connection.release();
   }

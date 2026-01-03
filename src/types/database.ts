@@ -198,3 +198,15 @@ export interface CreateTableParams {
     tableName: string;
     columns: CreateTableColumn[];
 }
+
+export interface ForeignKeyConstraint {
+    constraint_name: string;
+    source_schema: string;
+    source_table: string;
+    source_column: string;
+    target_schema: string;
+    target_table: string;
+    target_column: string;
+    update_rule?: string;
+    delete_rule?: string;
+}

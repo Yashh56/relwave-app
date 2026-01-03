@@ -1409,7 +1409,8 @@ export async function createTable(
   conn: PGConfig,
   schemaName: string,
   tableName: string,
-  columns: ColumnDetail[]
+  columns: ColumnDetail[],
+  foreignKeys: ForeignKeyInfo[] = []
 ) {
   const client = createClient(conn);
 
@@ -1436,7 +1437,7 @@ export async function createTable(
     columnDefs.push(`PRIMARY KEY (${primaryKeys.join(", ")})`);
   }
 
-  const query = `
+  const createTableQuery = `
     CREATE TABLE IF NOT EXISTS ${quoteIdent(schemaName)}.${quoteIdent(tableName)} (
       ${columnDefs.join(",\n")}
     );
@@ -1444,8 +1445,29 @@ export async function createTable(
 
   try {
     await client.connect();
-    await client.query(query);
+    await client.query("BEGIN");
+
+    await client.query(createTableQuery);
+
+    for (const fk of foreignKeys) {
+      const fkQuery = `
+        ALTER TABLE ${quoteIdent(fk.source_schema)}.${quoteIdent(fk.source_table)}
+        ADD CONSTRAINT ${quoteIdent(fk.constraint_name)}
+        FOREIGN KEY (${quoteIdent(fk.source_column)})
+        REFERENCES ${quoteIdent(fk.target_schema)}.${quoteIdent(fk.target_table)}
+          (${quoteIdent(fk.target_column)})
+        ${fk.delete_rule ? `ON DELETE ${fk.delete_rule}` : ""}
+        ${fk.update_rule ? `ON UPDATE ${fk.update_rule}` : ""};
+      `;
+
+      await client.query(fkQuery);
+    }
+
+    await client.query("COMMIT");
     return true;
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
   } finally {
     await client.end();
   }

@@ -159,7 +159,7 @@ export class QueryHandlers {
 
   async handleCreateTable(params: any, id: number | string) {
     try {
-      const { dbId, schemaName, tableName, columns } = params || {};
+      const { dbId, schemaName, tableName, columns, foreignKeys = [] } = params || {};
       if (!dbId || !tableName || !schemaName) {
         return this.rpc.sendError(id, {
           code: "BAD_REQUEST",
@@ -174,7 +174,8 @@ export class QueryHandlers {
           conn,
           schemaName,
           tableName,
-          columns
+          columns,
+          foreignKeys
         );
         // Clear MySQL cache after table creation
         this.queryExecutor.mysql.mysqlCache.clearForConnection(conn);
@@ -183,7 +184,8 @@ export class QueryHandlers {
           conn,
           schemaName,
           tableName,
-          columns
+          columns,
+          foreignKeys
         );
         // Clear PostgreSQL cache after table creation
         this.queryExecutor.postgres.postgresCache.clearForConnection(conn);
