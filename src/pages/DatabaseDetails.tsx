@@ -55,6 +55,7 @@ const DatabaseDetail = () => {
 
   // Fetch migrations data
   const { data: migrationsResponse } = useMigrations(dbId);
+  console.log(migrationsResponse);
   const migrationsData = migrationsResponse?.migrations || {
     local: [],
     applied: [],

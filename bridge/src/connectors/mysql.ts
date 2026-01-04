@@ -1612,9 +1612,9 @@ export async function ensureMigrationTable(conn: MySQLConfig) {
 
   await connection.query(`
     CREATE TABLE IF NOT EXISTS schema_migrations (
-      version VARCHAR(255) PRIMARY KEY,
+      version VARCHAR(14) PRIMARY KEY,
       name VARCHAR(255) NOT NULL,
-      applied_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      applied_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       checksum VARCHAR(64) NOT NULL
     ) ENGINE=InnoDB;
   `);

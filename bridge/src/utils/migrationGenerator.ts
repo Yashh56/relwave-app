@@ -58,13 +58,18 @@ export function generateCreateTableMigration(params: {
 
     const allDefs = [...[columnDefs], ...fkDefs].filter(Boolean).join(",\n");
 
+    // For MySQL, don't use schema prefix (database is the schema)
+    const tableRef = dbType === "mysql"
+        ? quoteIdent(tableName, dbType)
+        : `${quoteIdent(schemaName, dbType)}.${quoteIdent(tableName, dbType)}`;
+
     // Generate UP SQL
-    const upSQL = `CREATE TABLE ${quoteIdent(schemaName, dbType)}.${quoteIdent(tableName, dbType)} (
+    const upSQL = `CREATE TABLE ${tableRef} (
 ${allDefs}
 );`;
 
     // Generate DOWN SQL
-    const downSQL = `DROP TABLE ${quoteIdent(schemaName, dbType)}.${quoteIdent(tableName, dbType)};`;
+    const downSQL = `DROP TABLE ${tableRef};`;
 
     return {
         version,
@@ -89,7 +94,10 @@ export function generateAlterTableMigration(params: {
     const name = `alter_${tableName}_table`;
     const filename = `${version}_${name}.sql`;
 
-    const fullTableName = `${quoteIdent(schemaName, dbType)}.${quoteQuote(tableName, dbType)}`;
+    // For MySQL, don't use schema prefix
+    const fullTableName = dbType === "mysql"
+        ? quoteIdent(tableName, dbType)
+        : `${quoteIdent(schemaName, dbType)}.${quoteIdent(tableName, dbType)}`;
 
     // Build UP SQL
     const upStatements: string[] = [];
@@ -243,7 +251,10 @@ export function generateDropTableMigration(params: {
     const name = `drop_${tableName}_table`;
     const filename = `${version}_${name}.sql`;
 
-    const fullTableName = `${quoteIdent(schemaName, dbType)}.${quoteIdent(tableName, dbType)}`;
+    // For MySQL, don't use schema prefix
+    const fullTableName = dbType === "mysql"
+        ? quoteIdent(tableName, dbType)
+        : `${quoteIdent(schemaName, dbType)}.${quoteIdent(tableName, dbType)}`;
 
     let upSQL = "";
     if (mode === "CASCADE") {

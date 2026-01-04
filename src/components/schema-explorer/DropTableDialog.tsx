@@ -75,8 +75,11 @@ export default function DropTableDialog({
                 mode,
             });
 
-            toast.success("Migration created successfully!", {
-                description: `Created migration file: ${result.filename}. Review and apply it in the Migrations panel.`,
+            // Auto-apply the migration immediately
+            await bridgeApi.applyMigration(dbId, result.version);
+
+            toast.success("Table dropped successfully!", {
+                description: `Migration ${result.filename} was generated and applied. You can rollback from the Migrations panel if needed.`,
             });
 
             resetForm();
@@ -86,8 +89,8 @@ export default function DropTableDialog({
                 onSuccess();
             }
         } catch (error: any) {
-            console.error("Failed to create migration:", error);
-            toast.error("Failed to create migration", {
+            console.error("Failed to drop table:", error);
+            toast.error("Failed to drop table", {
                 description: error.message || "An unknown error occurred",
             });
         } finally {
@@ -101,13 +104,13 @@ export default function DropTableDialog({
                 <DialogHeader>
                     <DialogTitle className="flex items-center gap-2 text-destructive">
                         <AlertTriangle className="h-5 w-5" />
-                        Generate Drop Table Migration
+                        Drop Table
                     </DialogTitle>
                     <DialogDescription>
-                        This will create a migration to drop table{" "}
+                        This action cannot be undone. This will permanently delete table{" "}
                         <span className="font-mono font-medium">{tableName}</span> from schema{" "}
                         <span className="font-mono font-medium">{schemaName}</span>.
-                        The migration can be reviewed before applying.
+                        A migration will be created for rollback if needed.
                     </DialogDescription>
                 </DialogHeader>
 
@@ -167,7 +170,7 @@ export default function DropTableDialog({
                     {/* Warning Box */}
                     <div className="border border-destructive/50 bg-destructive/5 rounded-lg p-4">
                         <p className="text-sm text-destructive">
-                            <strong>⚠️ Warning:</strong> Dropping a table is irreversible once the migration is applied.
+                            <strong>⚠️ Warning:</strong> This will permanently delete the table and all its data.
                             {mode === "CASCADE" && " CASCADE mode will also drop all dependent objects!"}
                         </p>
                     </div>
@@ -186,10 +189,10 @@ export default function DropTableDialog({
                         {isSubmitting ? (
                             <>
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                Generating...
+                                Dropping...
                             </>
                         ) : (
-                            "Generate Migration"
+                            "Drop Table"
                         )}
                     </Button>
                 </DialogFooter>

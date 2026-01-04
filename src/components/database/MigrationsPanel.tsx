@@ -247,13 +247,14 @@ function MigrationItem({ migration, onApply, onRollback, onDelete, onViewSQL }: 
                         </p>
                         {migration.appliedAt && (
                             <p className="text-xs text-muted-foreground/70 mt-1">
-                                Applied: {new Date(migration.appliedAt).toLocaleString(undefined, {
+                                Applied: {new Date(migration.appliedAt).toLocaleString('en-IN', {
                                     year: 'numeric',
                                     month: 'short',
                                     day: 'numeric',
                                     hour: '2-digit',
                                     minute: '2-digit',
-                                    hour12: true
+                                    hour12: true,
+                                    timeZone: 'Asia/Kolkata'
                                 })}
                             </p>
                         )}

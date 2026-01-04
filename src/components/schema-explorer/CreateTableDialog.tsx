@@ -158,8 +158,11 @@ export default function CreateTableDialog({
                 foreignKeys: preparedForeignKeys,
             });
 
-            toast.success("Migration created successfully!", {
-                description: `Created migration file: ${result.filename}. Review and apply it in the Migrations panel.`,
+            // Auto-apply the migration immediately
+            await bridgeApi.applyMigration(dbId, result.version);
+
+            toast.success("Table created successfully!", {
+                description: `Migration ${result.filename} was generated and applied. You can rollback from the Migrations panel if needed.`,
             });
 
             // Close dialog and reset form
@@ -232,10 +235,10 @@ export default function CreateTableDialog({
                             {isSubmitting ? (
                                 <>
                                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Generating...
+                                    Creating...
                                 </>
                             ) : (
-                                "Generate Migration"
+                                "Create Table"
                             )}
                         </Button>
                     </DialogFooter>

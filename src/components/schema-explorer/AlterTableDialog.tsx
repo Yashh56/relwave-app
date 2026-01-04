@@ -147,8 +147,11 @@ export default function AlterTableDialog({
                 operations,
             });
 
-            toast.success("Migration created successfully!", {
-                description: `Created migration file: ${result.filename}. Review and apply it in the Migrations panel.`,
+            // Auto-apply the migration immediately
+            await bridgeApi.applyMigration(dbId, result.version);
+
+            toast.success("Table altered successfully!", {
+                description: `Migration ${result.filename} was generated and applied. You can rollback from the Migrations panel if needed.`,
             });
             onOpenChange(false);
 
