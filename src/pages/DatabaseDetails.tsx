@@ -219,7 +219,7 @@ const DatabaseDetail = () => {
                   </Button>
                 ) : (
                   <Button size="sm" onClick={handleExecuteQuery} className="text-xs">
-                    ▶ Execute
+                    Execute
                   </Button>
                 )}
               </div>
