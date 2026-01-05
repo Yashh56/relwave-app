@@ -13,9 +13,12 @@
     "withGlobalTauri": true,
     "windows": [
       {
-        "title": "database-visualizer",
-        "width": 800,
-        "height": 600
+        "title": "DB Studio",
+        "width": 1200,
+        "height": 800,
+        "decorations": false,
+        "transparent": false,
+        "center": true
       }
     ],
     "security": {
