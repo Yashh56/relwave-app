@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { toast } from "sonner";
+import { Plus } from "lucide-react";
 import { bridgeApi } from "@/services/bridgeApi";
 import { useBridgeQuery } from "@/hooks/useBridgeQuery";
 import {
@@ -11,9 +12,24 @@ import {
 import DashboardContent from "@/components/dashboard/DashboardContent";
 import BridgeLoader from "@/components/feedback/BridgeLoader";
 import BridgeFailed from "@/components/feedback/BridgeFailed";
-import Header from "@/components/common/Header";
+import VerticalIconBar from "@/components/common/VerticalIconBar";
+import FloatingActionButton from "@/components/common/FloatingActionButton";
+import CommandPalette from "@/components/common/CommandPalette";
 import { bytesToMBString } from "@/lib/bytesToMB";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
+import { Database } from "lucide-react";
 
 const INITIAL_FORM_DATA = {
   name: "",
@@ -32,6 +48,7 @@ const REQUIRED_FIELDS = ["name", "type", "host", "port", "user", "database"];
 const Index = () => {
   const queryClient = useQueryClient();
   const { data: bridgeReady, isLoading: bridgeLoading } = useBridgeQuery();
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
   //   React Query: Databases list with caching
   const {
@@ -155,40 +172,174 @@ const Index = () => {
     db.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
+  // Global keyboard shortcut for command palette
+  useState(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setCommandPaletteOpen(true);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  });
+
   // --- Render based on bridge state ---
-  if (bridgeLoading) return <BridgeLoader />;
+  // Show loader if bridge is loading OR if bridgeReady is undefined (initial state)
+  if (bridgeLoading || bridgeReady === undefined) return <BridgeLoader />;
   if (!bridgeReady) return <BridgeFailed />;
 
   return (
-    <div className="min-h-screen flex flex-col bg-background text-foreground">
-      <Header
-        refreshing={refreshing || addDatabaseMutation.isPending}
-        handleRefresh={handleRefresh}
-        isDialogOpen={isDialogOpen}
-        setIsDialogOpen={setIsDialogOpen}
-        formData={formData}
-        handleInputChange={handleInputChange}
-        setFormData={setFormData}
-        handleAddDatabase={handleAddDatabase}
+    <div className="min-h-screen flex bg-background text-foreground">
+      <VerticalIconBar />
+      <CommandPalette isOpen={commandPaletteOpen} onClose={() => setCommandPaletteOpen(false)} />
+
+      <main className="flex-1 ml-[60px]">
+        <DashboardContent
+          databases={databases}
+          loading={loading}
+          searchQuery={searchQuery}
+          setSearchQuery={setSearchQuery}
+          handleDeleteDatabase={handleDeleteDatabase}
+          handleTestConnection={handleTestConnection}
+          connectedCount={databases.length}
+          totalTables={totalTables}
+          totalRows={totalRows}
+          totalSize={totalSize}
+          filteredDatabases={filteredDatabases}
+          setIsDialogOpen={setIsDialogOpen}
+          statsLoading={statsLoading}
+          status={status}
+          onDatabaseHover={handleDatabaseHover}
+        />
+      </main>
+
+      <FloatingActionButton
+        icon={<Plus className="h-6 w-6" />}
+        label="Add New Database"
+        onClick={() => setIsDialogOpen(true)}
       />
 
-      <DashboardContent
-        databases={databases}
-        loading={loading}
-        searchQuery={searchQuery}
-        setSearchQuery={setSearchQuery}
-        handleDeleteDatabase={handleDeleteDatabase}
-        handleTestConnection={handleTestConnection}
-        connectedCount={databases.length}
-        totalTables={totalTables}
-        totalRows={totalRows}
-        totalSize={totalSize}
-        filteredDatabases={filteredDatabases}
-        setIsDialogOpen={setIsDialogOpen}
-        statsLoading={statsLoading}
-        status={status}
-        onDatabaseHover={handleDatabaseHover}
-      />
+      {/* Add Database Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="sm:max-w-[480px]">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Database className="h-4 w-4 text-muted-foreground/60" />
+              New Database Connection
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              Connect to a local, Docker, or remote database
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label className="text-xs">Connection Name</Label>
+              <Input
+                placeholder="My Production DB"
+                value={formData.name}
+                onChange={(e) => handleInputChange('name', e.target.value)}
+                className="text-sm"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs">Database Type</Label>
+              <Select
+                value={formData.type}
+                onValueChange={(val) => handleInputChange('type', val)}
+              >
+                <SelectTrigger className="text-sm">
+                  <SelectValue placeholder="Select database type" />
+                </SelectTrigger>
+                <SelectContent>
+                  {['postgresql', 'mysql'].map((db) => (
+                    <SelectItem key={db} value={db} className="text-sm">
+                      {db.charAt(0).toUpperCase() + db.slice(1)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-xs">Host</Label>
+                <Input
+                  placeholder="localhost"
+                  value={formData.host}
+                  onChange={(e) => handleInputChange('host', e.target.value)}
+                  className="text-sm"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Port</Label>
+                <Input
+                  placeholder="5432"
+                  value={formData.port}
+                  onChange={(e) => handleInputChange('port', e.target.value)}
+                  className="text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="space-y-2">
+                <Label className="text-xs">Username</Label>
+                <Input
+                  placeholder="postgres"
+                  value={formData.user}
+                  onChange={(e) => handleInputChange('user', e.target.value)}
+                  className="text-sm"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-xs">Password</Label>
+                <Input
+                  type="password"
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={(e) => handleInputChange('password', e.target.value)}
+                  className="text-sm"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label className="text-xs">Database Name</Label>
+              <Input
+                placeholder="myapp_db"
+                value={formData.database}
+                onChange={(e) => handleInputChange('database', e.target.value)}
+                className="text-sm"
+              />
+            </div>
+
+            <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/30 border border-border/20">
+              <Checkbox
+                id="ssl"
+                checked={formData.ssl}
+                onCheckedChange={(checked) =>
+                  setFormData((prev) => ({ ...prev, ssl: checked as boolean }))
+                }
+              />
+              <Label htmlFor="ssl" className="cursor-pointer text-xs">
+                Enable SSL Connection
+              </Label>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)} size="sm" className="text-xs">
+              Cancel
+            </Button>
+            <Button onClick={handleAddDatabase} size="sm" className="text-xs">
+              Connect
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

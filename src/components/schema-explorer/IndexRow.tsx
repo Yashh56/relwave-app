@@ -28,7 +28,6 @@ export default function IndexRow({
     onUpdate,
     onRemove,
     availableColumns,
-    tableName,
 }: IndexRowProps) {
     return (
         <div className="border border-border/50 rounded-lg p-4 space-y-3 bg-card/50">

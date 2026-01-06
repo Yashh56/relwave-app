@@ -35,6 +35,8 @@ function ThemeVariantInitializer() {
 }
 
 
+import TitleBar from './components/common/TitleBar';
+
 function AppRoot() {
   return (
     <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
@@ -43,17 +45,20 @@ function AppRoot() {
         <ThemeVariantInitializer />
         <TooltipProvider>
           <Toaster />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index />} />
-              <Route path="/:id" element={<DatabaseDetail />} />
-              <Route path="/database/:id/query-builder" element={<QueryBuilder />} />
-              <Route path="/database/:id/er-diagram" element={<ERDiagram />} />
-              <Route path='/database/:id/schema-explorer' element={<SchemaExplorer />} />
-              <Route path="/settings" element={<Settings />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
+          <TitleBar />
+          <div className="pt-8">
+            <BrowserRouter>
+              <Routes>
+                <Route path="/" element={<Index />} />
+                <Route path="/:id" element={<DatabaseDetail />} />
+                <Route path="/database/:id/query-builder" element={<QueryBuilder />} />
+                <Route path="/database/:id/er-diagram" element={<ERDiagram />} />
+                <Route path='/database/:id/schema-explorer' element={<SchemaExplorer />} />
+                <Route path="/settings" element={<Settings />} />
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </div>
         </TooltipProvider>
       </QueryClientProvider>
     </ThemeProvider>

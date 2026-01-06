@@ -179,12 +179,14 @@ export const ChartVisualization = ({ selectedTable, dbId }: ChartVisualizationPr
       {/* Header Section */}
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div className="flex items-center gap-2.5">
-          <BarChart3 className="h-4 w-4 text-muted-foreground/60" />
+          <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
+            <BarChart3 className="h-4 w-4 text-primary" />
+          </div>
           <div>
-            <h3 className="text-sm font-medium text-foreground">
+            <h3 className="text-sm font-semibold text-foreground">
               Chart Visualization
             </h3>
-            <p className="text-xs text-muted-foreground/70 mt-0.5">
+            <p className="text-xs text-muted-foreground mt-0.5">
               Generate interactive charts from your data
             </p>
           </div>
@@ -215,7 +217,7 @@ export const ChartVisualization = ({ selectedTable, dbId }: ChartVisualizationPr
       </div>
 
       {/* Config Panel */}
-      <div className="border border-border/20 rounded-lg p-4 bg-muted/10">
+      <div className="glass-card border border-border/20 rounded-xl p-4">
         <ChartConfigPanel
           chartType={chartType}
           setChartType={setChartType}
@@ -232,17 +234,31 @@ export const ChartVisualization = ({ selectedTable, dbId }: ChartVisualizationPr
       {/* Chart Container */}
       <div
         id="chart-container"
-        className="border border-border/20 rounded-lg p-6 bg-background min-h-[400px]"
+        className="glass-card border border-border/20 rounded-xl p-6 bg-background min-h-[450px] shadow-sm hover:shadow-md transition-shadow duration-300"
       >
         {/* Title */}
-        <h3 className="text-sm font-medium text-center mb-4">
+        <h3 className="text-sm font-semibold text-center mb-6">
           {chartTitle}
         </h3>
 
         {isExecuting ? (
-          <div className="flex flex-col items-center justify-center py-16">
-            <Loader2 className="h-7 w-7 animate-spin text-muted-foreground/50 mb-3" />
-            <p className="text-sm text-muted-foreground/70">Processing your data…</p>
+          <div className="flex flex-col items-center justify-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-primary mb-3" />
+            <p className="text-sm text-muted-foreground">Processing your data…</p>
+          </div>
+        ) : errorMessage ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="w-12 h-12 rounded-full bg-destructive/10 flex items-center justify-center mb-3">
+              <BarChart3 className="h-6 w-6 text-destructive" />
+            </div>
+            <p className="text-sm text-destructive font-medium">{errorMessage}</p>
+          </div>
+        ) : !rowData.length ? (
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="w-12 h-12 rounded-full bg-muted flex items-center justify-center mb-3">
+              <BarChart3 className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <p className="text-sm text-muted-foreground">Select X and Y axes to generate a chart</p>
           </div>
         ) : (
           <div key={`chart-${chartType}-${xAxis}-${yAxis}-${rowData.length}`}>

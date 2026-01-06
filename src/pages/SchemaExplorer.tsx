@@ -1,14 +1,15 @@
 import { useState, useEffect } from "react";
 import { useParams } from "react-router-dom";
+import { toast } from "sonner";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
-import TreeViewPanel from "@/components/schema-explorer/TreeViewPanel";
-import SchemaExplorerHeader from "@/components/schema-explorer/SchemaExplorerHeader";
-import MetaDataPanel from "@/components/schema-explorer/MetaDataPanel";
 import { Spinner } from "@/components/ui/spinner";
 import { useFullSchema, useInvalidateCache } from "@/hooks/useDbQueries";
 import { ColumnDetails, DatabaseSchemaDetails, SchemaGroup, TableSchemaDetails } from "@/types/database";
+import TreeViewPanel from "@/components/schema-explorer/TreeViewPanel";
+import SchemaExplorerHeader from "@/components/schema-explorer/SchemaExplorerHeader";
+import MetaDataPanel from "@/components/schema-explorer/MetaDataPanel";
+import VerticalIconBar from "@/components/common/VerticalIconBar";
 
 interface Column extends ColumnDetails {
     foreignKeyRef?: string;
@@ -156,35 +157,40 @@ export default function SchemaExplorer() {
 
     // --- Main renderer ---
     return (
-        <div className="min-h-screen bg-background flex flex-col text-foreground dark:bg-[#050505]">
-            <SchemaExplorerHeader
-                dbId={dbId!}
-                database={schemaData}
-                selectedTable={selectedTable}
-                onTableCreated={() => {
-                    // Invalidate cache and refetch schema data
-                    if (dbId) invalidateDatabase(dbId);
-                    refetch();
-                }}
-            />
+        <div className="min-h-screen flex bg-background text-foreground">
+            <VerticalIconBar dbId={dbId} />
 
-            <div className="flex-1 flex overflow-hidden">
-                <TreeViewPanel
+            <main className="flex-1 ml-[60px] flex flex-col">
+                <SchemaExplorerHeader
+                    dbId={dbId!}
                     database={schemaData}
-                    expandedSchemas={expandedSchemas}
-                    expandedTables={expandedTables}
-                    toggleSchema={toggleSchema}
-                    toggleTable={toggleTable}
-                    selectedItem={selectedItem}
-                    setSelectedItem={setSelectedItem}
-                    handlePreviewRows={handlePreviewRows}
-                    handleShowDDL={handleShowDDL}
-                    handleCopy={handleCopy}
-                    handleExport={handleExport}
+                    selectedTable={selectedTable}
+                    onTableCreated={() => {
+                        if (dbId) invalidateDatabase(dbId);
+                        refetch();
+                    }}
                 />
 
-                <MetaDataPanel database={schemaData} selectedItem={selectedItem} />
-            </div>
+                <div className="flex-1 flex">
+                    <TreeViewPanel
+                        database={schemaData}
+                        expandedSchemas={expandedSchemas}
+                        expandedTables={expandedTables}
+                        selectedItem={selectedItem}
+                        toggleSchema={toggleSchema}
+                        toggleTable={toggleTable}
+                        setSelectedItem={setSelectedItem}
+                        handlePreviewRows={() => { }}
+                        handleShowDDL={() => { }}
+                        handleCopy={() => { }}
+                        handleExport={() => { }}
+                    />
+                    <MetaDataPanel
+                        database={schemaData}
+                        selectedItem={selectedItem}
+                    />
+                </div>
+            </main>
         </div>
     );
 }
