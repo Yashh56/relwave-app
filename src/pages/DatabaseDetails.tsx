@@ -22,6 +22,7 @@ import ContentViewerPanel from "@/components/database/ContentViewerPanel";
 import ExpandableBottomPanel from "@/components/database/ExpandableBottomPanel";
 import { MigrationsPanel } from "@/components/database";
 import SqlEditor from "@/components/database/SqlEditor";
+import InsertDataDialog from "@/components/database/InsertDataDialog";
 import { ChartVisualization } from "@/components/chart/ChartVisualization";
 
 const DatabaseDetail = () => {
@@ -30,6 +31,7 @@ const DatabaseDetail = () => {
   const [sqlExpanded, setSqlExpanded] = useState(false);
   const [migrationsOpen, setMigrationsOpen] = useState(false);
   const [chartOpen, setChartOpen] = useState(false);
+  const [insertDialogOpen, setInsertDialogOpen] = useState(false);
 
   const {
     databaseName,
@@ -54,6 +56,7 @@ const DatabaseDetail = () => {
     fetchTables,
     handlePageChange,
     handlePageSizeChange,
+    refetchTableData,
   } = useDatabaseDetails({
     dbId,
     bridgeReady: bridgeReady ?? false,
@@ -210,6 +213,7 @@ const DatabaseDetail = () => {
             onPageChange={handlePageChange}
             onPageSizeChange={handlePageSizeChange}
             onChart={() => setChartOpen(true)}
+            onInsert={() => setInsertDialogOpen(true)}
           />
         </div>
 
@@ -279,6 +283,21 @@ const DatabaseDetail = () => {
           </div>
         )}
       </SlideOutPanel>
+
+      {/* Insert Data Dialog */}
+      {selectedTable && (
+        <InsertDataDialog
+          open={insertDialogOpen}
+          onOpenChange={setInsertDialogOpen}
+          dbId={dbId || ""}
+          schemaName={selectedTable.schema || "public"}
+          tableName={selectedTable.name}
+          onSuccess={() => {
+            // Refresh table data after insert
+            refetchTableData();
+          }}
+        />
+      )}
     </div>
   );
 };

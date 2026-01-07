@@ -331,4 +331,43 @@ export class QueryHandlers {
     }
   }
 
+  async handleInsertRow(params: any, id: number | string) {
+    try {
+      const { dbId, schemaName, tableName, rowData } = params || {};
+      if (!dbId || !schemaName || !tableName || !rowData) {
+        return this.rpc.sendError(id, {
+          code: "BAD_REQUEST",
+          message: "Missing dbId, schemaName, tableName, or rowData",
+        });
+      }
+      const { conn, dbType } = await this.dbService.getDatabaseConnection(dbId);
+
+      let result;
+      if (dbType === "mysql") {
+        result = await this.queryExecutor.mysql.insertRow(
+          conn,
+          schemaName,
+          tableName,
+          rowData
+        );
+        // Clear MySQL cache after insert
+        this.queryExecutor.mysql.mysqlCache.clearForConnection(conn);
+      } else {
+        result = await this.queryExecutor.postgres.insertRow(
+          conn,
+          schemaName,
+          tableName,
+          rowData
+        );
+        // Clear PostgreSQL cache after insert
+        this.queryExecutor.postgres.postgresCache.clearForConnection(conn);
+      }
+
+      this.rpc.sendResponse(id, { ok: true, result });
+    } catch (e: any) {
+      this.logger?.error({ e }, "insertRow failed");
+      this.rpc.sendError(id, { code: "IO_ERROR", message: String(e) });
+    }
+  }
+
 }

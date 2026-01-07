@@ -96,6 +96,9 @@ export function registerDbHandlers(
   rpcRegister("query.connectToDatabase", (p, id) =>
     queryHandlers.connectToDatabase(p, id)
   );
+  rpcRegister("query.insertRow", (p, id) =>
+    queryHandlers.handleInsertRow(p, id)
+  );
 
   // ==========================================
   // DATABASE CRUD HANDLERS

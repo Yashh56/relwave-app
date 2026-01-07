@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { bridgeApi } from "@/services/bridgeApi";
-import { useDatabase, useTables, useTableData, usePrefetch } from "@/hooks/useDbQueries";
+import { useDatabase, useTables, useTableData, usePrefetch, useInvalidateCache } from "@/hooks/useDbQueries";
 import { QueryProgress, SelectedTable, TableInfo, TableRow } from "@/types/database";
 
 interface UseDatabaseDetailsOptions {
@@ -32,6 +32,7 @@ interface UseDatabaseDetailsReturn {
     fetchTables: () => Promise<void>;
     handlePageChange: (page: number) => Promise<void>;
     handlePageSizeChange: (size: number) => Promise<void>;
+    refetchTableData: () => void;
 }
 
 export function useDatabaseDetails({
@@ -41,8 +42,8 @@ export function useDatabaseDetails({
     const { data: dbDetails } = useDatabase(dbId);
     const databaseName = dbDetails?.name || "Database";
 
-    const { 
-        data: tablesData = [], 
+    const {
+        data: tablesData = [],
         isLoading: loadingTables,
         refetch: refetchTables,
         isRefetching: isRefetchingTables
@@ -60,7 +61,7 @@ export function useDatabaseDetails({
     const [currentPage, setCurrentPage] = useState<number>(1);
     const [pageSize, setPageSize] = useState<number>(50);
 
-    const { 
+    const {
         data: tableDataResult,
         isLoading: isLoadingTableData,
         isFetching: isFetchingTableData
@@ -74,6 +75,9 @@ export function useDatabaseDetails({
 
     // Prefetch utilities
     const { prefetchNextPage } = usePrefetch();
+
+    // Cache invalidation
+    const { invalidateTable } = useInvalidateCache();
 
     // Derived state from table data query
     const tableData = tableDataResult?.rows || [];
@@ -138,6 +142,11 @@ export function useDatabaseDetails({
     const fetchTables = useCallback(async () => {
         await refetchTables();
     }, [refetchTables]);
+
+    const refetchTableData = useCallback(() => {
+        if (!dbId || !selectedTable) return;
+        invalidateTable(dbId, selectedTable.schema, selectedTable.name);
+    }, [dbId, selectedTable, invalidateTable]);
 
     const handleCancelQuery = useCallback(async () => {
         if (!querySessionId) return;
@@ -299,5 +308,6 @@ export function useDatabaseDetails({
         fetchTables,
         handlePageChange,
         handlePageSizeChange,
+        refetchTableData,
     };
 }

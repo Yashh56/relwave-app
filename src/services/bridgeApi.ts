@@ -333,26 +333,6 @@ class BridgeApiService {
     }
   }
 
-  /**
-   * Get table column details
-   */
-  async getTableDetails(id: string, schemaName: string, tableName: string): Promise<any[]> {
-    try {
-      if (!id || !schemaName || !tableName) {
-        throw new Error("Database ID, schema name, and table name are required.");
-      }
-      const result = await bridgeRequest("db.getTableDetails", {
-        id,
-        schemaName,
-        tableName,
-      });
-      return result?.data || [];
-    } catch (error: any) {
-      console.error("Failed to get table details:", error);
-      throw new Error(`Failed to get table details: ${error.message}`);
-    }
-  }
-
   async getPrimaryKeys(id: string, schemaName: string, tableName: string): Promise<string> {
     try {
       if (!id || !schemaName || !tableName) {
@@ -486,6 +466,37 @@ class BridgeApiService {
     } catch (error: any) {
       console.error("Failed to drop table:", error);
       throw new Error(`Failed to drop table: ${error.message}`);
+    }
+  }
+
+  /**
+   * Insert a row into a table
+   */
+  async insertRow(params: {
+    dbId: string;
+    schemaName: string;
+    tableName: string;
+    rowData: Record<string, any>;
+  }): Promise<any> {
+    try {
+      if (!params.dbId || !params.schemaName || !params.tableName) {
+        throw new Error("Database ID, schema name, and table name are required.");
+      }
+      if (!params.rowData || Object.keys(params.rowData).length === 0) {
+        throw new Error("Row data is required.");
+      }
+
+      const result = await bridgeRequest("query.insertRow", {
+        dbId: params.dbId,
+        schemaName: params.schemaName,
+        tableName: params.tableName,
+        rowData: params.rowData,
+      });
+
+      return result?.result || result;
+    } catch (error: any) {
+      console.error("Failed to insert row:", error);
+      throw new Error(`Failed to insert row: ${error.message}`);
     }
   }
 

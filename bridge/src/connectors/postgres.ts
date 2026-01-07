@@ -1962,3 +1962,56 @@ export async function rollbackMigration(
     await client.end();
   }
 }
+
+/**
+ * Insert a row into a table
+ * @param cfg - PostgreSQL connection config
+ * @param schemaName - Schema name
+ * @param tableName - Table name
+ * @param rowData - Object with column names as keys and values to insert
+ * @returns The inserted row
+ */
+export async function insertRow(
+  cfg: PGConfig,
+  schemaName: string,
+  tableName: string,
+  rowData: Record<string, any>
+): Promise<any> {
+  const client = createClient(cfg);
+
+  try {
+    await client.connect();
+
+    const columns = Object.keys(rowData);
+    const values = Object.values(rowData);
+
+    if (columns.length === 0) {
+      throw new Error("No data provided for insert");
+    }
+
+    // Build parameterized query
+    const safeSchema = `"${schemaName.replace(/"/g, '""')}"`;
+    const safeTable = `"${tableName.replace(/"/g, '""')}"`;
+    const columnList = columns.map(col => `"${col.replace(/"/g, '""')}"`).join(", ");
+    const placeholders = columns.map((_, i) => `$${i + 1}`).join(", ");
+
+    const query = `
+      INSERT INTO ${safeSchema}.${safeTable} (${columnList})
+      VALUES (${placeholders})
+      RETURNING *;
+    `;
+
+    const result = await client.query(query, values);
+
+    // Clear cache to refresh table data
+    postgresCache.clearForConnection(cfg);
+
+    return result.rows[0];
+  } catch (error) {
+    throw new Error(`Failed to insert row into ${schemaName}.${tableName}: ${error}`);
+  } finally {
+    try {
+      await client.end();
+    } catch (_) { }
+  }
+}

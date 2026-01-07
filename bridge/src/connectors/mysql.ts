@@ -1851,3 +1851,55 @@ export async function rollbackMigration(
     await pool.end();
   }
 }
+
+/**
+ * Insert a row into a table
+ * @param cfg - MySQL connection config
+ * @param schemaName - Schema/database name
+ * @param tableName - Table name
+ * @param rowData - Object with column names as keys and values to insert
+ * @returns The inserted row data with insertId
+ */
+export async function insertRow(
+  cfg: MySQLConfig,
+  schemaName: string,
+  tableName: string,
+  rowData: Record<string, any>
+): Promise<any> {
+  const pool = mysql.createPool(cfg);
+  const connection = await pool.getConnection();
+
+  try {
+    const columns = Object.keys(rowData);
+    const values = Object.values(rowData);
+
+    if (columns.length === 0) {
+      throw new Error("No data provided for insert");
+    }
+
+    // Build parameterized query
+    const columnList = columns.map(col => quoteIdent(col)).join(", ");
+    const placeholders = columns.map(() => "?").join(", ");
+
+    const query = `
+      INSERT INTO ${quoteIdent(tableName)} (${columnList})
+      VALUES (${placeholders});
+    `;
+
+    const [result] = await connection.execute(query, values);
+
+    // Clear cache to refresh table data
+    mysqlCache.clearForConnection(cfg);
+
+    return {
+      success: true,
+      insertId: (result as any).insertId,
+      affectedRows: (result as any).affectedRows
+    };
+  } catch (error) {
+    throw new Error(`Failed to insert row into ${schemaName}.${tableName}: ${error}`);
+  } finally {
+    connection.release();
+    await pool.end();
+  }
+}
