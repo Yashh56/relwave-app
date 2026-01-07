@@ -575,6 +575,40 @@ class BridgeApiService {
     }
   }
 
+  /**
+   * Search for rows in a table
+   */
+  async searchTable(params: {
+    dbId: string;
+    schemaName: string;
+    tableName: string;
+    searchTerm: string;
+    column?: string;
+    page?: number;
+    pageSize?: number;
+  }): Promise<{ rows: any[]; total: number }> {
+    try {
+      if (!params.dbId || !params.schemaName || !params.tableName || !params.searchTerm) {
+        throw new Error("Database ID, schema name, table name, and search term are required.");
+      }
+
+      const result = await bridgeRequest("query.searchTable", {
+        dbId: params.dbId,
+        schemaName: params.schemaName,
+        tableName: params.tableName,
+        searchTerm: params.searchTerm,
+        column: params.column,
+        page: params.page || 1,
+        pageSize: params.pageSize || 50,
+      });
+
+      return { rows: result?.rows || [], total: result?.total || 0 };
+    } catch (error: any) {
+      console.error("Failed to search table:", error);
+      throw new Error(`Failed to search table: ${error.message}`);
+    }
+  }
+
   // ------------------------------------
   // MIGRATION METHODS
   // ------------------------------------

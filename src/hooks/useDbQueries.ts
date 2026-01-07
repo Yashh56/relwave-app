@@ -179,22 +179,6 @@ export function useFullSchema(dbId: string | undefined) {
 }
 
 /**
- * Fetch table column details
- */
-export function useTableDetails(
-  dbId: string | undefined,
-  schema: string | undefined,
-  table: string | undefined
-) {
-  return useQuery({
-    queryKey: queryKeys.tableDetails(dbId!, schema!, table!),
-    queryFn: () => bridgeApi.getTableDetails(dbId!, schema!, table!),
-    enabled: !!dbId && !!schema && !!table,
-    staleTime: STALE_TIMES.tableDetails,
-  });
-}
-
-/**
  * Fetch primary keys for a table
  */
 export function usePrimaryKeys(

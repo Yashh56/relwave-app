@@ -1,5 +1,6 @@
-import { RefreshCw, Download, Plus, TrendingUp } from 'lucide-react';
+import { RefreshCw, Download, Plus, TrendingUp, Search, X } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { DataTable } from '@/components/common/DataTable';
 import { Pagination } from '@/components/ui/pagination';
 import { TableRow } from '@/types/database';
@@ -18,6 +19,12 @@ interface ContentViewerPanelProps {
     onChart?: () => void;
     onEditRow?: (row: Record<string, any>) => void;
     onDeleteRow?: (row: Record<string, any>) => void;
+    // Search
+    searchTerm?: string;
+    onSearchChange?: (term: string) => void;
+    onSearch?: () => void;
+    isSearching?: boolean;
+    searchResultCount?: number;
 }
 
 export default function ContentViewerPanel({
@@ -34,6 +41,11 @@ export default function ContentViewerPanel({
     onChart,
     onEditRow,
     onDeleteRow,
+    searchTerm,
+    onSearchChange,
+    onSearch,
+    isSearching,
+    searchResultCount,
 }: ContentViewerPanelProps) {
     if (!selectedTable) {
         return (
@@ -102,6 +114,45 @@ export default function ContentViewerPanel({
                         </Button>
                     </div>
                 </div>
+
+                {/* Search Bar */}
+                {onSearchChange && (
+                    <div className="flex items-center gap-2">
+                        <div className="relative flex-1 max-w-md">
+                            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+                            <Input
+                                type="text"
+                                placeholder="Search in table..."
+                                value={searchTerm || ""}
+                                onChange={(e) => onSearchChange(e.target.value)}
+                                onKeyDown={(e) => e.key === "Enter" && onSearch?.()}
+                                className="pl-8 pr-8 h-8 text-xs"
+                            />
+                            {searchTerm && (
+                                <button
+                                    onClick={() => onSearchChange("")}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                                >
+                                    <X className="h-3.5 w-3.5" />
+                                </button>
+                            )}
+                        </div>
+                        <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={onSearch}
+                            disabled={!searchTerm || isSearching}
+                            className="text-xs h-8"
+                        >
+                            {isSearching ? "Searching..." : "Search"}
+                        </Button>
+                        {typeof searchResultCount === 'number' && searchTerm && (
+                            <span className="text-xs text-muted-foreground">
+                                {searchResultCount} result{searchResultCount !== 1 ? 's' : ''}
+                            </span>
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* Data Table */}

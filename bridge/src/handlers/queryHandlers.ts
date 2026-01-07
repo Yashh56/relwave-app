@@ -457,4 +457,45 @@ export class QueryHandlers {
     }
   }
 
+  async handleSearchTable(params: any, id: number | string) {
+    try {
+      const { dbId, schemaName, tableName, searchTerm, column, page, pageSize } = params || {};
+      if (!dbId || !schemaName || !tableName || !searchTerm) {
+        return this.rpc.sendError(id, {
+          code: "BAD_REQUEST",
+          message: "Missing dbId, schemaName, tableName, or searchTerm",
+        });
+      }
+      const { conn, dbType } = await this.dbService.getDatabaseConnection(dbId);
+
+      let result;
+      if (dbType === "mysql") {
+        result = await this.queryExecutor.mysql.searchTable(
+          conn,
+          schemaName,
+          tableName,
+          searchTerm,
+          column,
+          page || 1,
+          pageSize || 50
+        );
+      } else {
+        result = await this.queryExecutor.postgres.searchTable(
+          conn,
+          schemaName,
+          tableName,
+          searchTerm,
+          column,
+          page || 1,
+          pageSize || 50
+        );
+      }
+
+      this.rpc.sendResponse(id, { ok: true, ...result });
+    } catch (e: any) {
+      this.logger?.error({ e }, "searchTable failed");
+      this.rpc.sendError(id, { code: "IO_ERROR", message: String(e) });
+    }
+  }
+
 }

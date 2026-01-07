@@ -2013,3 +2013,76 @@ export async function deleteRow(
   }
 }
 
+/**
+ * Search for rows in a table
+ * @param cfg - MySQL connection config
+ * @param schemaName - Schema/database name
+ * @param tableName - Table name
+ * @param searchTerm - Term to search for
+ * @param column - Optional specific column to search (searches all columns if not specified)
+ * @param limit - Max results (default 100)
+ * @returns Matching rows
+ */
+export async function searchTable(
+  cfg: MySQLConfig,
+  schemaName: string,
+  tableName: string,
+  searchTerm: string,
+  column?: string,
+  page: number = 1,
+  pageSize: number = 50
+): Promise<{ rows: any[]; total: number }> {
+  const pool = mysql.createPool(cfg);
+  const connection = await pool.getConnection();
+
+  try {
+    const searchPattern = `%${searchTerm.replace(/[%_]/g, '\\$&')}%`;
+
+    let whereClause: string;
+    let values: any[];
+
+    if (column) {
+      // Search specific column
+      whereClause = `${quoteIdent(column)} LIKE ?`;
+      values = [searchPattern];
+    } else {
+      // Get all columns and search across them
+      const [colRows] = await connection.query(
+        `SELECT COLUMN_NAME FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?`,
+        [schemaName, tableName]
+      );
+      const columns = (colRows as any[]).map(r => r.COLUMN_NAME);
+
+      if (columns.length === 0) {
+        return { rows: [], total: 0 };
+      }
+
+      // Build OR clause for all columns
+      whereClause = columns
+        .map(col => `${quoteIdent(col)} LIKE ?`)
+        .join(" OR ");
+      values = Array(columns.length).fill(searchPattern);
+    }
+
+    // Count total matches
+    const [countRows] = await connection.query(
+      `SELECT COUNT(*) as total FROM ${quoteIdent(tableName)} WHERE ${whereClause}`,
+      values
+    );
+    const total = (countRows as any[])[0]?.total || 0;
+
+    // Get matching rows with pagination
+    const offset = (page - 1) * pageSize;
+    const [rows] = await connection.query(
+      `SELECT * FROM ${quoteIdent(tableName)} WHERE ${whereClause} LIMIT ? OFFSET ?`,
+      [...values, pageSize, offset]
+    );
+
+    return { rows: rows as any[], total };
+  } catch (error) {
+    throw new Error(`Failed to search table ${schemaName}.${tableName}: ${error}`);
+  } finally {
+    connection.release();
+    await pool.end();
+  }
+}

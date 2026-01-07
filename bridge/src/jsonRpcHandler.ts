@@ -105,6 +105,9 @@ export function registerDbHandlers(
   rpcRegister("query.deleteRow", (p, id) =>
     queryHandlers.handleDeleteRow(p, id)
   );
+  rpcRegister("query.searchTable", (p, id) =>
+    queryHandlers.handleSearchTable(p, id)
+  );
 
   // ==========================================
   // DATABASE CRUD HANDLERS

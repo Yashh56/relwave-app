@@ -2152,3 +2152,87 @@ export async function deleteRow(
   }
 }
 
+/**
+ * Search for rows in a table
+ * @param cfg - PostgreSQL connection config
+ * @param schemaName - Schema name
+ * @param tableName - Table name
+ * @param searchTerm - Term to search for
+ * @param column - Optional specific column to search (searches all text columns if not specified)
+ * @param limit - Max results (default 100)
+ * @returns Matching rows
+ */
+export async function searchTable(
+  cfg: PGConfig,
+  schemaName: string,
+  tableName: string,
+  searchTerm: string,
+  column?: string,
+  page: number = 1,
+  pageSize: number = 50
+): Promise<{ rows: any[]; total: number }> {
+  const client = createClient(cfg);
+
+  try {
+    await client.connect();
+
+    const safeSchema = `"${schemaName.replace(/"/g, '""')}"`;
+    const safeTable = `"${tableName.replace(/"/g, '""')}"`;
+    const searchPattern = `%${searchTerm.replace(/[%_]/g, '\\$&')}%`;
+
+    let whereClause: string;
+    let values: any[];
+
+    if (column) {
+      // Search specific column
+      const safeColumn = `"${column.replace(/"/g, '""')}"`;
+      whereClause = `${safeColumn}::text ILIKE $1`;
+      values = [searchPattern];
+    } else {
+      // Get all columns and search across text-compatible ones
+      const colQuery = `
+        SELECT column_name 
+        FROM information_schema.columns 
+        WHERE table_schema = $1 AND table_name = $2
+      `;
+      const colResult = await client.query(colQuery, [schemaName, tableName]);
+      const columns = colResult.rows.map(r => r.column_name);
+
+      if (columns.length === 0) {
+        return { rows: [], total: 0 };
+      }
+
+      // Build OR clause for all columns cast to text
+      whereClause = columns
+        .map((col, i) => `"${col.replace(/"/g, '""')}"::text ILIKE $1`)
+        .join(" OR ");
+      values = [searchPattern];
+    }
+
+    // Count total matches
+    const countQuery = `
+      SELECT COUNT(*) as total 
+      FROM ${safeSchema}.${safeTable} 
+      WHERE ${whereClause}
+    `;
+    const countResult = await client.query(countQuery, values);
+    const total = parseInt(countResult.rows[0]?.total || "0", 10);
+
+    // Get matching rows with pagination
+    const offset = (page - 1) * pageSize;
+    const query = `
+      SELECT * FROM ${safeSchema}.${safeTable}
+      WHERE ${whereClause}
+      LIMIT ${pageSize} OFFSET ${offset}
+    `;
+    const result = await client.query(query, values);
+
+    return { rows: result.rows, total };
+  } catch (error) {
+    throw new Error(`Failed to search table ${schemaName}.${tableName}: ${error}`);
+  } finally {
+    try {
+      await client.end();
+    } catch (_) { }
+  }
+}

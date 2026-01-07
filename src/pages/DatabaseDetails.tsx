@@ -44,6 +44,12 @@ const DatabaseDetail = () => {
   const [deletingRow, setDeletingRow] = useState<Record<string, any> | null>(null);
   const [deleteRowPK, setDeleteRowPK] = useState<string>("");
   const [deleteHasPK, setDeleteHasPK] = useState(false);
+  // Search state
+  const [searchTerm, setSearchTerm] = useState("");
+  const [searchResults, setSearchResults] = useState<Record<string, any>[] | null>(null);
+  const [searchResultCount, setSearchResultCount] = useState<number | undefined>(undefined);
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchPage, setSearchPage] = useState(1);
 
   const {
     databaseName,
@@ -217,15 +223,88 @@ const DatabaseDetail = () => {
           {/* Right Panel: Content Viewer */}
           <ContentViewerPanel
             selectedTable={selectedTable?.name || null}
-            tableData={tableData}
-            totalRows={totalRows}
-            currentPage={currentPage}
+            tableData={searchResults !== null ? searchResults : tableData}
+            totalRows={searchResults !== null ? (searchResultCount || 0) : totalRows}
+            currentPage={searchResults !== null ? searchPage : currentPage}
             pageSize={pageSize}
-            onRefresh={fetchTables}
-            onPageChange={handlePageChange}
+            onRefresh={() => {
+              if (searchResults !== null && searchTerm) {
+                // Re-run search on refresh
+                setSearchPage(1);
+                bridgeApi.searchTable({
+                  dbId: dbId || "",
+                  schemaName: selectedTable?.schema || "public",
+                  tableName: selectedTable?.name || "",
+                  searchTerm,
+                  page: 1,
+                  pageSize,
+                }).then(result => {
+                  setSearchResults(result.rows);
+                  setSearchResultCount(result.total);
+                }).catch(() => { });
+              } else {
+                fetchTables();
+              }
+            }}
+            onPageChange={async (page) => {
+              if (searchResults !== null && searchTerm && selectedTable && dbId) {
+                // Search pagination
+                setSearchPage(page);
+                setIsSearching(true);
+                try {
+                  const result = await bridgeApi.searchTable({
+                    dbId,
+                    schemaName: selectedTable.schema || "public",
+                    tableName: selectedTable.name,
+                    searchTerm,
+                    page,
+                    pageSize,
+                  });
+                  setSearchResults(result.rows);
+                  setSearchResultCount(result.total);
+                } finally {
+                  setIsSearching(false);
+                }
+              } else {
+                handlePageChange(page);
+              }
+            }}
             onPageSizeChange={handlePageSizeChange}
             onChart={() => setChartOpen(true)}
             onInsert={() => setInsertDialogOpen(true)}
+            searchTerm={searchTerm}
+            onSearchChange={(term) => {
+              setSearchTerm(term);
+              if (!term) {
+                setSearchResults(null);
+                setSearchResultCount(undefined);
+              }
+            }}
+            onSearch={async () => {
+              if (!searchTerm || !selectedTable || !dbId) return;
+              setIsSearching(true);
+              setSearchPage(1); // Reset to page 1 for new search
+              try {
+                const result = await bridgeApi.searchTable({
+                  dbId,
+                  schemaName: selectedTable.schema || "public",
+                  tableName: selectedTable.name,
+                  searchTerm,
+                  page: 1,
+                  pageSize,
+                });
+                setSearchResults(result.rows);
+                setSearchResultCount(result.total);
+              } catch (err: any) {
+                toast.error(err.message || "Search failed");
+                setSearchResults(null);
+                setSearchResultCount(undefined);
+              } finally {
+                setIsSearching(false);
+              }
+            }}
+            isSearching={isSearching}
+            searchResultCount={searchResultCount}
             onEditRow={async (row) => {
               // Fetch primary key for this table (may be empty)
               try {
