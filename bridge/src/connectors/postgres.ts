@@ -443,11 +443,22 @@ export const postgresCache = new PostgresCacheManager();
  * Encapsulates the configuration mapping logic.
  */
 function createClient(cfg: PGConfig): Client {
+  // Build SSL configuration
+  let sslConfig: boolean | { rejectUnauthorized: boolean } | undefined;
+
+  if (cfg.ssl) {
+    // For cloud databases (Supabase, Railway, etc.), we need to allow self-signed certs
+    // sslmode=require or sslmode=prefer should use rejectUnauthorized: false
+    sslConfig = {
+      rejectUnauthorized: cfg.sslmode === 'verify-full' || cfg.sslmode === 'verify-ca'
+    };
+  }
+
   return new Client({
     host: cfg.host,
     port: cfg.port,
     user: cfg.user,
-    ssl: cfg.ssl || undefined,
+    ssl: sslConfig,
     password: cfg.password || undefined,
     database: cfg.database || undefined,
   });

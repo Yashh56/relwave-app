@@ -29,7 +29,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { Database } from "lucide-react";
+import { Database, Link } from "lucide-react";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { parseConnectionUrl } from "@/lib/parseConnectionUrl";
 
 const INITIAL_FORM_DATA = {
   name: "",
@@ -94,6 +96,8 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [formData, setFormData] = useState(INITIAL_FORM_DATA);
+  const [useUrl, setUseUrl] = useState(false);
+  const [connectionUrl, setConnectionUrl] = useState("");
 
   // Derived state
   const status = statusData || new Map<string, string>();
@@ -234,6 +238,51 @@ const Index = () => {
           </DialogHeader>
 
           <div className="space-y-4 py-4">
+            {/* Connection Mode Tabs */}
+            <Tabs value={useUrl ? "url" : "params"} onValueChange={(v) => setUseUrl(v === "url")}>
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="params" className="text-xs">Parameters</TabsTrigger>
+                <TabsTrigger value="url" className="text-xs">
+                  <Link className="h-3 w-3 mr-1" />
+                  Connection URL
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+
+            {/* URL Input (shown when URL mode) */}
+            {useUrl && (
+              <div className="space-y-2">
+                <Label className="text-xs">Connection URL</Label>
+                <Input
+                  placeholder="postgres://user:password@localhost:5432/database"
+                  value={connectionUrl}
+                  onChange={(e) => {
+                    const url = e.target.value;
+                    setConnectionUrl(url);
+                    // Auto-parse and fill form
+                    const parsed = parseConnectionUrl(url);
+                    if (parsed) {
+                      setFormData(prev => ({
+                        ...prev,
+                        type: parsed.type,
+                        host: parsed.host,
+                        port: parsed.port,
+                        user: parsed.user,
+                        password: parsed.password,
+                        database: parsed.database,
+                        ssl: parsed.ssl,
+                        sslmode: parsed.sslmode,
+                      }));
+                    }
+                  }}
+                  className="text-sm font-mono"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Example: postgres://user:pass@localhost:5432/mydb?sslmode=require
+                </p>
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label className="text-xs">Connection Name</Label>
               <Input
