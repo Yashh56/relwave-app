@@ -124,10 +124,10 @@ export const DataTable = ({
     </Table>
   );
 
-  // If maxHeight is "none", don't use ScrollArea (parent handles scrolling)
+  // If maxHeight is "none", render table directly (parent handles scrolling)
   if (maxHeight === "none") {
     return (
-      <div className="rounded-md border border-border/20 overflow-hidden bg-background">
+      <div className="rounded-md border border-border/20 overflow-x-auto bg-background">
         {tableContent}
       </div>
     );

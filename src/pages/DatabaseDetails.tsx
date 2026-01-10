@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { RefreshCw, Download, FileText, ChevronDown, Terminal } from "lucide-react";
+import { RefreshCw, Download, FileText, ChevronDown, Terminal, PanelLeftClose, PanelLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -26,6 +26,7 @@ import ConfirmDialog from "@/components/common/ConfirmDialog";
 import { ChartVisualization } from "@/components/chart/ChartVisualization";
 import { bridgeApi } from "@/services/bridgeApi";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 const DatabaseDetail = () => {
   const { id: dbId } = useParams<{ id: string }>();
@@ -36,17 +37,16 @@ const DatabaseDetail = () => {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingRow, setEditingRow] = useState<Record<string, any> | null>(null);
   const [primaryKeyColumn, setPrimaryKeyColumn] = useState<string>("");
-  // Delete confirmation state
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deletingRow, setDeletingRow] = useState<Record<string, any> | null>(null);
   const [deleteRowPK, setDeleteRowPK] = useState<string>("");
   const [deleteHasPK, setDeleteHasPK] = useState(false);
-  // Search state
   const [searchTerm, setSearchTerm] = useState("");
   const [searchResults, setSearchResults] = useState<Record<string, any>[] | null>(null);
   const [searchResultCount, setSearchResultCount] = useState<number | undefined>(undefined);
   const [isSearching, setIsSearching] = useState(false);
   const [searchPage, setSearchPage] = useState(1);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
 
   const {
     databaseName,
@@ -58,6 +58,7 @@ const DatabaseDetail = () => {
     pageSize,
     loading,
     loadingTables,
+    isLoadingData,
     error,
     handleTableSelect,
     fetchTables,
@@ -69,13 +70,11 @@ const DatabaseDetail = () => {
     bridgeReady: bridgeReady ?? false,
   });
 
-  // Export hook - exports all tables to CSV or JSON
   const { exportAllTables, isExporting } = useExport({
     dbId: dbId || "",
     databaseName: databaseName || "database",
   });
 
-  // Fetch migrations data
   const { data: migrationsResponse } = useMigrations(dbId);
   const migrationsData = migrationsResponse?.migrations || {
     local: [],
@@ -83,7 +82,6 @@ const DatabaseDetail = () => {
   };
   const baselined = migrationsResponse?.baselined || false;
 
-  // Show loader during bridge loading or initial undefined state
   if (bridgeLoading || bridgeReady === undefined) {
     return <BridgeLoader />;
   }
@@ -127,24 +125,35 @@ const DatabaseDetail = () => {
     <div className="h-[calc(100vh-32px)] flex bg-background text-foreground overflow-hidden">
       <VerticalIconBar dbId={dbId} />
 
-      <main className="flex-1 ml-[60px] flex flex-col">
+      <main className="flex-1 ml-[60px] flex flex-col overflow-hidden">
         {/* Header */}
-        <header className="border-b border-border/20 bg-background/95 backdrop-blur-sm">
-          <div className="px-8 py-4 flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-semibold">{databaseName || 'Database'}</h1>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {tables.length} tables
-              </p>
+        <header className="shrink-0 border-b border-border/20 bg-background/95 backdrop-blur-sm">
+          <div className="px-6 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8"
+                onClick={() => setSidebarOpen(!sidebarOpen)}
+                title={sidebarOpen ? "Hide sidebar" : "Show sidebar"}
+              >
+                {sidebarOpen ? (
+                  <PanelLeftClose className="h-4 w-4" />
+                ) : (
+                  <PanelLeft className="h-4 w-4" />
+                )}
+              </Button>
+              <div>
+                <h1 className="text-lg font-semibold">{databaseName || 'Database'}</h1>
+                <p className="text-xs text-muted-foreground">
+                  {tables.length} tables
+                </p>
+              </div>
             </div>
 
             <div className="flex items-center gap-2">
               <Link to={`/database/${dbId}/sql-workspace`}>
-                <Button
-                  size="sm"
-                  variant="default"
-                  className="text-xs"
-                >
+                <Button size="sm" variant="default" className="text-xs">
                   <Terminal className="h-3.5 w-3.5 mr-1.5" />
                   SQL Workspace
                 </Button>
@@ -160,12 +169,7 @@ const DatabaseDetail = () => {
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    disabled={isExporting}
-                    className="text-xs"
-                  >
+                  <Button size="sm" variant="outline" disabled={isExporting} className="text-xs">
                     {isExporting ? (
                       <>
                         <Spinner className="h-3.5 w-3.5 mr-1.5" />
@@ -174,7 +178,7 @@ const DatabaseDetail = () => {
                     ) : (
                       <>
                         <Download className="h-3.5 w-3.5 mr-1.5" />
-                        Export All
+                        Export
                         <ChevronDown className="h-3 w-3 ml-1" />
                       </>
                     )}
@@ -182,185 +186,180 @@ const DatabaseDetail = () => {
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                   <DropdownMenuItem onClick={() => exportAllTables("csv")}>
-                    <FileText className="h-3.5 w-3.5 mr-2" />
                     Export as CSV
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => exportAllTables("json")}>
-                    <FileText className="h-3.5 w-3.5 mr-2" />
                     Export as JSON
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
               <Button
-                size="sm"
-                variant="outline"
+                variant="ghost"
+                size="icon"
                 onClick={fetchTables}
                 disabled={loadingTables}
-                className="text-xs"
+                className="h-8 w-8"
               >
                 {loadingTables ? (
-                  <Spinner className="h-3.5 w-3.5" />
+                  <Spinner className="h-4 w-4" />
                 ) : (
-                  <RefreshCw className="h-3.5 w-3.5" />
+                  <RefreshCw className="h-4 w-4" />
                 )}
               </Button>
             </div>
           </div>
         </header>
 
-        {/* Split Screen Content */}
-        <div className="flex flex-1 overflow-hidden">
-          {/* Left Panel: Tables Explorer */}
-          <TablesExplorerPanel
-            dbId={dbId || ''}
-            tables={tables}
-            selectedTable={selectedTable}
-            onSelectTable={handleTableSelect}
-            loading={loadingTables}
-          />
+        {/* Content Area */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Sidebar */}
+          <div
+            className={cn(
+              "shrink-0 border-r border-border/20 transition-all duration-200 overflow-hidden",
+              sidebarOpen ? "w-64" : "w-0"
+            )}
+          >
+            <TablesExplorerPanel
+              dbId={dbId || ''}
+              tables={tables}
+              selectedTable={selectedTable}
+              onSelectTable={handleTableSelect}
+              loading={loadingTables}
+            />
+          </div>
 
-          {/* Right Panel: Content Viewer */}
-          <ContentViewerPanel
-            selectedTable={selectedTable?.name || null}
-            tableData={searchResults !== null ? searchResults : tableData}
-            totalRows={searchResults !== null ? (searchResultCount || 0) : totalRows}
-            currentPage={searchResults !== null ? searchPage : currentPage}
-            pageSize={pageSize}
-            onRefresh={() => {
-              if (searchResults !== null && searchTerm) {
-                // Re-run search on refresh
-                setSearchPage(1);
-                bridgeApi.searchTable({
-                  dbId: dbId || "",
-                  schemaName: selectedTable?.schema || "public",
-                  tableName: selectedTable?.name || "",
-                  searchTerm,
-                  page: 1,
-                  pageSize,
-                }).then(result => {
-                  setSearchResults(result.rows);
-                  setSearchResultCount(result.total);
-                }).catch(() => { });
-              } else {
-                fetchTables();
-              }
-            }}
-            onPageChange={async (page) => {
-              if (searchResults !== null && searchTerm && selectedTable && dbId) {
-                // Search pagination
-                setSearchPage(page);
+          {/* Main Content */}
+          <div className="flex-1 overflow-hidden">
+            <ContentViewerPanel
+              selectedTable={selectedTable?.name || null}
+              tableData={searchResults !== null ? searchResults : tableData}
+              totalRows={searchResults !== null ? (searchResultCount || 0) : totalRows}
+              currentPage={searchResults !== null ? searchPage : currentPage}
+              pageSize={pageSize}
+              isLoading={isLoadingData}
+              onRefresh={() => {
+                if (searchResults !== null && searchTerm) {
+                  setSearchPage(1);
+                  bridgeApi.searchTable({
+                    dbId: dbId || "",
+                    schemaName: selectedTable?.schema || "public",
+                    tableName: selectedTable?.name || "",
+                    searchTerm,
+                    page: 1,
+                    pageSize,
+                  }).then(result => {
+                    setSearchResults(result.rows);
+                    setSearchResultCount(result.total);
+                  }).catch(() => { });
+                } else {
+                  fetchTables();
+                }
+              }}
+              onPageChange={async (page) => {
+                if (searchResults !== null && searchTerm && selectedTable && dbId) {
+                  setSearchPage(page);
+                  setIsSearching(true);
+                  try {
+                    const result = await bridgeApi.searchTable({
+                      dbId,
+                      schemaName: selectedTable.schema || "public",
+                      tableName: selectedTable.name,
+                      searchTerm,
+                      page,
+                      pageSize,
+                    });
+                    setSearchResults(result.rows);
+                    setSearchResultCount(result.total);
+                  } finally {
+                    setIsSearching(false);
+                  }
+                } else {
+                  handlePageChange(page);
+                }
+              }}
+              onPageSizeChange={handlePageSizeChange}
+              onChart={() => setChartOpen(true)}
+              onInsert={() => setInsertDialogOpen(true)}
+              searchTerm={searchTerm}
+              onSearchChange={(term) => {
+                setSearchTerm(term);
+                if (!term) {
+                  setSearchResults(null);
+                  setSearchResultCount(undefined);
+                }
+              }}
+              onSearch={async () => {
+                if (!searchTerm || !selectedTable || !dbId) return;
                 setIsSearching(true);
+                setSearchPage(1);
                 try {
                   const result = await bridgeApi.searchTable({
                     dbId,
                     schemaName: selectedTable.schema || "public",
                     tableName: selectedTable.name,
                     searchTerm,
-                    page,
+                    page: 1,
                     pageSize,
                   });
                   setSearchResults(result.rows);
                   setSearchResultCount(result.total);
+                } catch (err: any) {
+                  toast.error(err.message || "Search failed");
+                  setSearchResults(null);
+                  setSearchResultCount(undefined);
                 } finally {
                   setIsSearching(false);
                 }
-              } else {
-                handlePageChange(page);
-              }
-            }}
-            onPageSizeChange={handlePageSizeChange}
-            onChart={() => setChartOpen(true)}
-            onInsert={() => setInsertDialogOpen(true)}
-            searchTerm={searchTerm}
-            onSearchChange={(term) => {
-              setSearchTerm(term);
-              if (!term) {
-                setSearchResults(null);
-                setSearchResultCount(undefined);
-              }
-            }}
-            onSearch={async () => {
-              if (!searchTerm || !selectedTable || !dbId) return;
-              setIsSearching(true);
-              setSearchPage(1); // Reset to page 1 for new search
-              try {
-                const result = await bridgeApi.searchTable({
-                  dbId,
-                  schemaName: selectedTable.schema || "public",
-                  tableName: selectedTable.name,
-                  searchTerm,
-                  page: 1,
-                  pageSize,
-                });
-                setSearchResults(result.rows);
-                setSearchResultCount(result.total);
-              } catch (err: any) {
-                toast.error(err.message || "Search failed");
-                setSearchResults(null);
-                setSearchResultCount(undefined);
-              } finally {
-                setIsSearching(false);
-              }
-            }}
-            isSearching={isSearching}
-            searchResultCount={searchResultCount}
-            onEditRow={async (row) => {
-              // Fetch primary key for this table (may be empty)
-              try {
-                let pk = "";
+              }}
+              isSearching={isSearching}
+              searchResultCount={searchResultCount}
+              onEditRow={async (row) => {
                 try {
-                  pk = await bridgeApi.getPrimaryKeys(
-                    dbId || "",
-                    selectedTable?.schema || "public",
-                    selectedTable?.name || ""
-                  );
-                } catch {
-                  // No PK found - will use first column as identifier
-                  pk = Object.keys(row)[0] || "";
+                  let pk = "";
+                  try {
+                    pk = await bridgeApi.getPrimaryKeys(
+                      dbId || "",
+                      selectedTable?.schema || "public",
+                      selectedTable?.name || ""
+                    );
+                  } catch {
+                    pk = Object.keys(row)[0] || "";
+                  }
+                  setPrimaryKeyColumn(pk);
+                  setEditingRow(row);
+                  setEditDialogOpen(true);
+                } catch (err: any) {
+                  toast.error("Cannot edit: " + (err.message || "Unknown error"));
                 }
-                setPrimaryKeyColumn(pk);
-                setEditingRow(row);
-                setEditDialogOpen(true);
-              } catch (err: any) {
-                toast.error("Cannot edit: " + (err.message || "Unknown error"));
-              }
-            }}
-            onDeleteRow={async (row) => {
-              try {
-                let pk = "";
-                let hasPK = false;
+              }}
+              onDeleteRow={async (row) => {
                 try {
-                  pk = await bridgeApi.getPrimaryKeys(
-                    dbId || "",
-                    selectedTable?.schema || "public",
-                    selectedTable?.name || ""
-                  );
-                  hasPK = !!pk;
-                } catch {
-                  hasPK = false;
+                  let pk = "";
+                  let hasPK = false;
+                  try {
+                    pk = await bridgeApi.getPrimaryKeys(
+                      dbId || "",
+                      selectedTable?.schema || "public",
+                      selectedTable?.name || ""
+                    );
+                    hasPK = !!pk;
+                  } catch {
+                    hasPK = false;
+                  }
+                  setDeletingRow(row);
+                  setDeleteRowPK(pk);
+                  setDeleteHasPK(hasPK);
+                  setDeleteDialogOpen(true);
+                } catch (err: any) {
+                  toast.error(err.message || "Failed to prepare delete");
                 }
-
-                let confirmMsg: string;
-                if (hasPK) {
-                  confirmMsg = `Delete row with ${pk} = ${row[pk]}?`;
-                } else {
-                  confirmMsg = `Delete this row? (Table has no primary key - using all columns to identify)`;
-                }
-
-                // Store delete info and open confirm dialog
-                setDeletingRow(row);
-                setDeleteRowPK(pk);
-                setDeleteHasPK(hasPK);
-                setDeleteDialogOpen(true);
-              } catch (err: any) {
-                toast.error(err.message || "Failed to prepare delete");
-              }
-            }}
-          />
+              }}
+            />
+          </div>
         </div>
       </main>
 
-      {/* Right Slide-out: Migrations */}
+      {/* Migrations Panel */}
       <SlideOutPanel
         isOpen={migrationsOpen}
         onClose={() => setMigrationsOpen(false)}
@@ -368,95 +367,81 @@ const DatabaseDetail = () => {
         disableScroll={true}
       >
         <MigrationsPanel
+          dbId={dbId || ""}
           migrations={migrationsData}
           baselined={baselined}
-          dbId={dbId || ""}
         />
       </SlideOutPanel>
 
-      {/* Right Slide-out: Chart Visualization */}
+      {/* Chart Panel */}
       <SlideOutPanel
         isOpen={chartOpen}
         onClose={() => setChartOpen(false)}
-        title="Chart Visualization"
+        title={`Chart: ${selectedTable?.name || 'Table'}`}
         width="60%"
       >
         {selectedTable && (
-          <div className="p-6">
-            <ChartVisualization
-              selectedTable={selectedTable}
-              dbId={dbId}
-            />
-          </div>
+          <ChartVisualization
+            selectedTable={selectedTable}
+            dbId={dbId}
+          />
         )}
       </SlideOutPanel>
 
-      {/* Insert Data Dialog */}
-      {selectedTable && (
-        <InsertDataDialog
-          open={insertDialogOpen}
-          onOpenChange={setInsertDialogOpen}
-          dbId={dbId || ""}
-          schemaName={selectedTable.schema || "public"}
-          tableName={selectedTable.name}
-          onSuccess={() => {
-            // Refresh table data after insert
-            refetchTableData();
-          }}
-        />
-      )}
+      {/* Insert Dialog */}
+      <InsertDataDialog
+        open={insertDialogOpen}
+        onOpenChange={setInsertDialogOpen}
+        dbId={dbId || ""}
+        tableName={selectedTable?.name || ""}
+        schemaName={selectedTable?.schema || ""}
+        onSuccess={() => {
+          refetchTableData();
+          setInsertDialogOpen(false);
+        }}
+      />
 
-      {/* Edit Row Dialog */}
-      {selectedTable && editingRow && (
-        <EditRowDialog
-          open={editDialogOpen}
-          onOpenChange={(open) => {
-            setEditDialogOpen(open);
-            if (!open) setEditingRow(null);
-          }}
-          dbId={dbId || ""}
-          schemaName={selectedTable.schema || "public"}
-          tableName={selectedTable.name}
-          primaryKeyColumn={primaryKeyColumn}
-          rowData={editingRow}
-          onSuccess={() => {
-            refetchTableData();
-          }}
-        />
-      )}
+      {/* Edit Dialog */}
+      <EditRowDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        dbId={dbId || ""}
+        tableName={selectedTable?.name || ""}
+        schemaName={selectedTable?.schema || ""}
+        rowData={editingRow || {}}
+        primaryKeyColumn={primaryKeyColumn}
+        onSuccess={() => {
+          refetchTableData();
+          setEditDialogOpen(false);
+        }}
+      />
 
-      {/* Delete Confirmation Dialog */}
+      {/* Delete Confirm Dialog */}
       <ConfirmDialog
         open={deleteDialogOpen}
-        onOpenChange={(open) => {
-          setDeleteDialogOpen(open);
-          if (!open) setDeletingRow(null);
-        }}
+        onOpenChange={setDeleteDialogOpen}
         title="Delete Row"
         description={
           deleteHasPK
-            ? `Are you sure you want to delete the row with ${deleteRowPK} = ${deletingRow?.[deleteRowPK]}?`
-            : "Are you sure you want to delete this row? (Table has no primary key - using all columns to identify)"
+            ? `Delete row with ${deleteRowPK} = ${deletingRow?.[deleteRowPK]}?`
+            : `Delete this row? (Table has no primary key)`
         }
         confirmLabel="Delete"
-        cancelLabel="Cancel"
         variant="destructive"
         onConfirm={async () => {
-          if (!deletingRow || !selectedTable) return;
+          if (!deletingRow || !selectedTable || !dbId) return;
           try {
             await bridgeApi.deleteRow({
-              dbId: dbId || "",
+              dbId,
               schemaName: selectedTable.schema || "public",
               tableName: selectedTable.name,
-              primaryKeyColumn: deleteHasPK ? deleteRowPK : "",
-              primaryKeyValue: deleteHasPK ? deletingRow[deleteRowPK] : deletingRow,
+              primaryKeyColumn: deleteRowPK,
+              primaryKeyValue: deletingRow[deleteRowPK],
             });
-            toast.success("Row deleted successfully");
+            toast.success("Row deleted");
             refetchTableData();
-            setDeleteDialogOpen(false);
-            setDeletingRow(null);
           } catch (err: any) {
-            toast.error(err.message || "Failed to delete row");
+            toast.error(err.message || "Delete failed");
           }
         }}
       />

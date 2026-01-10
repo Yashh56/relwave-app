@@ -20,6 +20,7 @@ interface UseDatabaseDetailsReturn {
     queryProgress: QueryProgress | null;
     queryError: string | null;
     isExecuting: boolean;
+    isLoadingData: boolean;
     loading: boolean;
     loadingTables: boolean;
     error: string | null;
@@ -295,7 +296,8 @@ export function useDatabaseDetails({
         query,
         queryProgress,
         queryError,
-        isExecuting: isExecuting || isTableDataLoading,
+        isExecuting,
+        isLoadingData: isFetchingTableData,
         loading,
         loadingTables: loadingTables || isRefetchingTables,
         error,
