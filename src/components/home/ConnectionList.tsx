@@ -1,6 +1,13 @@
-import { Plus, Database, Search } from "lucide-react";
+import { Plus, Database, Search, Trash2, Zap } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from "@/components/ui/context-menu";
 import { cn } from "@/lib/utils";
 import { ConnectionListProps } from "./types";
 
@@ -18,6 +25,8 @@ export function ConnectionList({
   statsLoading,
   onAddClick,
   onDatabaseHover,
+  onDelete,
+  onTest,
 }: ConnectionListProps) {
   return (
     <div className="w-72 border-r border-border/50 flex flex-col bg-muted/20">
@@ -64,31 +73,51 @@ export function ConnectionList({
               const isConnected = status.get(db.id) === "connected";
               const isSelected = selectedDb === db.id;
               return (
-                <button
-                  key={db.id}
-                  onClick={() => setSelectedDb(db.id)}
-                  onMouseEnter={() => onDatabaseHover(db.id)}
-                  className={cn(
-                    "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-left transition-colors",
-                    isSelected
-                      ? "bg-accent text-accent-foreground"
-                      : "hover:bg-accent/50",
-                    !isConnected && "opacity-50"
-                  )}
-                >
-                  <div
-                    className={cn(
-                      "h-2 w-2 rounded-full shrink-0",
-                      isConnected ? "bg-emerald-500" : "bg-muted-foreground/30"
-                    )}
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium truncate">{db.name}</p>
-                    <p className="text-[10px] text-muted-foreground truncate font-mono">
-                      {db.type} • {db.host}
-                    </p>
-                  </div>
-                </button>
+                <ContextMenu key={db.id}>
+                  <ContextMenuTrigger asChild>
+                    <button
+                      onClick={() => setSelectedDb(db.id)}
+                      onMouseEnter={() => onDatabaseHover(db.id)}
+                      className={cn(
+                        "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-left transition-colors",
+                        isSelected
+                          ? "bg-accent text-accent-foreground"
+                          : "hover:bg-accent/50",
+                        !isConnected && "opacity-50"
+                      )}
+                    >
+                      <div
+                        className={cn(
+                          "h-2 w-2 rounded-full shrink-0",
+                          isConnected ? "bg-emerald-500" : "bg-muted-foreground/30"
+                        )}
+                      />
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-medium truncate">{db.name}</p>
+                        <p className="text-[10px] text-muted-foreground truncate font-mono">
+                          {db.type} • {db.host}
+                        </p>
+                      </div>
+                    </button>
+                  </ContextMenuTrigger>
+                  <ContextMenuContent className="w-48">
+                    <ContextMenuItem
+                      onClick={() => onTest(db.id, db.name)}
+                      className="gap-2"
+                    >
+                      <Zap className="h-4 w-4" />
+                      Test Connection
+                    </ContextMenuItem>
+                    <ContextMenuSeparator />
+                    <ContextMenuItem
+                      onClick={() => onDelete(db.id, db.name)}
+                      className="gap-2 text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Delete Connection
+                    </ContextMenuItem>
+                  </ContextMenuContent>
+                </ContextMenu>
               );
             })}
           </div>

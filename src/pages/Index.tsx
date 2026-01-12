@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { bridgeApi } from "@/services/bridgeApi";
@@ -9,6 +9,11 @@ import {
   useDeleteDatabase,
   usePrefetch
 } from "@/hooks/useDbQueries";
+import {
+  useCachedConnectionStatus,
+  useCachedTotalStats,
+  useCachedDbStats,
+} from "@/hooks/useCachedData";
 import BridgeLoader from "@/components/feedback/BridgeLoader";
 import BridgeFailed from "@/components/feedback/BridgeFailed";
 import VerticalIconBar from "@/components/common/VerticalIconBar";
@@ -28,20 +33,33 @@ const Index = () => {
   const navigate = useNavigate();
   const { data: bridgeReady, isLoading: bridgeLoading } = useBridgeQuery();
 
+  // Caching hooks - load cached data instantly
+  const { cachedStatus, updateCache: updateStatusCache } = useCachedConnectionStatus();
+  const { cachedStats, updateCache: updateStatsCache } = useCachedTotalStats();
+  const { getStats: getCachedDbStats, updateCache: updateDbStatsCache } = useCachedDbStats();
+
   const { data: databases = [], isLoading: loading, refetch: refetchDatabases } = useDatabases();
+
   const { data: stats, isLoading: statsLoading, refetch: refetchStats } = useQuery({
     queryKey: ["totalStats"],
-    queryFn: () => bridgeApi.getTotalDatabaseStats(),
+    queryFn: async () => {
+      const result = await bridgeApi.getTotalDatabaseStats();
+      // Update cache when fresh data arrives
+      if (result) updateStatsCache(result);
+      return result;
+    },
     enabled: !!bridgeReady && databases.length > 0,
     staleTime: 30 * 1000,
   });
 
-  const { data: statusData, refetch: refetchStatus } = useQuery({
+  const { data: statusData, isLoading: statusLoading, refetch: refetchStatus } = useQuery({
     queryKey: ["connectionStatus"],
     queryFn: async () => {
       const res = await bridgeApi.testAllConnections();
       const statusMap = new Map<string, string>();
       res.forEach((r) => statusMap.set(r.id, r.result.status));
+      // Update cache when fresh data arrives
+      updateStatusCache(statusMap);
       return statusMap;
     },
     enabled: !!bridgeReady,
@@ -58,18 +76,33 @@ const Index = () => {
   const [dbToDelete, setDbToDelete] = useState<{ id: string; name: string } | null>(null);
   const [selectedDb, setSelectedDb] = useState<string | null>(null);
 
-  const status = statusData || new Map<string, string>();
-  const totalSize = stats?.sizeBytes ? bytesToMBString(stats.sizeBytes) : "0 MB";
-  const totalTables = stats?.tables || 0;
+  // Use fresh data if available, fall back to cached data
+  const status = statusData || cachedStatus;
+  const effectiveStats = stats || cachedStats;
+  const totalSize = effectiveStats?.sizeBytes ? bytesToMBString(effectiveStats.sizeBytes) : "—";
+  const totalTables = effectiveStats?.tables ?? "—";
   const connectedCount = [...status.values()].filter(s => s === "connected").length;
+
+  // Show loading state only if we have no cached data
+  const showStatsLoading = statsLoading && !cachedStats;
+  const showStatusLoading = statusLoading && cachedStatus.size === 0;
 
   // Fetch stats for the selected database
   const { data: selectedDbStats, isLoading: selectedDbStatsLoading } = useQuery({
     queryKey: ["dbStats", selectedDb],
-    queryFn: () => bridgeApi.getDataBaseStats(selectedDb!),
+    queryFn: async () => {
+      const result = await bridgeApi.getDataBaseStats(selectedDb!);
+      // Update cache when fresh data arrives
+      if (result && selectedDb) updateDbStatsCache(selectedDb, result);
+      return result;
+    },
     enabled: !!bridgeReady && !!selectedDb && status.get(selectedDb) === "connected",
     staleTime: 30 * 1000,
   });
+
+  // Get cached stats for selected db
+  const cachedSelectedDbStats = selectedDb ? getCachedDbStats(selectedDb) : undefined;
+  const effectiveSelectedDbStats = selectedDbStats || cachedSelectedDbStats;
 
   const recentDatabases = [...databases]
     .filter(db => db.lastAccessedAt)
@@ -160,9 +193,14 @@ const Index = () => {
           status={status}
           connectedCount={connectedCount}
           totalTables={totalTables}
-          statsLoading={statsLoading}
+          statsLoading={showStatsLoading}
           onAddClick={() => setIsDialogOpen(true)}
           onDatabaseHover={handleDatabaseHover}
+          onDelete={(dbId, dbName) => {
+            setDbToDelete({ id: dbId, name: dbName });
+            setDeleteDialogOpen(true);
+          }}
+          onTest={handleTestConnection}
         />
 
         {/* Right Panel - Main Content */}
@@ -171,8 +209,8 @@ const Index = () => {
             <DatabaseDetail
               database={selectedDatabase}
               isConnected={isSelectedConnected}
-              tables={selectedDbStatsLoading ? "—" : selectedDbStats?.tables ?? "—"}
-              size={selectedDbStatsLoading ? "—" : selectedDbStats?.sizeBytes ? bytesToMBString(selectedDbStats.sizeBytes) : "—"}
+              tables={(selectedDbStatsLoading && !cachedSelectedDbStats) ? "—" : effectiveSelectedDbStats?.tables ?? "—"}
+              size={(selectedDbStatsLoading && !cachedSelectedDbStats) ? "—" : effectiveSelectedDbStats?.sizeBytes ? bytesToMBString(effectiveSelectedDbStats.sizeBytes) : "—"}
               onTest={() => handleTestConnection(selectedDatabase.id, selectedDatabase.name)}
               onOpen={() => handleDatabaseClick(selectedDatabase.id)}
               onDelete={() => {
@@ -188,7 +226,7 @@ const Index = () => {
               connectedCount={connectedCount}
               totalTables={totalTables}
               totalSize={totalSize}
-              statsLoading={statsLoading}
+              statsLoading={showStatsLoading}
               onAddClick={() => setIsDialogOpen(true)}
               onSelectDb={setSelectedDb}
               onDatabaseClick={handleDatabaseClick}

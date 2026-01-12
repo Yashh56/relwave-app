@@ -10,10 +10,12 @@ export interface ConnectionListProps {
     setSelectedDb: (id: string | null) => void;
     status: Map<string, string>;
     connectedCount: number;
-    totalTables: number;
+    totalTables: number | string;
     statsLoading: boolean;
     onAddClick: () => void;
     onDatabaseHover: (dbId: string) => void;
+    onDelete: (dbId: string, dbName: string) => void;
+    onTest: (dbId: string, dbName: string) => void;
 }
 
 export interface DatabaseDetailProps {
@@ -31,7 +33,7 @@ export interface WelcomeViewProps {
     recentDatabases: DatabaseConnection[];
     status: Map<string, string>;
     connectedCount: number;
-    totalTables: number;
+    totalTables: number | string;
     totalSize: string;
     statsLoading: boolean;
     onAddClick: () => void;
