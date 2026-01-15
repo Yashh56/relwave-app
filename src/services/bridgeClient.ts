@@ -12,12 +12,15 @@ let unlistenStderr: UnlistenFn | null = null;
 
 // Connection health tracking
 let lastSuccessfulRequest = Date.now();
+let lastHealthCheckTime = Date.now();
 let connectionHealthy = true;
 let healthCheckInterval: ReturnType<typeof setInterval> | null = null;
 let reconnectAttempts = 0;
+let isReconnecting = false; // Prevent concurrent reconnection attempts
 const MAX_RECONNECT_ATTEMPTS = 3;
 const HEALTH_CHECK_INTERVAL = 30000; // 30 seconds
 const CONNECTION_TIMEOUT = 60000; // Consider unhealthy after 60s of no successful requests
+const SLEEP_DETECTION_THRESHOLD = 60000; // If interval fires 60s+ late, system likely slept
 
 // Listeners for connection state changes
 type ConnectionStateListener = (healthy: boolean) => void;
@@ -112,11 +115,59 @@ export async function startBridgeListeners(): Promise<void> {
     // Start health check interval
     startHealthCheck();
     
+    // Listen for visibility changes (tab/app becomes visible)
+    setupVisibilityHandler();
+    
     console.log("bridgeClient: Listeners initialized");
   } catch (error) {
     console.error("bridgeClient: Failed to initialize listeners", error);
     throw error;
   }
+}
+
+let visibilityHandler: (() => void) | null = null;
+
+/**
+ * Setup handler for when app becomes visible after being hidden
+ */
+function setupVisibilityHandler(): void {
+  if (visibilityHandler) {
+    document.removeEventListener("visibilitychange", visibilityHandler);
+  }
+  
+  visibilityHandler = async () => {
+    if (document.visibilityState === "visible" && isInitialized) {
+      console.log("bridgeClient: App became visible, verifying connection...");
+      
+      // Reset timestamp to avoid immediate health check trigger
+      lastSuccessfulRequest = Date.now();
+      
+      // Small delay for system to stabilize
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Quick health check
+      try {
+        const status = await invoke<string>("bridge_status");
+        if (status === "running") {
+          await bridgeRequestInternal("ping", {}, 5000);
+          console.log("bridgeClient: Connection OK after visibility change");
+          lastSuccessfulRequest = Date.now();
+          if (!connectionHealthy) {
+            notifyConnectionState(true);
+            reconnectAttempts = 0;
+          }
+        } else {
+          console.warn("bridgeClient: Bridge not running after visibility change");
+          await handleBridgeReconnect();
+        }
+      } catch (error) {
+        console.warn("bridgeClient: Connection check failed after visibility change:", error);
+        // Don't immediately reconnect - the health check will handle it if needed
+      }
+    }
+  };
+  
+  document.addEventListener("visibilitychange", visibilityHandler);
 }
 
 /**
@@ -127,9 +178,47 @@ function startHealthCheck(): void {
     clearInterval(healthCheckInterval);
   }
   
+  lastHealthCheckTime = Date.now();
+  
   healthCheckInterval = setInterval(async () => {
-    // Check if we've had recent successful communication
-    const timeSinceLastSuccess = Date.now() - lastSuccessfulRequest;
+    const now = Date.now();
+    const timeSinceLastHealthCheck = now - lastHealthCheckTime;
+    lastHealthCheckTime = now;
+    
+    // Detect system wake from sleep - if interval fired much later than expected
+    if (timeSinceLastHealthCheck > HEALTH_CHECK_INTERVAL + SLEEP_DETECTION_THRESHOLD) {
+      console.log(`bridgeClient: System likely woke from sleep (${Math.round(timeSinceLastHealthCheck / 1000)}s since last check)`);
+      // Reset the timestamp to give the system time to stabilize
+      lastSuccessfulRequest = now;
+      reconnectAttempts = 0;
+      
+      // Wait a moment for system to stabilize after wake
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      
+      // Do a gentle health check
+      try {
+        const status = await invoke<string>("bridge_status");
+        if (status === "running") {
+          // Try a ping to verify connection is actually working
+          await bridgeRequestInternal("ping", {}, 10000);
+          console.log("bridgeClient: Connection verified after wake");
+          lastSuccessfulRequest = Date.now();
+          if (!connectionHealthy) {
+            notifyConnectionState(true);
+          }
+        } else {
+          console.warn(`bridgeClient: Bridge not running after wake (status: ${status})`);
+          await handleBridgeReconnect();
+        }
+      } catch (error) {
+        console.warn("bridgeClient: Health check failed after wake, attempting reconnect...", error);
+        await handleBridgeReconnect();
+      }
+      return;
+    }
+    
+    // Normal health check - only if no recent successful communication
+    const timeSinceLastSuccess = now - lastSuccessfulRequest;
     
     if (timeSinceLastSuccess > CONNECTION_TIMEOUT && connectionHealthy) {
       console.warn("bridgeClient: No recent successful requests, checking health...");
@@ -140,13 +229,7 @@ function startHealthCheck(): void {
         if (status !== "running") {
           console.warn(`bridgeClient: Bridge process not running (status: ${status}), attempting restart...`);
           notifyConnectionState(false);
-          
-          // Try to restart
-          try {
-            await reinitializeBridge();
-          } catch (reinitError) {
-            console.error("bridgeClient: Failed to reinitialize after status check:", reinitError);
-          }
+          await handleBridgeReconnect();
           return;
         }
       } catch (statusError) {
@@ -166,15 +249,30 @@ function startHealthCheck(): void {
         
         // If ping failed, try to restart
         if (isPipeError(error)) {
-          try {
-            await reinitializeBridge();
-          } catch (reinitError) {
-            console.error("bridgeClient: Failed to reinitialize after ping failure:", reinitError);
-          }
+          await handleBridgeReconnect();
         }
       }
     }
   }, HEALTH_CHECK_INTERVAL);
+}
+
+/**
+ * Handle bridge reconnection with deduplication
+ */
+async function handleBridgeReconnect(): Promise<void> {
+  if (isReconnecting) {
+    console.log("bridgeClient: Reconnection already in progress, skipping...");
+    return;
+  }
+  
+  isReconnecting = true;
+  try {
+    await reinitializeBridge();
+  } catch (reinitError) {
+    console.error("bridgeClient: Failed to reinitialize:", reinitError);
+  } finally {
+    isReconnecting = false;
+  }
 }
 
 /**
@@ -187,6 +285,10 @@ export function stopBridgeListeners(): void {
     clearInterval(healthCheckInterval);
     healthCheckInterval = null;
   }
+  if (visibilityHandler) {
+    document.removeEventListener("visibilitychange", visibilityHandler);
+    visibilityHandler = null;
+  }
   if (unlistenStdout) {
     unlistenStdout();
     unlistenStdout = null;
@@ -197,6 +299,7 @@ export function stopBridgeListeners(): void {
   }
   isInitialized = false;
   connectionHealthy = false;
+  isReconnecting = false;
   console.log("bridgeClient: Listeners stopped");
 }
 

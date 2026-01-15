@@ -29,7 +29,6 @@ export function DatabaseDetail({
     size,
     tables
 }: DatabaseDetailProps) {
-    console.log(size,tables,'yash')
     return (
         <div className="h-full flex flex-col">
             {/* Detail Header */}
