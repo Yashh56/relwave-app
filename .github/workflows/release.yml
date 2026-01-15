@@ -59,7 +59,8 @@ jobs:
           pnpm install --frozen-lockfile=false
           npx esbuild src/index.ts --bundle --platform=node --outfile=dist/index.cjs --format=cjs --packages=external
           cd ..
-          npx pkg@5.8.1 ./bridge/dist/index.cjs --target node18-win-x64 --output ./src-tauri/resources/bridge-x86_64-pc-windows-msvc.exe
+          npm install -g pkg@5.8.1
+          pkg ./bridge/dist/index.cjs --target node18-win-x64 --output ./src-tauri/resources/bridge-x86_64-pc-windows-msvc.exe
 
       - name: Build bridge (Linux)
         if: matrix.platform == 'ubuntu-22.04'
@@ -68,7 +69,8 @@ jobs:
           pnpm install --frozen-lockfile=false
           npx esbuild src/index.ts --bundle --platform=node --outfile=dist/index.cjs --format=cjs --packages=external
           cd ..
-          npx pkg@5.8.1 ./bridge/dist/index.cjs --target node18-linux-x64 --output ./src-tauri/resources/bridge-x86_64-unknown-linux-gnu
+          npm install -g pkg@5.8.1
+          pkg ./bridge/dist/index.cjs --target node18-linux-x64 --output ./src-tauri/resources/bridge-x86_64-unknown-linux-gnu
 
       - name: Build and release
         uses: tauri-apps/tauri-action@v0
