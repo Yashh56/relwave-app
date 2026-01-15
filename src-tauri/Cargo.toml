@@ -1,12 +1,12 @@
 [package]
 name = "RelWave"
-version = "0.1.1"
+version = "0.1.0"
 description = "A beautiful database management tool"
 authors = ["you"]
 edition = "2021"
 
 [lib]
-name = "relwave_lib"
+name = "RelWave_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
