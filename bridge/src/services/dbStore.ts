@@ -13,12 +13,12 @@ import { promisify } from "util";
 const scryptAsync = promisify(scrypt);
 
 export const CONFIG_FOLDER =
-  process.env.DBVISUALIZER_HOME ||
+  process.env.RELWAVE_HOME ||
   path.join(
     os.homedir(),
     process.platform === "win32"
-      ? "AppData\\Roaming\\DBVisualizer"
-      : ".dbvisualizer"
+      ? "AppData\\Roaming\\relwave"
+      : ".relwave"
   );
 
 export const CONFIG_FILE = path.join(CONFIG_FOLDER, "databases.json");

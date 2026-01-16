@@ -2,7 +2,7 @@
 name = "RelWave"
 version = "0.1.0"
 description = "A beautiful database management tool"
-authors = ["you"]
+authors = ["yashh56"]
 edition = "2021"
 
 [lib]

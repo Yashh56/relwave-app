@@ -217,8 +217,8 @@ Database connection configurations are stored in:
 
 | Platform | Location |
 |----------|----------|
-| **Windows** | `%APPDATA%\DBVisualizer\databases.json` |
-| **Linux** | `~/.dbvisualizer/databases.json` |
+| **Windows** | `%APPDATA%\relwave\databases.json` |
+| **Linux** | `~/.relwave/databases.json` |
 
 > **Note:** Credentials are **encrypted** and stored separately in a `.credentials` file using machine-specific keys.
 
@@ -226,7 +226,7 @@ Database connection configurations are stored in:
 
 | Variable | Description |
 |----------|-------------|
-| `DBVISUALIZER_HOME` | Override the default configuration directory |
+| `RELWAVE_HOME` | Override the default configuration directory |
 
 ## Development
 

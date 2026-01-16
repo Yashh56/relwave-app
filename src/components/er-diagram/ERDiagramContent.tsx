@@ -366,11 +366,12 @@ const ERDiagramContent: React.FC<ERDiagramContentProps> = ({ nodeTypes }) => {
                         defaultViewport={{ x: 0, y: 0, zoom: 1 }}
                     >
                         <Background variant={BackgroundVariant.Dots} gap={16} size={1} className="bg-background" />
-                        <Controls showFitView={true} />
+                        <Controls showFitView={true} style={{ bottom: 16, left: 16 }} />
                         <MiniMap
                             nodeColor={miniMapNodeColor}
                             maskColor="rgba(0, 0, 0, 0.1)"
                             className="bg-card border border-border rounded-md"
+                            style={{ bottom: 66 }}
                             pannable
                             zoomable
                         />
@@ -391,7 +392,7 @@ const ERDiagramContent: React.FC<ERDiagramContentProps> = ({ nodeTypes }) => {
                     )}
 
                     {/* Legend */}
-                    <div className="absolute bottom-20 left-4 bg-card/90 backdrop-blur-sm border border-border rounded-lg p-3 text-xs z-10">
+                    <div className="absolute bottom-20 left-52 bg-card/90 backdrop-blur-sm border border-border rounded-lg p-3 text-xs z-10">
                         <div className="font-semibold mb-2">Legend</div>
                         <div className="space-y-1">
                             <div className="flex items-center gap-2">
