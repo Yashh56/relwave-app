@@ -23,14 +23,12 @@ const SchemaExplorerHeader = ({ dbId, database, onTableCreated, selectedTable }:
     const [dropTableOpen, setDropTableOpen] = useState(false);
     const [alterTableOpen, setAlterTableOpen] = useState(false);
 
-    // For now, we'll use the first schema or 'public' as default
-    // In a future enhancement, we could let users select the schema
     const defaultSchema = 'public';
 
     return (
         <div>
-            <header className="border-b bg-card/50 backdrop-blur">
-                <div className="container mx-auto px-4 py-4">
+            <header className="h-12 border-b border-border/40 bg-background flex items-center justify-between px-4 shrink-0">
+                <div className="container">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                             <Database className="h-4 w-4 text-muted-foreground" />
