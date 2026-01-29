@@ -1,6 +1,6 @@
-# Frontend Features - DB Studio (Database Visualizer)
+# RelWave Features
 
-This document outlines all the frontend features and capabilities of DB Studio - a modern, minimalistic database management application built with Tauri, React, and TypeScript.
+This document outlines all the features and capabilities of RelWave - a modern, cross-platform database management and visualization tool built with Tauri, React, and TypeScript.
 
 **Tech Stack:** Tauri + React 18 + TypeScript + Tailwind CSS + shadcn/ui + React Query + ReactFlow + Recharts + CodeMirror
 
@@ -14,11 +14,21 @@ The main landing page for managing database connections. Features a clean, VS Co
 **Features:**
 - **Database Connection Management**
   - Add new database connections with detailed configuration (name, type, host, port, user, password, SSL options)
-  - **Connect via URL (NEW)** - Paste connection URLs like `postgres://user:pass@host:port/db`
+  - **Connect via URL** - Paste connection URLs like `postgres://user:pass@host:port/db`
   - Auto-parse URLs to populate form fields
   - Delete existing database connections
   - Test database connections with real-time feedback
   - View connection status indicators for all databases
+
+- **Auto-Detect Local Databases (NEW)**
+  - Automatically discover databases running on your machine
+  - Port scanning for PostgreSQL (5432-5434), MySQL (3306-3308)
+  - Docker container detection with image recognition
+  - **Docker Credential Extraction** - Reads `POSTGRES_USER`, `POSTGRES_PASSWORD`, `MYSQL_ROOT_PASSWORD`, etc. from container environment variables
+  - One-click add with pre-filled connection details
+  - Fun auto-generated names (e.g., "swift-phoenix", "cosmic-dragon")
+  - Visual indicators for database source (Local/Docker)
+  - Manual rescan capability
   
 - **Database Statistics Overview**
   - Total connected databases count
@@ -704,15 +714,22 @@ Customize application appearance and preferences.
 
 ### Connection Management
 - **Database Support**
-  - PostgreSQL
-  - MySQL
-  - SQLite
-  - And potentially others
+  - PostgreSQL (full support)
+  - MySQL (full support)
+  - MariaDB (full support) - NEW
 - **SSL/TLS Support**
   - Secure connections
-  - SSL mode configuration
+  - SSL mode configuration (disable, require, verify-ca, verify-full)
   - Certificate handling
-  - **Cloud Database Support (NEW)** - Self-signed certificate handling for Supabase, Railway, Neon, etc.
+  - **Cloud Database Support** - Self-signed certificate handling for Supabase, Railway, Neon, PlanetScale, etc.
+
+### Auto-Discovery (NEW)
+- **Local Database Detection**
+  - TCP port scanning on localhost
+  - Docker container detection via `docker ps`
+  - Environment variable extraction via `docker inspect`
+  - Automatic credential pre-fill for Docker databases
+  - Support for PostgreSQL, MySQL, and MariaDB containers
 
 ### Error Handling
 - **Graceful Degradation**
@@ -723,9 +740,9 @@ Customize application appearance and preferences.
 
 ---
 
-**Total Frontend Features:** 200+
+**Total Features:** 200+
 
-**Last Updated:** January 2026
+**Last Updated:** January 26, 2026
 
 This document is a living reference and will be updated as new features are added to the application.
 
