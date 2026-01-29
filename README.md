@@ -15,7 +15,6 @@ _A powerful, cross-platform desktop tool built with Tauri, React, and TypeScript
 
 [**📥 Download**](https://github.com/Relwave/relwave-app/releases) • [**✨ Features**](#-features) • [**🚀 Quick Start**](#-quick-start) • [**📚 Documentation**](#-documentation)
 
-<img src="https://via.placeholder.com/800x400/1a1a2e/ffffff?text=Screenshot+Placeholder" alt="RelWave Screenshot" width="100%" style="border-radius: 8px; margin: 20px 0;" />
 
 </div>
 
@@ -90,12 +89,12 @@ Complete offline functionality
 <th width="50%">Description</th>
 </tr>
 <tr>
-<td><img src="https://raw.githubusercontent.com/PKief/vscode-material-icon-theme/main/icons/windows.svg" width="20" /> <b>Windows</b></td>
+<td><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/windows11/windows11-original.svg" width="20" /> <b>Windows</b></td>
 <td><code>.exe</code> | <code>.msi</code></td>
 <td>NSIS installer (recommended) or MSI package</td>
 </tr>
 <tr>
-<td><img src="https://raw.githubusercontent.com/PKief/vscode-material-icon-theme/main/icons/folder-linux.svg" width="20" /> <b>Linux</b></td>
+<td><img src="https://cdn.jsdelivr.net/gh/devicons/devicon@latest/icons/linux/linux-original.svg" width="20" /> <b>Linux</b></td>
 <td><code>.deb</code> | <code>.AppImage</code></td>
 <td>Debian package or portable AppImage</td>
 </tr>
