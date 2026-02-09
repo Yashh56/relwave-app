@@ -48,6 +48,25 @@ export class ProjectHandlers {
         }
     }
 
+    async handleGetProjectByDatabaseId(params: any, id: number | string) {
+        try {
+            const { databaseId } = params || {};
+            if (!databaseId) {
+                return this.rpc.sendError(id, {
+                    code: "BAD_REQUEST",
+                    message: "Missing databaseId",
+                });
+            }
+
+            const project = await projectStoreInstance.getProjectByDatabaseId(databaseId);
+            // Return null (not an error) when no project is linked
+            this.rpc.sendResponse(id, { ok: true, data: project });
+        } catch (e: any) {
+            this.logger?.error({ e }, "project.getByDatabaseId failed");
+            this.rpc.sendError(id, { code: "IO_ERROR", message: String(e) });
+        }
+    }
+
     async handleCreateProject(params: any, id: number | string) {
         try {
             const { databaseId, name, description, defaultSchema } = params || {};

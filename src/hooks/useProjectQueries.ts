@@ -14,6 +14,7 @@ import {
 export const projectKeys = {
   all: ["projects"] as const,
   detail: (id: string) => ["projects", id] as const,
+  byDatabaseId: (dbId: string) => ["projects", "byDb", dbId] as const,
   schema: (id: string) => ["projects", id, "schema"] as const,
   erDiagram: (id: string) => ["projects", id, "erDiagram"] as const,
   queries: (id: string) => ["projects", id, "queries"] as const,
@@ -57,6 +58,18 @@ export function useProject(projectId: string | undefined) {
     queryFn: () => bridgeApi.getProject(projectId!),
     staleTime: STALE_TIMES.detail,
     enabled: !!projectId,
+  });
+}
+
+// ============================================
+// Get Project by Database ID (for auto-sync)
+// ============================================
+export function useProjectByDatabaseId(databaseId: string | undefined) {
+  return useQuery({
+    queryKey: projectKeys.byDatabaseId(databaseId!),
+    queryFn: () => bridgeApi.getProjectByDatabaseId(databaseId!),
+    staleTime: STALE_TIMES.detail,
+    enabled: !!databaseId,
   });
 }
 

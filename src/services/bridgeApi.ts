@@ -827,6 +827,21 @@ class BridgeApiService {
   }
 
   /**
+   * Find a project linked to a specific database connection.
+   * Returns null when no project is linked (not an error).
+   */
+  async getProjectByDatabaseId(databaseId: string): Promise<ProjectMetadata | null> {
+    try {
+      if (!databaseId) throw new Error("Database ID is required");
+      const result = await bridgeRequest("project.getByDatabaseId", { databaseId });
+      return result?.data || null;
+    } catch (error: any) {
+      console.error("Failed to get project by database ID:", error);
+      throw new Error(`Failed to get project by database ID: ${error.message}`);
+    }
+  }
+
+  /**
    * Create a new project linked to a database connection
    */
   async createProject(params: CreateProjectParams): Promise<ProjectMetadata> {

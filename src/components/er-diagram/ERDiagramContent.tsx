@@ -1,6 +1,6 @@
 import { toPng, toSvg } from "html-to-image";
 import { ArrowLeft, ChevronDown, Database, Download, Filter, LayoutGrid, Layers, Search, X } from "lucide-react";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
     Background,
@@ -19,7 +19,9 @@ import { toast } from "sonner";
 import { transformSchemaToER } from "@/lib/schemaTransformer";
 import { Spinner } from "@/components/ui/spinner";
 import { useFullSchema } from "@/hooks/useDbQueries";
+import { bridgeApi } from "@/services/bridgeApi";
 import { ColumnDetails, DatabaseSchemaDetails, ForeignKeyInfo, TableSchemaDetails } from "@/types/database";
+import type { ERNode } from "@/types/project";
 import {
     Tooltip,
     TooltipContent,
@@ -55,9 +57,12 @@ interface ERDiagramContentProps {
     nodeTypes: {
         table: React.FC<{ data: TableNodeData }>;
     };
+    projectId?: string | null;
 }
 
-const ERDiagramContent: React.FC<ERDiagramContentProps> = ({ nodeTypes }) => {
+const ER_SAVE_DEBOUNCE_MS = 2000;
+
+const ERDiagramContent: React.FC<ERDiagramContentProps> = ({ nodeTypes, projectId }) => {
     const { id: dbId } = useParams<{ id: string }>();
     const reactFlowInstance = useReactFlow();
 
@@ -95,7 +100,7 @@ const ERDiagramContent: React.FC<ERDiagramContentProps> = ({ nodeTypes }) => {
     const filteredSchemaData = useMemo((): DatabaseSchemaDetails | null => {
         if (!schemaData) return null;
         if (selectedSchema === "__all__") return schemaData;
-        
+
         return {
             ...schemaData,
             schemas: schemaData.schemas.filter(s => s.name === selectedSchema)
@@ -115,6 +120,52 @@ const ERDiagramContent: React.FC<ERDiagramContentProps> = ({ nodeTypes }) => {
             setEdges([]);
         }
     }, [filteredSchemaData, setNodes, setEdges, reactFlowInstance]);
+
+    // -----------------------------------------
+    // Auto-save ER node positions to project
+    // Debounced: only fires ER_SAVE_DEBOUNCE_MS after last node movement
+    // -----------------------------------------
+    const erSaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const initialLayoutDoneRef = useRef(false);
+
+    // Mark that the initial layout just happened so we skip saving it
+    useEffect(() => {
+        initialLayoutDoneRef.current = false;
+        const id = setTimeout(() => { initialLayoutDoneRef.current = true; }, 500);
+        return () => clearTimeout(id);
+    }, [filteredSchemaData]);
+
+    useEffect(() => {
+        // Don't save during initial layout or if no project linked
+        if (!projectId || !initialLayoutDoneRef.current || nodes.length === 0) return;
+
+        if (erSaveTimerRef.current) clearTimeout(erSaveTimerRef.current);
+
+        erSaveTimerRef.current = setTimeout(() => {
+            const viewport = reactFlowInstance?.getViewport();
+            const erNodes: ERNode[] = nodes.map((n) => ({
+                tableId: n.id,
+                x: n.position.x,
+                y: n.position.y,
+                width: n.width ?? undefined,
+                height: n.height ?? undefined,
+            }));
+
+            bridgeApi
+                .saveProjectERDiagram(projectId, {
+                    nodes: erNodes,
+                    zoom: viewport?.zoom,
+                    panX: viewport?.x,
+                    panY: viewport?.y,
+                })
+                .then(() => console.debug("[ProjectSync] ER diagram saved"))
+                .catch((err) => console.warn("[ProjectSync] ER diagram save failed:", err.message));
+        }, ER_SAVE_DEBOUNCE_MS);
+
+        return () => {
+            if (erSaveTimerRef.current) clearTimeout(erSaveTimerRef.current);
+        };
+    }, [nodes, projectId, reactFlowInstance]);
 
     // Filter nodes based on search query
     const filteredNodes = useMemo(() => {

@@ -179,6 +179,9 @@ export function registerDbHandlers(
   rpcRegister("project.get", (p, id) =>
     projectHandlers.handleGetProject(p, id)
   );
+  rpcRegister("project.getByDatabaseId", (p, id) =>
+    projectHandlers.handleGetProjectByDatabaseId(p, id)
+  );
   rpcRegister("project.create", (p, id) =>
     projectHandlers.handleCreateProject(p, id)
   );

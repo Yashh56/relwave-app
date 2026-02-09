@@ -197,6 +197,17 @@ export class ProjectStore {
     }
 
     /**
+     * Find a project linked to a specific database ID.
+     * Returns the first matching project or null.
+     */
+    async getProjectByDatabaseId(databaseId: string): Promise<ProjectMetadata | null> {
+        const index = await this.loadIndex();
+        const entry = index.projects.find((p) => p.databaseId === databaseId);
+        if (!entry) return null;
+        return this.getProject(entry.id);
+    }
+
+    /**
      * Create a new project linked to a database connection
      */
     async createProject(params: {
