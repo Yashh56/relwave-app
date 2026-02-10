@@ -114,7 +114,9 @@ const Projects = () => {
             a.href = url;
             a.download = `${bundle.metadata.name.replace(/\s+/g, "-").toLowerCase()}-export.json`;
             a.click();
-            URL.revokeObjectURL(url);
+            setTimeout(() => {
+                URL.revokeObjectURL(url);
+            }, 0);
             toast.success("Project exported");
         } catch (err: any) {
             toast.error("Export failed", { description: err.message });
