@@ -163,7 +163,7 @@ export class ProjectStore {
     private async writeJSON(filePath: string, data: unknown): Promise<void> {
         const dir = path.dirname(filePath);
         ensureDir(dir);
-        const tmp = filePath + ".tmp";
+        const tmp = `${filePath}.${process.pid}.${uuidv4()}.tmp`;
         await fs.writeFile(tmp, JSON.stringify(data, null, 2), "utf-8");
         await fs.rename(tmp, filePath);
     }
