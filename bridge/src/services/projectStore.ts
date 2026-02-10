@@ -302,9 +302,24 @@ export class ProjectStore {
         if (!meta) return null;
 
         const now = new Date().toISOString();
+
+        // Whitelist only allowed fields from updates to avoid overwriting
+        // sensitive metadata (e.g., id, databaseId, version, timestamps).
+        const { name, description, defaultSchema } = updates;
+        const safeUpdates: Partial<Pick<ProjectMetadata, "name" | "description" | "defaultSchema">> = {};
+        if (name !== undefined) {
+            safeUpdates.name = name;
+        }
+        if (description !== undefined) {
+            safeUpdates.description = description;
+        }
+        if (defaultSchema !== undefined) {
+            safeUpdates.defaultSchema = defaultSchema;
+        }
+
         const updated: ProjectMetadata = {
             ...meta,
-            ...updates,
+            ...safeUpdates,
             updatedAt: now,
         };
 
