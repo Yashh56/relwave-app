@@ -4,50 +4,32 @@ import { toast } from "sonner";
 import { useFullSchema } from "@/hooks/useDbQueries";
 import {
     useProjectSchema,
-    useProjectERDiagram,
     projectKeys,
 } from "@/hooks/useProjectQueries";
 import { bridgeApi } from "@/services/bridgeApi";
 import { snapshotToSchemaDetails, schemaGroupsToSnapshots } from "@/lib/schemaConverters";
-import type {
-    DatabaseSchemaDetails,
-} from "@/types/database";
-import type {
-    ERDiagramFile,
-    ERNode,
-} from "@/types/project";
+import type { DatabaseSchemaDetails } from "@/types/database";
 
 // ================================================================
-// useERDiagramData
+// useSchemaExplorerData
 //
-// Smart data source for the ER diagram that:
+// Smart data source for the Schema Explorer that:
 //
-// 1. OFFLINE-FIRST: Loads from project files (schema.json + er-diagram.json)
-//    even when the database is not connected.
+// 1. OFFLINE-FIRST: Loads from project files (schema.json) even
+//    when the database is not connected.
 //
-// 2. LIVE FALLBACK: Falls back to live DB schema via useFullSchema when
-//    project files are empty or projectId is not provided.
+// 2. LIVE FALLBACK: Falls back to live DB schema via useFullSchema
+//    when project files are empty or projectId is not provided.
 //
-// 3. MERGE: Merges saved ER layout positions (er-diagram.json) with the
-//    current schema data. Tables in schema but missing from ER layout
-//    are auto-placed. Tables in ER layout but removed from schema are
-//    ignored.
-//
-// 4. SYNC: Provides a `syncFromDatabase` callback that pulls fresh
-//    schema from the live DB, saves it to project files (schema.json),
-//    and does NOT touch the ER layout (er-diagram.json).
+// 3. SYNC: Provides a `syncFromDatabase` callback that pulls fresh
+//    schema from the live DB and saves it to project files.
 // ================================================================
 
-// ================================================================
-
-export interface UseERDiagramDataReturn {
-    /** The resolved schema data that the diagram should render */
+export interface UseSchemaExplorerDataReturn {
+    /** The resolved schema data for the explorer to render */
     schemaData: DatabaseSchemaDetails | null;
 
-    /** Saved ER layout (node positions, zoom, pan) — may be null */
-    savedLayout: ERDiagramFile | null;
-
-    /** True while initial data is still loading */
+    /** True while initial data is loading */
     isLoading: boolean;
 
     /** Data source: "live" = from DB, "project" = from project files */
@@ -59,14 +41,14 @@ export interface UseERDiagramDataReturn {
     /** Pull fresh schema from DB → save to project files → reload */
     syncFromDatabase: () => Promise<void>;
 
-    /** Whether sync is currently in progress */
-    isSyncing: boolean;
+    /** Refetch from existing source (not a DB sync — just re-queries) */
+    refetch: () => void;
 }
 
-export function useERDiagramData(
+export function useSchemaExplorerData(
     dbId: string | undefined,
     projectId: string | null | undefined
-): UseERDiagramDataReturn {
+): UseSchemaExplorerDataReturn {
     const queryClient = useQueryClient();
 
     // ---- Live DB schema ----
@@ -74,18 +56,15 @@ export function useERDiagramData(
         data: liveSchema,
         isLoading: liveLoading,
         error: liveError,
+        refetch: refetchLive,
     } = useFullSchema(dbId);
 
     // ---- Project files ----
     const {
         data: projectSchemaFile,
         isLoading: projectSchemaLoading,
+        refetch: refetchProject,
     } = useProjectSchema(projectId ?? undefined);
-
-    const {
-        data: savedLayout,
-        isLoading: erLayoutLoading,
-    } = useProjectERDiagram(projectId ?? undefined);
 
     // ---- Determine the best schema source ----
     const { schemaData, dataSource } = useMemo(() => {
@@ -109,8 +88,20 @@ export function useERDiagramData(
     }, [liveSchema, projectSchemaFile]);
 
     // ---- Loading state ----
-    const isLoading = liveLoading || projectSchemaLoading || erLayoutLoading;
+    const isLoading = liveLoading || projectSchemaLoading;
     const hasLiveSchema = !!liveSchema && !liveError;
+
+    // ---- Refetch from current source ----
+    const refetch = useCallback(() => {
+        if (dataSource === "live") {
+            refetchLive();
+        } else if (dataSource === "project") {
+            refetchProject();
+        } else {
+            refetchLive();
+            refetchProject();
+        }
+    }, [dataSource, refetchLive, refetchProject]);
 
     // ---- Sync from Database ----
     const syncFromDatabase = useCallback(async () => {
@@ -134,7 +125,6 @@ export function useERDiagramData(
             }
 
             // 2. Convert to snapshots and save to project schema.json
-            //    ❗ This does NOT touch er-diagram.json
             const snapshots = schemaGroupsToSnapshots(freshSchema.schemas);
             await bridgeApi.saveProjectSchema(projectId, snapshots);
 
@@ -142,7 +132,6 @@ export function useERDiagramData(
             queryClient.invalidateQueries({
                 queryKey: projectKeys.schema(projectId),
             });
-            // Also refresh the live schema cache
             queryClient.invalidateQueries({
                 queryKey: ["fullSchema", dbId],
             });
@@ -153,10 +142,8 @@ export function useERDiagramData(
                     0
                 )} tables across ${freshSchema.schemas.length} schemas`,
             });
-
-            console.debug("[ERDiagramData] Schema synced from DB, ER layout untouched");
         } catch (err: any) {
-            console.error("[ERDiagramData] Sync failed:", err);
+            console.error("[SchemaExplorerData] Sync failed:", err);
             toast.error("Schema sync failed", {
                 description: err.message || "Could not pull schema from database",
             });
@@ -165,12 +152,10 @@ export function useERDiagramData(
 
     return {
         schemaData,
-        savedLayout: savedLayout ?? null,
         isLoading,
         dataSource,
         hasLiveSchema,
         syncFromDatabase,
-        // isSyncing is tracked by the caller if needed
-        isSyncing: false,
+        refetch,
     };
 }

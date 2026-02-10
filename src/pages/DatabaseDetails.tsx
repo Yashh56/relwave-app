@@ -144,7 +144,7 @@ const DatabaseDetail = () => {
       case 'query-builder':
         return <QueryBuilderPanel dbId={dbId || ''} />;
       case 'schema-explorer':
-        return <SchemaExplorerPanel dbId={dbId || ''} />;
+        return <SchemaExplorerPanel dbId={dbId || ''} projectId={projectId} />;
       case 'er-diagram':
         return <ERDiagramPanel projectId={projectId} />;
       case 'data':
