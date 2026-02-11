@@ -98,6 +98,21 @@ export type ProjectSummary = Pick<
     "id" | "name" | "description" | "engine" | "databaseId" | "createdAt" | "updatedAt"
 >;
 
+/**
+ * Local (git-ignored) configuration for a project.
+ * Contains per-developer settings that should NOT be committed.
+ */
+export type LocalConfig = {
+    /** Override connection URL (developer-specific) */
+    connectionUrl?: string;
+
+    /** Environment label (dev / staging / prod) */
+    environment?: string;
+
+    /** Any developer-specific notes */
+    notes?: string;
+};
+
 
 
 type ProjectIndex = {
@@ -108,6 +123,7 @@ type ProjectIndex = {
 
 const PROJECT_FILES = {
     metadata: "relwave.json",
+    localConfig: "relwave.local.json",
     schema: path.join("schema", "schema.json"),
     erDiagram: path.join("diagrams", "er.json"),
     queries: path.join("queries", "queries.json"),
@@ -274,6 +290,12 @@ export class ProjectStore {
             this.writeJSON(this.projectFile(id, PROJECT_FILES.erDiagram), emptyER),
             this.writeJSON(this.projectFile(id, PROJECT_FILES.queries), emptyQueries),
         ]);
+
+        // Create git-safe scaffolding
+        await this.ensureGitignore(id);
+        // Create empty local config (will be gitignored)
+        const emptyLocal: LocalConfig = {};
+        await this.writeJSON(this.projectFile(id, PROJECT_FILES.localConfig), emptyLocal);
 
         // Update global index
         const index = await this.loadIndex();
@@ -505,6 +527,67 @@ export class ProjectStore {
         ]);
 
         return { metadata, schema, erDiagram, queries };
+    }
+
+    // ==========================================
+    // Local Config (git-ignored)
+    // ==========================================
+
+    /**
+     * Read the local (git-ignored) config for a project
+     */
+    async getLocalConfig(projectId: string): Promise<LocalConfig | null> {
+        return this.readJSON<LocalConfig>(
+            this.projectFile(projectId, PROJECT_FILES.localConfig)
+        );
+    }
+
+    /**
+     * Write/update the local config
+     */
+    async saveLocalConfig(projectId: string, config: LocalConfig): Promise<LocalConfig> {
+        await this.writeJSON(
+            this.projectFile(projectId, PROJECT_FILES.localConfig),
+            config
+        );
+        return config;
+    }
+
+    // ==========================================
+    // .gitignore management
+    // ==========================================
+
+    /**
+     * Ensure a .gitignore file exists in the project directory
+     * with rules to exclude local credentials and caches.
+     */
+    async ensureGitignore(projectId: string): Promise<boolean> {
+        const dir = this.projectDir(projectId);
+        const giPath = path.join(dir, ".gitignore");
+
+        const rules = [
+            "# RelWave — auto-generated",
+            "# Local config (connection credentials, environment overrides)",
+            "relwave.local.json",
+            "",
+            "# OS / Editor",
+            ".DS_Store",
+            "Thumbs.db",
+            "",
+        ].join("\n");
+
+        if (fsSync.existsSync(giPath)) {
+            const existing = await fs.readFile(giPath, "utf-8");
+            if (existing.includes("relwave.local.json")) {
+                return false; // already has our rules
+            }
+            // Append to existing
+            await fs.writeFile(giPath, existing + "\n\n" + rules, "utf-8");
+            return true;
+        }
+
+        await fs.writeFile(giPath, rules, "utf-8");
+        return true;
     }
 }
 

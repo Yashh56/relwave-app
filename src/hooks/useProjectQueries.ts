@@ -19,6 +19,7 @@ export const projectKeys = {
   erDiagram: (id: string) => ["projects", id, "erDiagram"] as const,
   queries: (id: string) => ["projects", id, "queries"] as const,
   export: (id: string) => ["projects", id, "export"] as const,
+  dir: (id: string) => ["projects", id, "dir"] as const,
 };
 
 // ============================================
@@ -70,6 +71,19 @@ export function useProjectByDatabaseId(databaseId: string | undefined) {
     queryFn: () => bridgeApi.getProjectByDatabaseId(databaseId!),
     staleTime: STALE_TIMES.detail,
     enabled: !!databaseId,
+  });
+}
+
+// ============================================
+// Get Project Filesystem Directory
+// ============================================
+export function useProjectDir(projectId: string | null | undefined) {
+  return useQuery({
+    queryKey: projectKeys.dir(projectId!),
+    queryFn: () => bridgeApi.getProjectDir(projectId!),
+    staleTime: Infinity, // path never changes for a given project
+    gcTime: 30 * 60 * 1000,
+    enabled: !!projectId,
   });
 }
 

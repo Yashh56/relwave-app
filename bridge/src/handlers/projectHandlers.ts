@@ -1,6 +1,7 @@
 import { Rpc } from "../types";
 import { Logger } from "pino";
 import { projectStoreInstance } from "../services/projectStore";
+import { getProjectDir } from "../utils/config";
 
 /**
  * RPC handlers for project CRUD and sub-resource operations.
@@ -323,6 +324,74 @@ export class ProjectHandlers {
             this.rpc.sendResponse(id, { ok: true, data: bundle });
         } catch (e: any) {
             this.logger?.error({ e }, "project.export failed");
+            this.rpc.sendError(id, { code: "IO_ERROR", message: String(e) });
+        }
+    }
+
+    async handleGetProjectDir(params: any, id: number | string) {
+        try {
+            const { projectId } = params || {};
+            if (!projectId) {
+                return this.rpc.sendError(id, {
+                    code: "BAD_REQUEST",
+                    message: "Missing projectId",
+                });
+            }
+            const dir = getProjectDir(projectId);
+            this.rpc.sendResponse(id, { ok: true, data: { dir } });
+        } catch (e: any) {
+            this.logger?.error({ e }, "project.getDir failed");
+            this.rpc.sendError(id, { code: "IO_ERROR", message: String(e) });
+        }
+    }
+
+    async handleGetLocalConfig(params: any, id: number | string) {
+        try {
+            const { projectId } = params || {};
+            if (!projectId) {
+                return this.rpc.sendError(id, {
+                    code: "BAD_REQUEST",
+                    message: "Missing projectId",
+                });
+            }
+            const config = await projectStoreInstance.getLocalConfig(projectId);
+            this.rpc.sendResponse(id, { ok: true, data: config });
+        } catch (e: any) {
+            this.logger?.error({ e }, "project.getLocalConfig failed");
+            this.rpc.sendError(id, { code: "IO_ERROR", message: String(e) });
+        }
+    }
+
+    async handleSaveLocalConfig(params: any, id: number | string) {
+        try {
+            const { projectId, config } = params || {};
+            if (!projectId) {
+                return this.rpc.sendError(id, {
+                    code: "BAD_REQUEST",
+                    message: "Missing projectId",
+                });
+            }
+            const saved = await projectStoreInstance.saveLocalConfig(projectId, config || {});
+            this.rpc.sendResponse(id, { ok: true, data: saved });
+        } catch (e: any) {
+            this.logger?.error({ e }, "project.saveLocalConfig failed");
+            this.rpc.sendError(id, { code: "IO_ERROR", message: String(e) });
+        }
+    }
+
+    async handleEnsureGitignore(params: any, id: number | string) {
+        try {
+            const { projectId } = params || {};
+            if (!projectId) {
+                return this.rpc.sendError(id, {
+                    code: "BAD_REQUEST",
+                    message: "Missing projectId",
+                });
+            }
+            const modified = await projectStoreInstance.ensureGitignore(projectId);
+            this.rpc.sendResponse(id, { ok: true, data: { modified } });
+        } catch (e: any) {
+            this.logger?.error({ e }, "project.ensureGitignore failed");
             this.rpc.sendError(id, { code: "IO_ERROR", message: String(e) });
         }
     }

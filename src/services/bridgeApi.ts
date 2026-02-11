@@ -1,5 +1,6 @@
 import { AddDatabaseParams, ConnectionTestResult, CreateTableColumn, DatabaseConnection, DatabaseSchemaDetails, DatabaseStats, DiscoveredDatabase, RunQueryParams, TableRow, UpdateDatabaseParams } from "@/types/database";
 import { ProjectSummary, ProjectMetadata, CreateProjectParams, UpdateProjectParams, SchemaFile, SchemaSnapshot, ERDiagramFile, ERNode, QueriesFile, SavedQuery, ProjectExport } from "@/types/project";
+import { GitStatus, GitFileChange, GitLogEntry, GitBranchInfo } from "@/types/git";
 import { bridgeRequest } from "./bridgeClient";
 
 
@@ -1022,6 +1023,146 @@ class BridgeApiService {
       console.error("Failed to export project:", error);
       throw new Error(`Failed to export project: ${error.message}`);
     }
+  }
+
+  /**
+   * Get the filesystem directory path for a project
+   */
+  async getProjectDir(projectId: string): Promise<string | null> {
+    try {
+      if (!projectId) return null;
+      const result = await bridgeRequest("project.getDir", { projectId });
+      return result?.data?.dir || null;
+    } catch (error: any) {
+      console.error("Failed to get project dir:", error);
+      return null;
+    }
+  }
+
+  // ------------------------------------
+  // 8. GIT OPERATIONS (git.*)
+  // ------------------------------------
+
+  /**
+   * Get git repository status for a directory
+   */
+  async gitStatus(dir: string): Promise<GitStatus> {
+    const result = await bridgeRequest("git.status", { dir });
+    return result?.data;
+  }
+
+  /**
+   * Initialize a new git repo in the given directory
+   */
+  async gitInit(dir: string, defaultBranch = "main"): Promise<GitStatus> {
+    const result = await bridgeRequest("git.init", { dir, defaultBranch });
+    return result?.data;
+  }
+
+  /**
+   * Get list of changed files
+   */
+  async gitChanges(dir: string): Promise<GitFileChange[]> {
+    const result = await bridgeRequest("git.changes", { dir });
+    return result?.data || [];
+  }
+
+  /**
+   * Stage specific files
+   */
+  async gitStage(dir: string, files: string[]): Promise<void> {
+    await bridgeRequest("git.stage", { dir, files });
+  }
+
+  /**
+   * Stage all changes
+   */
+  async gitStageAll(dir: string): Promise<void> {
+    await bridgeRequest("git.stageAll", { dir });
+  }
+
+  /**
+   * Unstage specific files
+   */
+  async gitUnstage(dir: string, files: string[]): Promise<void> {
+    await bridgeRequest("git.unstage", { dir, files });
+  }
+
+  /**
+   * Commit staged changes
+   */
+  async gitCommit(dir: string, message: string): Promise<{ hash: string }> {
+    const result = await bridgeRequest("git.commit", { dir, message });
+    return result?.data;
+  }
+
+  /**
+   * Get recent commit history
+   */
+  async gitLog(dir: string, count = 20): Promise<GitLogEntry[]> {
+    const result = await bridgeRequest("git.log", { dir, count });
+    return result?.data || [];
+  }
+
+  /**
+   * List all branches
+   */
+  async gitBranches(dir: string): Promise<GitBranchInfo[]> {
+    const result = await bridgeRequest("git.branches", { dir });
+    return result?.data || [];
+  }
+
+  /**
+   * Create and checkout a new branch
+   */
+  async gitCreateBranch(dir: string, name: string): Promise<{ branch: string }> {
+    const result = await bridgeRequest("git.createBranch", { dir, name });
+    return result?.data;
+  }
+
+  /**
+   * Checkout an existing branch
+   */
+  async gitCheckout(dir: string, name: string): Promise<{ branch: string }> {
+    const result = await bridgeRequest("git.checkout", { dir, name });
+    return result?.data;
+  }
+
+  /**
+   * Discard unstaged changes for specific files
+   */
+  async gitDiscard(dir: string, files: string[]): Promise<void> {
+    await bridgeRequest("git.discard", { dir, files });
+  }
+
+  /**
+   * Stash all changes
+   */
+  async gitStash(dir: string, message?: string): Promise<void> {
+    await bridgeRequest("git.stash", { dir, message });
+  }
+
+  /**
+   * Pop latest stash
+   */
+  async gitStashPop(dir: string): Promise<void> {
+    await bridgeRequest("git.stashPop", { dir });
+  }
+
+  /**
+   * Get diff for a file (or all files)
+   */
+  async gitDiff(dir: string, file?: string, staged = false): Promise<string> {
+    const result = await bridgeRequest("git.diff", { dir, file, staged });
+    return result?.data?.diff || "";
+  }
+
+  /**
+   * Ensure .gitignore has RelWave rules
+   */
+  async gitEnsureIgnore(dir: string): Promise<{ modified: boolean }> {
+    const result = await bridgeRequest("git.ensureIgnore", { dir });
+    return result?.data;
   }
 }
 

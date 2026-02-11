@@ -8,6 +8,7 @@ import { SessionHandlers } from "./handlers/sessionHandlers";
 import { StatsHandlers } from "./handlers/statsHandlers";
 import { MigrationHandlers } from "./handlers/migrationHandlers";
 import { ProjectHandlers } from "./handlers/projectHandlers";
+import { GitHandlers } from "./handlers/gitHandlers";
 import { discoveryService } from "./services/discoveryService";
 import { Logger } from "pino";
 
@@ -54,6 +55,7 @@ export function registerDbHandlers(
     queryExecutor
   );
   const projectHandlers = new ProjectHandlers(rpc, logger);
+  const gitHandlers = new GitHandlers(rpc, logger);
 
   // ==========================================
   // SESSION MANAGEMENT HANDLERS
@@ -218,6 +220,38 @@ export function registerDbHandlers(
   rpcRegister("project.export", (p, id) =>
     projectHandlers.handleExportProject(p, id)
   );
+  rpcRegister("project.getDir", (p, id) =>
+    projectHandlers.handleGetProjectDir(p, id)
+  );
+  rpcRegister("project.getLocalConfig", (p, id) =>
+    projectHandlers.handleGetLocalConfig(p, id)
+  );
+  rpcRegister("project.saveLocalConfig", (p, id) =>
+    projectHandlers.handleSaveLocalConfig(p, id)
+  );
+  rpcRegister("project.ensureGitignore", (p, id) =>
+    projectHandlers.handleEnsureGitignore(p, id)
+  );
+
+  // ==========================================
+  // GIT HANDLERS
+  // ==========================================
+  rpcRegister("git.status", (p, id) => gitHandlers.handleStatus(p, id));
+  rpcRegister("git.init", (p, id) => gitHandlers.handleInit(p, id));
+  rpcRegister("git.changes", (p, id) => gitHandlers.handleChanges(p, id));
+  rpcRegister("git.stage", (p, id) => gitHandlers.handleStage(p, id));
+  rpcRegister("git.stageAll", (p, id) => gitHandlers.handleStageAll(p, id));
+  rpcRegister("git.unstage", (p, id) => gitHandlers.handleUnstage(p, id));
+  rpcRegister("git.commit", (p, id) => gitHandlers.handleCommit(p, id));
+  rpcRegister("git.log", (p, id) => gitHandlers.handleLog(p, id));
+  rpcRegister("git.branches", (p, id) => gitHandlers.handleBranches(p, id));
+  rpcRegister("git.createBranch", (p, id) => gitHandlers.handleCreateBranch(p, id));
+  rpcRegister("git.checkout", (p, id) => gitHandlers.handleCheckout(p, id));
+  rpcRegister("git.discard", (p, id) => gitHandlers.handleDiscard(p, id));
+  rpcRegister("git.stash", (p, id) => gitHandlers.handleStash(p, id));
+  rpcRegister("git.stashPop", (p, id) => gitHandlers.handleStashPop(p, id));
+  rpcRegister("git.diff", (p, id) => gitHandlers.handleDiff(p, id));
+  rpcRegister("git.ensureIgnore", (p, id) => gitHandlers.handleEnsureIgnore(p, id));
 
   // ==========================================
   // DATABASE DISCOVERY HANDLERS
