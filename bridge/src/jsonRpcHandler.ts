@@ -9,6 +9,7 @@ import { StatsHandlers } from "./handlers/statsHandlers";
 import { MigrationHandlers } from "./handlers/migrationHandlers";
 import { ProjectHandlers } from "./handlers/projectHandlers";
 import { GitHandlers } from "./handlers/gitHandlers";
+import { SchemaDiffHandlers } from "./handlers/schemaDiffHandlers";
 import { discoveryService } from "./services/discoveryService";
 import { Logger } from "pino";
 
@@ -56,6 +57,7 @@ export function registerDbHandlers(
   );
   const projectHandlers = new ProjectHandlers(rpc, logger);
   const gitHandlers = new GitHandlers(rpc, logger);
+  const schemaDiffHandlers = new SchemaDiffHandlers(rpc, logger);
 
   // ==========================================
   // SESSION MANAGEMENT HANDLERS
@@ -252,6 +254,12 @@ export function registerDbHandlers(
   rpcRegister("git.stashPop", (p, id) => gitHandlers.handleStashPop(p, id));
   rpcRegister("git.diff", (p, id) => gitHandlers.handleDiff(p, id));
   rpcRegister("git.ensureIgnore", (p, id) => gitHandlers.handleEnsureIgnore(p, id));
+
+  // ==========================================
+  // SCHEMA DIFF HANDLERS
+  // ==========================================
+  rpcRegister("schema.diff", (p, id) => schemaDiffHandlers.handleDiff(p, id));
+  rpcRegister("schema.fileHistory", (p, id) => schemaDiffHandlers.handleFileHistory(p, id));
 
   // ==========================================
   // DATABASE DISCOVERY HANDLERS

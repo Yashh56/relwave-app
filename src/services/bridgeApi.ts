@@ -1,6 +1,7 @@
 import { AddDatabaseParams, ConnectionTestResult, CreateTableColumn, DatabaseConnection, DatabaseSchemaDetails, DatabaseStats, DiscoveredDatabase, RunQueryParams, TableRow, UpdateDatabaseParams } from "@/types/database";
 import { ProjectSummary, ProjectMetadata, CreateProjectParams, UpdateProjectParams, SchemaFile, SchemaSnapshot, ERDiagramFile, ERNode, QueriesFile, SavedQuery, ProjectExport } from "@/types/project";
 import { GitStatus, GitFileChange, GitLogEntry, GitBranchInfo } from "@/types/git";
+import { SchemaDiffResponse, SchemaFileHistoryResponse } from "@/types/schemaDiff";
 import { bridgeRequest } from "./bridgeClient";
 
 
@@ -1162,6 +1163,34 @@ class BridgeApiService {
    */
   async gitEnsureIgnore(dir: string): Promise<{ modified: boolean }> {
     const result = await bridgeRequest("git.ensureIgnore", { dir });
+    return result?.data;
+  }
+
+  // ------------------------------------
+  // 9. SCHEMA DIFF (schema.*)
+  // ------------------------------------
+
+  /**
+   * Compute structured schema diff between two git refs.
+   * Default: HEAD vs working tree.
+   */
+  async schemaDiff(
+    projectId: string,
+    fromRef = "HEAD",
+    toRef?: string
+  ): Promise<SchemaDiffResponse> {
+    const result = await bridgeRequest("schema.diff", { projectId, fromRef, toRef });
+    return result?.data;
+  }
+
+  /**
+   * Get commit history for a project's schema.json file.
+   */
+  async schemaFileHistory(
+    projectId: string,
+    count = 20
+  ): Promise<SchemaFileHistoryResponse> {
+    const result = await bridgeRequest("schema.fileHistory", { projectId, count });
     return result?.data;
   }
 }

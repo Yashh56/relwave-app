@@ -415,6 +415,44 @@ export class GitService {
     }
 
     /**
+     * Read a file's content at a given git ref (HEAD, branch, commit hash).
+     * Returns null if the file doesn't exist at that ref.
+     */
+    async getFileAtRef(dir: string, filePath: string, ref = "HEAD"): Promise<string | null> {
+        try {
+            return await this.git(dir, "show", `${ref}:${filePath}`);
+        } catch {
+            return null; // file doesn't exist at this ref
+        }
+    }
+
+    /**
+     * List commits that touched a specific file
+     */
+    async fileLog(dir: string, filePath: string, count = 20): Promise<GitLogEntry[]> {
+        try {
+            const SEP = "<<SEP>>";
+            const format = ["%h", "%H", "%an", "%aI", "%s"].join(SEP);
+            const output = await this.git(
+                dir,
+                "log",
+                `--max-count=${count}`,
+                `--format=${format}`,
+                "--follow",
+                "--",
+                filePath
+            );
+            if (!output) return [];
+            return output.split("\n").map((line) => {
+                const [hash, fullHash, author, date, subject] = line.split(SEP);
+                return { hash, fullHash, author, date, subject };
+            });
+        } catch {
+            return [];
+        }
+    }
+
+    /**
      * Generate a .gitignore file suitable for RelWave projects
      */
     generateGitignore(): string {

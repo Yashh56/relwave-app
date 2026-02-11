@@ -33,6 +33,7 @@ import SQLWorkspacePanel from "@/components/workspace/SQLWorkspacePanel";
 import QueryBuilderPanel from "@/components/query-builder/QueryBuilderPanel";
 import SchemaExplorerPanel from "@/components/schema-explorer/SchemaExplorerPanel";
 import ERDiagramPanel from "@/components/er-diagram/ERDiagramPanel";
+import SchemaDiffPanel from "@/components/schema-diff/SchemaDiffPanel";
 import GitStatusBar from "@/components/common/GitStatusBar";
 
 const DatabaseDetail = () => {
@@ -150,6 +151,8 @@ const DatabaseDetail = () => {
         return <SchemaExplorerPanel dbId={dbId || ''} projectId={projectId} />;
       case 'er-diagram':
         return <ERDiagramPanel projectId={projectId} />;
+      case 'schema-diff':
+        return <SchemaDiffPanel projectId={projectId} />;
       case 'data':
       default:
         return (
