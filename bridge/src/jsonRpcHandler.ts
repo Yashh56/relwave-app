@@ -9,6 +9,7 @@ import { StatsHandlers } from "./handlers/statsHandlers";
 import { MigrationHandlers } from "./handlers/migrationHandlers";
 import { ProjectHandlers } from "./handlers/projectHandlers";
 import { GitHandlers } from "./handlers/gitHandlers";
+import { GitAdvancedHandlers } from "./handlers/gitAdvancedHandlers";
 import { SchemaDiffHandlers } from "./handlers/schemaDiffHandlers";
 import { GitWorkflowHandlers } from "./handlers/gitWorkflowHandlers";
 import { discoveryService } from "./services/discoveryService";
@@ -58,6 +59,7 @@ export function registerDbHandlers(
   );
   const projectHandlers = new ProjectHandlers(rpc, logger);
   const gitHandlers = new GitHandlers(rpc, logger);
+  const gitAdvancedHandlers = new GitAdvancedHandlers(rpc, logger);
   const schemaDiffHandlers = new SchemaDiffHandlers(rpc, logger);
   const gitWorkflowHandlers = new GitWorkflowHandlers(rpc, logger);
 
@@ -256,6 +258,54 @@ export function registerDbHandlers(
   rpcRegister("git.stashPop", (p, id) => gitHandlers.handleStashPop(p, id));
   rpcRegister("git.diff", (p, id) => gitHandlers.handleDiff(p, id));
   rpcRegister("git.ensureIgnore", (p, id) => gitHandlers.handleEnsureIgnore(p, id));
+
+  // ==========================================
+  // GIT ADVANCED HANDLERS (P3)
+  // ==========================================
+
+  // Remote management
+  rpcRegister("git.remoteList", (p, id) => gitAdvancedHandlers.handleRemoteList(p, id));
+  rpcRegister("git.remoteAdd", (p, id) => gitAdvancedHandlers.handleRemoteAdd(p, id));
+  rpcRegister("git.remoteRemove", (p, id) => gitAdvancedHandlers.handleRemoteRemove(p, id));
+  rpcRegister("git.remoteGetUrl", (p, id) => gitAdvancedHandlers.handleRemoteGetUrl(p, id));
+  rpcRegister("git.remoteSetUrl", (p, id) => gitAdvancedHandlers.handleRemoteSetUrl(p, id));
+
+  // Push / Pull / Fetch
+  rpcRegister("git.push", (p, id) => gitAdvancedHandlers.handlePush(p, id));
+  rpcRegister("git.pull", (p, id) => gitAdvancedHandlers.handlePull(p, id));
+  rpcRegister("git.fetch", (p, id) => gitAdvancedHandlers.handleFetch(p, id));
+
+  // Merge & Rebase
+  rpcRegister("git.merge", (p, id) => gitAdvancedHandlers.handleMerge(p, id));
+  rpcRegister("git.abortMerge", (p, id) => gitAdvancedHandlers.handleAbortMerge(p, id));
+  rpcRegister("git.rebase", (p, id) => gitAdvancedHandlers.handleRebase(p, id));
+  rpcRegister("git.abortRebase", (p, id) => gitAdvancedHandlers.handleAbortRebase(p, id));
+  rpcRegister("git.continueRebase", (p, id) => gitAdvancedHandlers.handleContinueRebase(p, id));
+
+  // History & Reversal
+  rpcRegister("git.revert", (p, id) => gitAdvancedHandlers.handleRevert(p, id));
+  rpcRegister("git.cherryPick", (p, id) => gitAdvancedHandlers.handleCherryPick(p, id));
+  rpcRegister("git.blame", (p, id) => gitAdvancedHandlers.handleBlame(p, id));
+  rpcRegister("git.show", (p, id) => gitAdvancedHandlers.handleShow(p, id));
+
+  // Stash management
+  rpcRegister("git.stashList", (p, id) => gitAdvancedHandlers.handleStashList(p, id));
+  rpcRegister("git.stashApply", (p, id) => gitAdvancedHandlers.handleStashApply(p, id));
+  rpcRegister("git.stashDrop", (p, id) => gitAdvancedHandlers.handleStashDrop(p, id));
+  rpcRegister("git.stashClear", (p, id) => gitAdvancedHandlers.handleStashClear(p, id));
+
+  // Clone
+  rpcRegister("git.clone", (p, id) => gitAdvancedHandlers.handleClone(p, id));
+
+  // Conflict resolution
+  rpcRegister("git.mergeState", (p, id) => gitAdvancedHandlers.handleMergeState(p, id));
+  rpcRegister("git.markResolved", (p, id) => gitAdvancedHandlers.handleMarkResolved(p, id));
+
+  // Branch protection & management
+  rpcRegister("git.isProtected", (p, id) => gitAdvancedHandlers.handleIsProtected(p, id));
+  rpcRegister("git.protectedBranches", (p, id) => gitAdvancedHandlers.handleProtectedBranches(p, id));
+  rpcRegister("git.deleteBranch", (p, id) => gitAdvancedHandlers.handleDeleteBranch(p, id));
+  rpcRegister("git.renameBranch", (p, id) => gitAdvancedHandlers.handleRenameBranch(p, id));
 
   // ==========================================
   // SCHEMA DIFF HANDLERS

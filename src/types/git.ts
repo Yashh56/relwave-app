@@ -68,3 +68,52 @@ export interface GitBranchInfo {
     /** Remote tracking branch */
     upstream: string | null;
 }
+
+// ==========================================
+// P3 — Remote, Merge, Stash, Blame, Clone
+// ==========================================
+
+export interface GitRemoteInfo {
+    /** Remote name (e.g. "origin") */
+    name: string;
+    /** Fetch URL */
+    fetchUrl: string;
+    /** Push URL */
+    pushUrl: string;
+}
+
+export interface GitStashEntry {
+    /** Stash index (0 = most recent) */
+    index: number;
+    /** Stash message */
+    message: string;
+    /** When the stash was created */
+    date: string;
+}
+
+export interface GitBlameEntry {
+    /** Short commit hash */
+    hash: string;
+    /** Author name */
+    author: string;
+    /** Commit date ISO string */
+    date: string;
+    /** 1-based line number */
+    lineNumber: number;
+    /** Line content */
+    content: string;
+}
+
+export interface GitMergeState {
+    /** Whether a merge operation is in progress */
+    mergeInProgress: boolean;
+    /** Whether a rebase operation is in progress */
+    rebaseInProgress: boolean;
+    /** Files with unresolved conflicts */
+    conflictedFiles: string[];
+}
+
+export interface GitPushPullResult {
+    /** Command output text */
+    output: string;
+}

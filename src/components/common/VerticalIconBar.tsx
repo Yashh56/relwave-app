@@ -1,4 +1,4 @@
-import { Home, Database, Search, GitBranch, GitCompareArrows, History, Settings, Layers, Terminal, FolderOpen } from 'lucide-react';
+import { Home, Database, Search, GitBranch, GitCompareArrows, GitMerge, History, Settings, Layers, Terminal, FolderOpen } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
@@ -7,7 +7,7 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 
-export type PanelType = 'data' | 'sql-workspace' | 'query-builder' | 'schema-explorer' | 'er-diagram' | 'schema-diff' | 'migration-timeline';
+export type PanelType = 'data' | 'sql-workspace' | 'query-builder' | 'schema-explorer' | 'er-diagram' | 'schema-diff' | 'migration-timeline' | 'git-ops';
 
 interface VerticalIconBarProps {
     dbId?: string;
@@ -40,6 +40,7 @@ export default function VerticalIconBar({ dbId, activePanel, onPanelChange }: Ve
         { icon: Database, label: 'ER Diagram', panel: 'er-diagram' },
         { icon: GitCompareArrows, label: 'Schema Diff', panel: 'schema-diff' },
         { icon: History, label: 'Migration Timeline', panel: 'migration-timeline' },
+        { icon: GitMerge, label: 'Git Operations', panel: 'git-ops' },
     ] : [];
 
     return (

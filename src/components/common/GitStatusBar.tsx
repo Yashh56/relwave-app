@@ -10,6 +10,13 @@ import {
     ChevronDown,
     RotateCcw,
     FolderGit2,
+    Globe,
+    CloudUpload,
+    CloudDownload,
+    RefreshCw,
+    GitMerge,
+    Trash2,
+    AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -23,6 +30,9 @@ import {
     DropdownMenuItem,
     DropdownMenuSeparator,
     DropdownMenuTrigger,
+    DropdownMenuSub,
+    DropdownMenuSubContent,
+    DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
     Dialog,
@@ -43,8 +53,21 @@ import {
     useGitCheckout,
     useGitCreateBranch,
 } from "@/hooks/useGitQueries";
+import {
+    useGitPush,
+    useGitPull,
+    useGitFetch,
+    useGitRemotes,
+    useGitMerge,
+    useGitDeleteBranch,
+    useGitIsProtected,
+    useGitMergeState,
+    useGitAbortMerge,
+    useGitAbortRebase,
+} from "@/hooks/useGitAdvanced";
 import { toast } from "sonner";
 import type { GitBranchInfo } from "@/types/git";
+import RemoteConfigDialog from "./RemoteConfigDialog";
 
 interface GitStatusBarProps {
     /**
@@ -70,6 +93,30 @@ export default function GitStatusBar({ projectDir }: GitStatusBarProps) {
     const [commitMessage, setCommitMessage] = useState("");
     const [branchDialogOpen, setBranchDialogOpen] = useState(false);
     const [newBranchName, setNewBranchName] = useState("");
+    const [remoteDialogOpen, setRemoteDialogOpen] = useState(false);
+    const [mergeDialogOpen, setMergeDialogOpen] = useState(false);
+    const [mergeBranch, setMergeBranch] = useState("");
+
+    // P3 hooks
+    const pushMutation = useGitPush(projectDir);
+    const pullMutation = useGitPull(projectDir);
+    const fetchMutation = useGitFetch(projectDir);
+    const mergeMutation = useGitMerge(projectDir);
+    const deleteBranchMutation = useGitDeleteBranch(projectDir);
+    const abortMergeMutation = useGitAbortMerge(projectDir);
+    const abortRebaseMutation = useGitAbortRebase(projectDir);
+    const { data: remotes } = useGitRemotes(
+        status?.isGitRepo ? projectDir : undefined
+    );
+    const { data: mergeState } = useGitMergeState(
+        status?.isGitRepo ? projectDir : undefined
+    );
+    const { data: protectionInfo } = useGitIsProtected(
+        projectDir,
+        status?.branch
+    );
+
+    const hasRemote = remotes && remotes.length > 0;
 
     // --- Not a git repo: show init button ---
     if (!projectDir) return null;
@@ -152,6 +199,77 @@ export default function GitStatusBar({ projectDir }: GitStatusBarProps) {
         }
     };
 
+    const handlePush = async () => {
+        try {
+            const needsUpstream = !status?.upstream;
+            await pushMutation.mutateAsync({
+                setUpstream: needsUpstream,
+                branch: needsUpstream ? (status?.branch ?? undefined) : undefined,
+            });
+            toast.success("Pushed successfully");
+        } catch (e: any) {
+            toast.error("Push failed: " + e.message);
+        }
+    };
+
+    const handlePull = async () => {
+        try {
+            await pullMutation.mutateAsync();
+            toast.success("Pulled successfully");
+        } catch (e: any) {
+            toast.error("Pull failed: " + e.message);
+        }
+    };
+
+    const handleFetch = async () => {
+        try {
+            await fetchMutation.mutateAsync({ all: true, prune: true });
+            toast.success("Fetched from all remotes");
+        } catch (e: any) {
+            toast.error("Fetch failed: " + e.message);
+        }
+    };
+
+    const handleMerge = async () => {
+        if (!mergeBranch.trim()) return;
+        try {
+            await mergeMutation.mutateAsync({ branch: mergeBranch.trim(), noFF: true });
+            toast.success(`Merged ${mergeBranch.trim()} into ${status?.branch}`);
+            setMergeBranch("");
+            setMergeDialogOpen(false);
+        } catch (e: any) {
+            toast.error("Merge failed: " + e.message);
+            // Don't close dialog on conflict — user needs to see the error
+        }
+    };
+
+    const handleDeleteBranch = async (name: string) => {
+        try {
+            await deleteBranchMutation.mutateAsync({ name });
+            toast.success(`Deleted branch ${name}`);
+        } catch (e: any) {
+            toast.error("Delete branch failed: " + e.message);
+        }
+    };
+
+    const handleAbortMerge = async () => {
+        try {
+            await abortMergeMutation.mutateAsync();
+            toast.success("Merge aborted");
+        } catch (e: any) {
+            toast.error("Abort failed: " + e.message);
+        }
+    };
+
+    const handleAbortRebase = async () => {
+        try {
+            await abortRebaseMutation.mutateAsync();
+            toast.success("Rebase aborted");
+        } catch (e: any) {
+            toast.error("Abort failed: " + e.message);
+        }
+    };
+
     return (
         <>
             <div className="flex items-center gap-1 text-xs">
@@ -189,6 +307,19 @@ export default function GitStatusBar({ projectDir }: GitStatusBarProps) {
                                             {b.upstream}
                                         </span>
                                     )}
+                                    {!b.current && (
+                                        <Button
+                                            variant="ghost"
+                                            size="sm"
+                                            className="h-4 w-4 p-0 text-destructive hover:text-destructive opacity-0 group-hover:opacity-100"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                handleDeleteBranch(b.name);
+                                            }}
+                                        >
+                                            <Trash2 className="h-2.5 w-2.5" />
+                                        </Button>
+                                    )}
                                 </div>
                             </DropdownMenuItem>
                         ))}
@@ -197,33 +328,174 @@ export default function GitStatusBar({ projectDir }: GitStatusBarProps) {
                             <Plus className="h-3 w-3 mr-2" />
                             New Branch...
                         </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => setMergeDialogOpen(true)}>
+                            <GitMerge className="h-3 w-3 mr-2" />
+                            Merge Branch...
+                        </DropdownMenuItem>
+                        {hasRemote && (
+                            <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={handlePush} disabled={pushMutation.isPending}>
+                                    <CloudUpload className="h-3 w-3 mr-2" />
+                                    Push
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={handlePull} disabled={pullMutation.isPending}>
+                                    <CloudDownload className="h-3 w-3 mr-2" />
+                                    Pull
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={handleFetch} disabled={fetchMutation.isPending}>
+                                    <RefreshCw className="h-3 w-3 mr-2" />
+                                    Fetch All
+                                </DropdownMenuItem>
+                            </>
+                        )}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => setRemoteDialogOpen(true)}>
+                            <Globe className="h-3 w-3 mr-2" />
+                            Manage Remotes...
+                        </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
 
-                {/* Sync indicators: ahead / behind */}
-                {status.ahead != null && status.ahead > 0 && (
+                {/* Sync indicators: ahead / behind — now clickable for push/pull */}
+                {hasRemote && status.ahead != null && status.ahead > 0 && (
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                                <ArrowUp className="h-2.5 w-2.5" />
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 px-1 text-[10px] text-muted-foreground hover:text-foreground gap-0.5"
+                                onClick={handlePush}
+                                disabled={pushMutation.isPending}
+                            >
+                                {pushMutation.isPending ? (
+                                    <Spinner className="h-2.5 w-2.5" />
+                                ) : (
+                                    <ArrowUp className="h-2.5 w-2.5" />
+                                )}
                                 {status.ahead}
-                            </span>
+                            </Button>
                         </TooltipTrigger>
                         <TooltipContent side="top">
-                            <p>{status.ahead} commit{status.ahead > 1 ? "s" : ""} ahead of {status.upstream}</p>
+                            <p>Push {status.ahead} commit{status.ahead > 1 ? "s" : ""} to {status.upstream}</p>
                         </TooltipContent>
                     </Tooltip>
                 )}
-                {status.behind != null && status.behind > 0 && (
+                {hasRemote && status.behind != null && status.behind > 0 && (
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                                <ArrowDown className="h-2.5 w-2.5" />
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 px-1 text-[10px] text-muted-foreground hover:text-foreground gap-0.5"
+                                onClick={handlePull}
+                                disabled={pullMutation.isPending}
+                            >
+                                {pullMutation.isPending ? (
+                                    <Spinner className="h-2.5 w-2.5" />
+                                ) : (
+                                    <ArrowDown className="h-2.5 w-2.5" />
+                                )}
                                 {status.behind}
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                            <p>Pull {status.behind} commit{status.behind > 1 ? "s" : ""} from {status.upstream}</p>
+                        </TooltipContent>
+                    </Tooltip>
+                )}
+
+                {/* Push / Pull / Fetch / Remote buttons */}
+                {hasRemote && (status.ahead === 0 || status.ahead == null) && (status.behind === 0 || status.behind == null) && (
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 px-1 text-[10px] text-muted-foreground hover:text-foreground"
+                                onClick={handleFetch}
+                                disabled={fetchMutation.isPending}
+                            >
+                                {fetchMutation.isPending ? (
+                                    <Spinner className="h-2.5 w-2.5" />
+                                ) : (
+                                    <RefreshCw className="h-2.5 w-2.5" />
+                                )}
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                            <p>Fetch from all remotes</p>
+                        </TooltipContent>
+                    </Tooltip>
+                )}
+
+                {!hasRemote && (
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 px-1 text-[10px] text-muted-foreground hover:text-foreground"
+                                onClick={() => setRemoteDialogOpen(true)}
+                            >
+                                <Globe className="h-2.5 w-2.5" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                            <p>Add a remote to enable push/pull</p>
+                        </TooltipContent>
+                    </Tooltip>
+                )}
+
+                {/* Merge/rebase conflict banner */}
+                {mergeState?.mergeInProgress && (
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 px-1.5 text-xs text-orange-500 hover:text-orange-400 gap-1"
+                                onClick={handleAbortMerge}
+                            >
+                                <AlertTriangle className="h-2.5 w-2.5" />
+                                MERGING
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                            <p>Merge in progress ({mergeState.conflictedFiles.length} conflicts). Click to abort.</p>
+                        </TooltipContent>
+                    </Tooltip>
+                )}
+                {mergeState?.rebaseInProgress && (
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 px-1.5 text-xs text-orange-500 hover:text-orange-400 gap-1"
+                                onClick={handleAbortRebase}
+                            >
+                                <AlertTriangle className="h-2.5 w-2.5" />
+                                REBASING
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                            <p>Rebase in progress ({mergeState.conflictedFiles.length} conflicts). Click to abort.</p>
+                        </TooltipContent>
+                    </Tooltip>
+                )}
+
+                {/* Production branch guard */}
+                {protectionInfo?.isProtected && (
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <span className="inline-flex items-center gap-0.5 text-[10px] text-red-400">
+                                <AlertTriangle className="h-2.5 w-2.5" />
+                                protected
                             </span>
                         </TooltipTrigger>
                         <TooltipContent side="top">
-                            <p>{status.behind} commit{status.behind > 1 ? "s" : ""} behind {status.upstream}</p>
+                            <p>This is a protected branch. Force-push is disabled.</p>
                         </TooltipContent>
                     </Tooltip>
                 )}
@@ -374,6 +646,76 @@ export default function GitStatusBar({ projectDir }: GitStatusBarProps) {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* Merge Branch Dialog */}
+            <Dialog open={mergeDialogOpen} onOpenChange={setMergeDialogOpen}>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle className="flex items-center gap-2">
+                            <GitMerge className="h-4 w-4" />
+                            Merge Branch
+                        </DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-3">
+                        <div className="text-xs text-muted-foreground">
+                            Merge a branch into <span className="font-mono font-medium">{status.branch}</span>.
+                        </div>
+                        <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button
+                                    variant="outline"
+                                    size="sm"
+                                    className="w-full justify-between font-mono text-xs"
+                                >
+                                    {mergeBranch || "Select branch to merge..."}
+                                    <ChevronDown className="h-3 w-3 opacity-50" />
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent className="w-full min-w-[200px]">
+                                {branches
+                                    ?.filter((b: GitBranchInfo) => !b.current)
+                                    .map((b: GitBranchInfo) => (
+                                        <DropdownMenuItem
+                                            key={b.name}
+                                            onClick={() => setMergeBranch(b.name)}
+                                            className="font-mono text-xs"
+                                        >
+                                            {b.name}
+                                        </DropdownMenuItem>
+                                    ))}
+                            </DropdownMenuContent>
+                        </DropdownMenu>
+                    </div>
+                    <DialogFooter>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => { setMergeDialogOpen(false); setMergeBranch(""); }}
+                        >
+                            Cancel
+                        </Button>
+                        <Button
+                            size="sm"
+                            onClick={handleMerge}
+                            disabled={!mergeBranch.trim() || mergeMutation.isPending}
+                        >
+                            {mergeMutation.isPending ? (
+                                <Spinner className="h-3.5 w-3.5 mr-1.5" />
+                            ) : (
+                                <GitMerge className="h-3.5 w-3.5 mr-1.5" />
+                            )}
+                            Merge
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+
+            {/* Remote Config Dialog */}
+            <RemoteConfigDialog
+                open={remoteDialogOpen}
+                onOpenChange={setRemoteDialogOpen}
+                projectDir={projectDir}
+            />
         </>
     );
 }

@@ -388,6 +388,17 @@ export class ProjectStore {
         const meta = await this.getProject(projectId);
         if (!meta) throw new Error(`Project ${projectId} not found`);
 
+        // Read existing file and skip write if schema data is identical
+        // (avoids cachedAt churn that creates phantom git changes)
+        const existing = await this.getSchema(projectId);
+        if (existing) {
+            const oldData = JSON.stringify(existing.schemas);
+            const newData = JSON.stringify(schemas);
+            if (oldData === newData) {
+                return existing; // nothing changed — keep old cachedAt
+            }
+        }
+
         const now = new Date().toISOString();
         const file: SchemaFile = {
             version: 1,

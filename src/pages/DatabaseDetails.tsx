@@ -35,7 +35,9 @@ import SchemaExplorerPanel from "@/components/schema-explorer/SchemaExplorerPane
 import ERDiagramPanel from "@/components/er-diagram/ERDiagramPanel";
 import SchemaDiffPanel from "@/components/schema-diff/SchemaDiffPanel";
 import MigrationTimelinePanel from "@/components/migration-timeline/MigrationTimelinePanel";
+import GitOpsPanel from "@/components/git/GitOpsPanel";
 import GitStatusBar from "@/components/common/GitStatusBar";
+import { useGitStatus } from "@/hooks/useGitQueries";
 import EnvironmentSwitcher from "@/components/common/EnvironmentSwitcher";
 
 const DatabaseDetail = () => {
@@ -102,6 +104,7 @@ const DatabaseDetail = () => {
   const { data: schemaData } = useFullSchema(dbId);
   const { projectId } = useProjectSync(dbId, schemaData ?? undefined);
   const { data: projectDir } = useProjectDir(projectId);
+  const { data: gitStatus } = useGitStatus(projectDir);
 
   if (bridgeLoading || bridgeReady === undefined) {
     return <BridgeLoader />;
@@ -157,6 +160,8 @@ const DatabaseDetail = () => {
         return <SchemaDiffPanel projectId={projectId} />;
       case 'migration-timeline':
         return <MigrationTimelinePanel projectId={projectId} />;
+      case 'git-ops':
+        return <GitOpsPanel projectDir={projectDir} currentBranch={gitStatus?.branch ?? null} />;
       case 'data':
       default:
         return (

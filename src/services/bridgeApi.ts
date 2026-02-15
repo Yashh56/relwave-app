@@ -1,6 +1,6 @@
 import { AddDatabaseParams, ConnectionTestResult, CreateTableColumn, DatabaseConnection, DatabaseSchemaDetails, DatabaseStats, DiscoveredDatabase, RunQueryParams, TableRow, UpdateDatabaseParams } from "@/types/database";
 import { ProjectSummary, ProjectMetadata, CreateProjectParams, UpdateProjectParams, SchemaFile, SchemaSnapshot, ERDiagramFile, ERNode, QueriesFile, SavedQuery, ProjectExport } from "@/types/project";
-import { GitStatus, GitFileChange, GitLogEntry, GitBranchInfo } from "@/types/git";
+import { GitStatus, GitFileChange, GitLogEntry, GitBranchInfo, GitRemoteInfo, GitStashEntry, GitBlameEntry, GitMergeState, GitPushPullResult } from "@/types/git";
 import { SchemaDiffResponse, SchemaFileHistoryResponse } from "@/types/schemaDiff";
 import {
   TimelineEntry,
@@ -1324,6 +1324,205 @@ class BridgeApiService {
       targetBranch,
     });
     return result?.data;
+  }
+
+  // ------------------------------------
+  // 13. GIT REMOTE OPERATIONS (P3)
+  // ------------------------------------
+
+  /** List all configured remotes */
+  async gitRemoteList(dir: string): Promise<GitRemoteInfo[]> {
+    const result = await bridgeRequest("git.remoteList", { dir });
+    return result?.data || [];
+  }
+
+  /** Add a named remote */
+  async gitRemoteAdd(dir: string, name: string, url: string): Promise<void> {
+    await bridgeRequest("git.remoteAdd", { dir, name, url });
+  }
+
+  /** Remove a named remote */
+  async gitRemoteRemove(dir: string, name: string): Promise<void> {
+    await bridgeRequest("git.remoteRemove", { dir, name });
+  }
+
+  /** Get the URL of a remote */
+  async gitRemoteGetUrl(dir: string, name = "origin"): Promise<string | null> {
+    const result = await bridgeRequest("git.remoteGetUrl", { dir, name });
+    return result?.data?.url || null;
+  }
+
+  /** Change the URL of an existing remote */
+  async gitRemoteSetUrl(dir: string, name: string, url: string): Promise<void> {
+    await bridgeRequest("git.remoteSetUrl", { dir, name, url });
+  }
+
+  // ------------------------------------
+  // 14. GIT PUSH / PULL / FETCH (P3)
+  // ------------------------------------
+
+  /** Push commits to a remote */
+  async gitPush(
+    dir: string,
+    remote = "origin",
+    branch?: string,
+    options?: { force?: boolean; setUpstream?: boolean }
+  ): Promise<GitPushPullResult> {
+    const result = await bridgeRequest("git.push", { dir, remote, branch, ...options });
+    return result?.data || { output: "" };
+  }
+
+  /** Pull from a remote */
+  async gitPull(
+    dir: string,
+    remote = "origin",
+    branch?: string,
+    options?: { rebase?: boolean }
+  ): Promise<GitPushPullResult> {
+    const result = await bridgeRequest("git.pull", { dir, remote, branch, ...options });
+    return result?.data || { output: "" };
+  }
+
+  /** Fetch from a remote (or all) */
+  async gitFetch(
+    dir: string,
+    remote?: string,
+    options?: { prune?: boolean; all?: boolean }
+  ): Promise<GitPushPullResult> {
+    const result = await bridgeRequest("git.fetch", { dir, remote, ...options });
+    return result?.data || { output: "" };
+  }
+
+  // ------------------------------------
+  // 15. GIT MERGE & REBASE (P3)
+  // ------------------------------------
+
+  /** Merge a branch into current */
+  async gitMerge(
+    dir: string,
+    branch: string,
+    options?: { noFF?: boolean; squash?: boolean; message?: string }
+  ): Promise<GitPushPullResult> {
+    const result = await bridgeRequest("git.merge", { dir, branch, ...options });
+    return result?.data || { output: "" };
+  }
+
+  /** Abort an in-progress merge */
+  async gitAbortMerge(dir: string): Promise<void> {
+    await bridgeRequest("git.abortMerge", { dir });
+  }
+
+  /** Rebase current branch onto target */
+  async gitRebase(dir: string, onto: string): Promise<GitPushPullResult> {
+    const result = await bridgeRequest("git.rebase", { dir, onto });
+    return result?.data || { output: "" };
+  }
+
+  /** Abort an in-progress rebase */
+  async gitAbortRebase(dir: string): Promise<void> {
+    await bridgeRequest("git.abortRebase", { dir });
+  }
+
+  /** Continue a rebase after conflict resolution */
+  async gitContinueRebase(dir: string): Promise<GitPushPullResult> {
+    const result = await bridgeRequest("git.continueRebase", { dir });
+    return result?.data || { output: "" };
+  }
+
+  /** Get current merge/rebase state */
+  async gitMergeState(dir: string): Promise<GitMergeState> {
+    const result = await bridgeRequest("git.mergeState", { dir });
+    return result?.data || { mergeInProgress: false, rebaseInProgress: false, conflictedFiles: [] };
+  }
+
+  /** Mark conflicted files as resolved */
+  async gitMarkResolved(dir: string, files: string[]): Promise<void> {
+    await bridgeRequest("git.markResolved", { dir, files });
+  }
+
+  // ------------------------------------
+  // 16. GIT HISTORY & REVERSAL (P3)
+  // ------------------------------------
+
+  /** Revert a specific commit */
+  async gitRevert(dir: string, hash: string, noCommit = false): Promise<GitPushPullResult> {
+    const result = await bridgeRequest("git.revert", { dir, hash, noCommit });
+    return result?.data || { output: "" };
+  }
+
+  /** Cherry-pick a commit */
+  async gitCherryPick(dir: string, hash: string, noCommit = false): Promise<GitPushPullResult> {
+    const result = await bridgeRequest("git.cherryPick", { dir, hash, noCommit });
+    return result?.data || { output: "" };
+  }
+
+  /** Get line-by-line blame for a file */
+  async gitBlame(dir: string, file: string): Promise<GitBlameEntry[]> {
+    const result = await bridgeRequest("git.blame", { dir, file });
+    return result?.data || [];
+  }
+
+  /** Show file content at a specific ref */
+  async gitShow(dir: string, ref: string, file: string): Promise<string | null> {
+    const result = await bridgeRequest("git.show", { dir, ref, file });
+    return result?.data?.content ?? null;
+  }
+
+  // ------------------------------------
+  // 17. GIT STASH MANAGEMENT (P3)
+  // ------------------------------------
+
+  /** List all stash entries */
+  async gitStashList(dir: string): Promise<GitStashEntry[]> {
+    const result = await bridgeRequest("git.stashList", { dir });
+    return result?.data || [];
+  }
+
+  /** Apply a stash entry without removing it */
+  async gitStashApply(dir: string, index = 0): Promise<void> {
+    await bridgeRequest("git.stashApply", { dir, index });
+  }
+
+  /** Drop a stash entry */
+  async gitStashDrop(dir: string, index = 0): Promise<void> {
+    await bridgeRequest("git.stashDrop", { dir, index });
+  }
+
+  /** Clear all stash entries */
+  async gitStashClear(dir: string): Promise<void> {
+    await bridgeRequest("git.stashClear", { dir });
+  }
+
+  // ------------------------------------
+  // 18. GIT CLONE & BRANCH MGMT (P3)
+  // ------------------------------------
+
+  /** Clone a repository */
+  async gitClone(url: string, dest: string, branch?: string): Promise<string> {
+    const result = await bridgeRequest("git.clone", { url, dest, branch });
+    return result?.data?.path || dest;
+  }
+
+  /** Check if a branch is protected */
+  async gitIsProtected(dir: string, branch: string): Promise<{ isProtected: boolean; patterns: string[] }> {
+    const result = await bridgeRequest("git.isProtected", { dir, branch });
+    return result?.data || { isProtected: false, patterns: [] };
+  }
+
+  /** Get protected branch patterns */
+  async gitProtectedBranches(dir: string): Promise<string[]> {
+    const result = await bridgeRequest("git.protectedBranches", { dir });
+    return result?.data?.patterns || [];
+  }
+
+  /** Delete a local branch */
+  async gitDeleteBranch(dir: string, name: string, force = false): Promise<void> {
+    await bridgeRequest("git.deleteBranch", { dir, name, force });
+  }
+
+  /** Rename the current branch */
+  async gitRenameBranch(dir: string, newName: string): Promise<void> {
+    await bridgeRequest("git.renameBranch", { dir, newName });
   }
 }
 
