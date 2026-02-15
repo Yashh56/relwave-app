@@ -9,8 +9,7 @@ import { StatsHandlers } from "./handlers/statsHandlers";
 import { MigrationHandlers } from "./handlers/migrationHandlers";
 import { ProjectHandlers } from "./handlers/projectHandlers";
 import { GitHandlers } from "./handlers/gitHandlers";
-import { SchemaDiffHandlers } from "./handlers/schemaDiffHandlers";
-import { GitWorkflowHandlers } from "./handlers/gitWorkflowHandlers";
+import { GitAdvancedHandlers } from "./handlers/gitAdvancedHandlers";
 import { discoveryService } from "./services/discoveryService";
 import { Logger } from "pino";
 
@@ -58,8 +57,7 @@ export function registerDbHandlers(
   );
   const projectHandlers = new ProjectHandlers(rpc, logger);
   const gitHandlers = new GitHandlers(rpc, logger);
-  const schemaDiffHandlers = new SchemaDiffHandlers(rpc, logger);
-  const gitWorkflowHandlers = new GitWorkflowHandlers(rpc, logger);
+  const gitAdvancedHandlers = new GitAdvancedHandlers(rpc, logger);
 
   // ==========================================
   // SESSION MANAGEMENT HANDLERS
@@ -258,29 +256,23 @@ export function registerDbHandlers(
   rpcRegister("git.ensureIgnore", (p, id) => gitHandlers.handleEnsureIgnore(p, id));
 
   // ==========================================
-  // SCHEMA DIFF HANDLERS
-  // ==========================================
-  rpcRegister("schema.diff", (p, id) => schemaDiffHandlers.handleDiff(p, id));
-  rpcRegister("schema.fileHistory", (p, id) => schemaDiffHandlers.handleFileHistory(p, id));
-
-  // ==========================================
-  // GIT WORKFLOW HANDLERS (P2)
+  // GIT ADVANCED HANDLERS
   // ==========================================
 
-  // Timeline
-  rpcRegister("timeline.list", (p, id) => gitWorkflowHandlers.handleTimelineList(p, id));
-  rpcRegister("timeline.commitSummary", (p, id) => gitWorkflowHandlers.handleCommitSummary(p, id));
-  rpcRegister("timeline.autoCommit", (p, id) => gitWorkflowHandlers.handleAutoCommit(p, id));
+  // Remote management
+  rpcRegister("git.remoteList", (p, id) => gitAdvancedHandlers.handleRemoteList(p, id));
+  rpcRegister("git.remoteAdd", (p, id) => gitAdvancedHandlers.handleRemoteAdd(p, id));
+  rpcRegister("git.remoteRemove", (p, id) => gitAdvancedHandlers.handleRemoteRemove(p, id));
+  rpcRegister("git.remoteGetUrl", (p, id) => gitAdvancedHandlers.handleRemoteGetUrl(p, id));
+  rpcRegister("git.remoteSetUrl", (p, id) => gitAdvancedHandlers.handleRemoteSetUrl(p, id));
 
-  // Environment
-  rpcRegister("env.getConfig", (p, id) => gitWorkflowHandlers.handleEnvGetConfig(p, id));
-  rpcRegister("env.saveConfig", (p, id) => gitWorkflowHandlers.handleEnvSaveConfig(p, id));
-  rpcRegister("env.setMapping", (p, id) => gitWorkflowHandlers.handleEnvSetMapping(p, id));
-  rpcRegister("env.removeMapping", (p, id) => gitWorkflowHandlers.handleEnvRemoveMapping(p, id));
-  rpcRegister("env.resolve", (p, id) => gitWorkflowHandlers.handleEnvResolve(p, id));
+  // Push / Pull / Fetch
+  rpcRegister("git.push", (p, id) => gitAdvancedHandlers.handlePush(p, id));
+  rpcRegister("git.pull", (p, id) => gitAdvancedHandlers.handlePull(p, id));
+  rpcRegister("git.fetch", (p, id) => gitAdvancedHandlers.handleFetch(p, id));
 
-  // Conflict Detection
-  rpcRegister("conflict.detect", (p, id) => gitWorkflowHandlers.handleConflictDetect(p, id));
+  // Rollback
+  rpcRegister("git.revert", (p, id) => gitAdvancedHandlers.handleRevert(p, id));
 
   // ==========================================
   // DATABASE DISCOVERY HANDLERS

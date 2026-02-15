@@ -1,16 +1,6 @@
 import { AddDatabaseParams, ConnectionTestResult, CreateTableColumn, DatabaseConnection, DatabaseSchemaDetails, DatabaseStats, DiscoveredDatabase, RunQueryParams, TableRow, UpdateDatabaseParams } from "@/types/database";
 import { ProjectSummary, ProjectMetadata, CreateProjectParams, UpdateProjectParams, SchemaFile, SchemaSnapshot, ERDiagramFile, ERNode, QueriesFile, SavedQuery, ProjectExport } from "@/types/project";
-import { GitStatus, GitFileChange, GitLogEntry, GitBranchInfo } from "@/types/git";
-import { SchemaDiffResponse, SchemaFileHistoryResponse } from "@/types/schemaDiff";
-import {
-  TimelineEntry,
-  TimelineChangeSummary,
-  AutoCommitResult,
-  EnvironmentConfig,
-  EnvironmentMapping,
-  ResolvedEnvironment,
-  ConflictReport,
-} from "@/types/gitWorkflow";
+import { GitStatus, GitFileChange, GitLogEntry, GitBranchInfo, GitRemoteInfo, GitPushPullResult } from "@/types/git";
 import { bridgeRequest } from "./bridgeClient";
 
 
@@ -1179,151 +1169,81 @@ class BridgeApiService {
   // 9. SCHEMA DIFF (schema.*)
   // ------------------------------------
 
-  /**
-   * Compute structured schema diff between two git refs.
-   * Default: HEAD vs working tree.
-   */
-  async schemaDiff(
-    projectId: string,
-    fromRef = "HEAD",
-    toRef?: string
-  ): Promise<SchemaDiffResponse> {
-    const result = await bridgeRequest("schema.diff", { projectId, fromRef, toRef });
-    return result?.data;
+  // ------------------------------------
+  // 13. GIT REMOTE OPERATIONS
+  // ------------------------------------
+
+  /** List all configured remotes */
+  async gitRemoteList(dir: string): Promise<GitRemoteInfo[]> {
+    const result = await bridgeRequest("git.remoteList", { dir });
+    return result?.data || [];
   }
 
-  /**
-   * Get commit history for a project's schema.json file.
-   */
-  async schemaFileHistory(
-    projectId: string,
-    count = 20
-  ): Promise<SchemaFileHistoryResponse> {
-    const result = await bridgeRequest("schema.fileHistory", { projectId, count });
-    return result?.data;
+  /** Add a named remote */
+  async gitRemoteAdd(dir: string, name: string, url: string): Promise<void> {
+    await bridgeRequest("git.remoteAdd", { dir, name, url });
+  }
+
+  /** Remove a named remote */
+  async gitRemoteRemove(dir: string, name: string): Promise<void> {
+    await bridgeRequest("git.remoteRemove", { dir, name });
+  }
+
+  /** Get the URL of a remote */
+  async gitRemoteGetUrl(dir: string, name = "origin"): Promise<string | null> {
+    const result = await bridgeRequest("git.remoteGetUrl", { dir, name });
+    return result?.data?.url || null;
+  }
+
+  /** Change the URL of an existing remote */
+  async gitRemoteSetUrl(dir: string, name: string, url: string): Promise<void> {
+    await bridgeRequest("git.remoteSetUrl", { dir, name, url });
   }
 
   // ------------------------------------
-  // 10. MIGRATION TIMELINE (timeline.*)
+  // 14. GIT PUSH / PULL / FETCH (P3)
   // ------------------------------------
 
-  /**
-   * Get the migration timeline (commits that changed schema.json)
-   */
-  async timelineList(
-    projectId: string,
-    count = 50
-  ): Promise<{ entries: TimelineEntry[] }> {
-    const result = await bridgeRequest("timeline.list", { projectId, count });
-    return result?.data;
+  /** Push commits to a remote */
+  async gitPush(
+    dir: string,
+    remote = "origin",
+    branch?: string,
+    options?: { force?: boolean; setUpstream?: boolean }
+  ): Promise<GitPushPullResult> {
+    const result = await bridgeRequest("git.push", { dir, remote, branch, ...options });
+    return result?.data || { output: "" };
   }
 
-  /**
-   * Get change summary for a specific commit in the timeline
-   */
-  async timelineCommitSummary(
-    projectId: string,
-    commitHash: string
-  ): Promise<{ summary: TimelineChangeSummary | null }> {
-    const result = await bridgeRequest("timeline.commitSummary", {
-      projectId,
-      commitHash,
-    });
-    return result?.data;
+  /** Pull from a remote */
+  async gitPull(
+    dir: string,
+    remote = "origin",
+    branch?: string,
+    options?: { rebase?: boolean }
+  ): Promise<GitPushPullResult> {
+    const result = await bridgeRequest("git.pull", { dir, remote, branch, ...options });
+    return result?.data || { output: "" };
   }
 
-  /**
-   * Auto-commit the current schema snapshot with optional tag
-   */
-  async timelineAutoCommit(
-    projectId: string,
-    options?: { message?: string; tag?: string }
-  ): Promise<AutoCommitResult> {
-    const result = await bridgeRequest("timeline.autoCommit", {
-      projectId,
-      ...options,
-    });
-    return result?.data;
+  /** Fetch from a remote (or all) */
+  async gitFetch(
+    dir: string,
+    remote?: string,
+    options?: { prune?: boolean; all?: boolean }
+  ): Promise<GitPushPullResult> {
+    const result = await bridgeRequest("git.fetch", { dir, remote, ...options });
+    return result?.data || { output: "" };
   }
 
   // ------------------------------------
-  // 11. ENVIRONMENT (env.*)
+  // 15. GIT REVERT (Rollback)
   // ------------------------------------
 
-  /**
-   * Get environment config (branch → environment mappings)
-   */
-  async envGetConfig(projectId: string): Promise<EnvironmentConfig> {
-    const result = await bridgeRequest("env.getConfig", { projectId });
-    return result?.data;
-  }
-
-  /**
-   * Replace the full environment config
-   */
-  async envSaveConfig(
-    projectId: string,
-    config: EnvironmentConfig
-  ): Promise<EnvironmentConfig> {
-    const result = await bridgeRequest("env.saveConfig", {
-      projectId,
-      config,
-    });
-    return result?.data;
-  }
-
-  /**
-   * Add or update a single branch → environment mapping
-   */
-  async envSetMapping(
-    projectId: string,
-    mapping: EnvironmentMapping
-  ): Promise<EnvironmentConfig> {
-    const result = await bridgeRequest("env.setMapping", {
-      projectId,
-      mapping,
-    });
-    return result?.data;
-  }
-
-  /**
-   * Remove a branch mapping
-   */
-  async envRemoveMapping(
-    projectId: string,
-    branch: string
-  ): Promise<EnvironmentConfig> {
-    const result = await bridgeRequest("env.removeMapping", {
-      projectId,
-      branch,
-    });
-    return result?.data;
-  }
-
-  /**
-   * Resolve the current environment (based on active git branch)
-   */
-  async envResolve(projectId: string): Promise<ResolvedEnvironment> {
-    const result = await bridgeRequest("env.resolve", { projectId });
-    return result?.data;
-  }
-
-  // ------------------------------------
-  // 12. CONFLICT DETECTION (conflict.*)
-  // ------------------------------------
-
-  /**
-   * Detect schema conflicts between current branch and a target
-   */
-  async conflictDetect(
-    projectId: string,
-    targetBranch = "main"
-  ): Promise<ConflictReport> {
-    const result = await bridgeRequest("conflict.detect", {
-      projectId,
-      targetBranch,
-    });
-    return result?.data;
+  /** Revert a specific commit */
+  async gitRevert(dir: string, hash: string, noCommit = false): Promise<GitPushPullResult> {
+    const result = await bridgeRequest("git.revert", { dir, hash, noCommit });
+    return result?.data || { output: "" };
   }
 }
 

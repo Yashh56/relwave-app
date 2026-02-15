@@ -8,8 +8,11 @@ import {
     Plus,
     Check,
     ChevronDown,
-    RotateCcw,
     FolderGit2,
+    Globe,
+    CloudUpload,
+    CloudDownload,
+    RefreshCw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -43,14 +46,17 @@ import {
     useGitCheckout,
     useGitCreateBranch,
 } from "@/hooks/useGitQueries";
+import {
+    useGitPush,
+    useGitPull,
+    useGitFetch,
+    useGitRemotes,
+} from "@/hooks/useGitAdvanced";
 import { toast } from "sonner";
 import type { GitBranchInfo } from "@/types/git";
+import RemoteConfigDialog from "./RemoteConfigDialog";
 
 interface GitStatusBarProps {
-    /**
-     * The directory to check git status for.
-     * Typically the project files directory from the bridge config.
-     */
     projectDir: string | null | undefined;
 }
 
@@ -70,8 +76,17 @@ export default function GitStatusBar({ projectDir }: GitStatusBarProps) {
     const [commitMessage, setCommitMessage] = useState("");
     const [branchDialogOpen, setBranchDialogOpen] = useState(false);
     const [newBranchName, setNewBranchName] = useState("");
+    const [remoteDialogOpen, setRemoteDialogOpen] = useState(false);
 
-    // --- Not a git repo: show init button ---
+    const pushMutation = useGitPush(projectDir);
+    const pullMutation = useGitPull(projectDir);
+    const fetchMutation = useGitFetch(projectDir);
+    const { data: remotes } = useGitRemotes(
+        status?.isGitRepo ? projectDir : undefined
+    );
+
+    const hasRemote = remotes && remotes.length > 0;
+
     if (!projectDir) return null;
 
     if (isLoading) {
@@ -113,15 +128,12 @@ export default function GitStatusBar({ projectDir }: GitStatusBarProps) {
         );
     }
 
-    // --- Active repo: show branch + status ---
     const totalChanges = status.stagedCount + status.unstagedCount + status.untrackedCount;
 
     const handleQuickCommit = async () => {
         if (!commitMessage.trim()) return;
         try {
-            // Stage all first
             await stageAllMutation.mutateAsync();
-            // Then commit
             const result = await commitMutation.mutateAsync(commitMessage.trim());
             toast.success(`Committed as ${result.hash}`);
             setCommitMessage("");
@@ -149,6 +161,37 @@ export default function GitStatusBar({ projectDir }: GitStatusBarProps) {
             toast.success(`Switched to ${name}`);
         } catch (e: any) {
             toast.error("Checkout failed: " + e.message);
+        }
+    };
+
+    const handlePush = async () => {
+        try {
+            const needsUpstream = !status?.upstream;
+            await pushMutation.mutateAsync({
+                setUpstream: needsUpstream,
+                branch: needsUpstream ? (status?.branch ?? undefined) : undefined,
+            });
+            toast.success("Pushed successfully");
+        } catch (e: any) {
+            toast.error("Push failed: " + e.message);
+        }
+    };
+
+    const handlePull = async () => {
+        try {
+            await pullMutation.mutateAsync();
+            toast.success("Pulled successfully");
+        } catch (e: any) {
+            toast.error("Pull failed: " + e.message);
+        }
+    };
+
+    const handleFetch = async () => {
+        try {
+            await fetchMutation.mutateAsync({ all: true, prune: true });
+            toast.success("Fetched from all remotes");
+        } catch (e: any) {
+            toast.error("Fetch failed: " + e.message);
         }
     };
 
@@ -197,33 +240,120 @@ export default function GitStatusBar({ projectDir }: GitStatusBarProps) {
                             <Plus className="h-3 w-3 mr-2" />
                             New Branch...
                         </DropdownMenuItem>
+                        {hasRemote && (
+                            <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem onClick={handlePush} disabled={pushMutation.isPending}>
+                                    <CloudUpload className="h-3 w-3 mr-2" />
+                                    Push
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={handlePull} disabled={pullMutation.isPending}>
+                                    <CloudDownload className="h-3 w-3 mr-2" />
+                                    Pull
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={handleFetch} disabled={fetchMutation.isPending}>
+                                    <RefreshCw className="h-3 w-3 mr-2" />
+                                    Fetch All
+                                </DropdownMenuItem>
+                            </>
+                        )}
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem onClick={() => setRemoteDialogOpen(true)}>
+                            <Globe className="h-3 w-3 mr-2" />
+                            Manage Remotes...
+                        </DropdownMenuItem>
                     </DropdownMenuContent>
                 </DropdownMenu>
 
-                {/* Sync indicators: ahead / behind */}
-                {status.ahead != null && status.ahead > 0 && (
+                {/* Ahead indicator — click to push */}
+                {hasRemote && status.ahead != null && status.ahead > 0 && (
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                                <ArrowUp className="h-2.5 w-2.5" />
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 px-1 text-[10px] text-muted-foreground hover:text-foreground gap-0.5"
+                                onClick={handlePush}
+                                disabled={pushMutation.isPending}
+                            >
+                                {pushMutation.isPending ? (
+                                    <Spinner className="h-2.5 w-2.5" />
+                                ) : (
+                                    <ArrowUp className="h-2.5 w-2.5" />
+                                )}
                                 {status.ahead}
-                            </span>
+                            </Button>
                         </TooltipTrigger>
                         <TooltipContent side="top">
-                            <p>{status.ahead} commit{status.ahead > 1 ? "s" : ""} ahead of {status.upstream}</p>
+                            <p>Push {status.ahead} commit{status.ahead > 1 ? "s" : ""} to {status.upstream}</p>
                         </TooltipContent>
                     </Tooltip>
                 )}
-                {status.behind != null && status.behind > 0 && (
+
+                {/* Behind indicator — click to pull */}
+                {hasRemote && status.behind != null && status.behind > 0 && (
                     <Tooltip>
                         <TooltipTrigger asChild>
-                            <span className="inline-flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                                <ArrowDown className="h-2.5 w-2.5" />
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 px-1 text-[10px] text-muted-foreground hover:text-foreground gap-0.5"
+                                onClick={handlePull}
+                                disabled={pullMutation.isPending}
+                            >
+                                {pullMutation.isPending ? (
+                                    <Spinner className="h-2.5 w-2.5" />
+                                ) : (
+                                    <ArrowDown className="h-2.5 w-2.5" />
+                                )}
                                 {status.behind}
-                            </span>
+                            </Button>
                         </TooltipTrigger>
                         <TooltipContent side="top">
-                            <p>{status.behind} commit{status.behind > 1 ? "s" : ""} behind {status.upstream}</p>
+                            <p>Pull {status.behind} commit{status.behind > 1 ? "s" : ""} from {status.upstream}</p>
+                        </TooltipContent>
+                    </Tooltip>
+                )}
+
+                {/* Sync button when up to date */}
+                {hasRemote && (status.ahead === 0 || status.ahead == null) && (status.behind === 0 || status.behind == null) && (
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 px-1 text-[10px] text-muted-foreground hover:text-foreground"
+                                onClick={handleFetch}
+                                disabled={fetchMutation.isPending}
+                            >
+                                {fetchMutation.isPending ? (
+                                    <Spinner className="h-2.5 w-2.5" />
+                                ) : (
+                                    <RefreshCw className="h-2.5 w-2.5" />
+                                )}
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                            <p>Fetch from all remotes</p>
+                        </TooltipContent>
+                    </Tooltip>
+                )}
+
+                {/* No remote — show add remote button */}
+                {!hasRemote && (
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 px-1 text-[10px] text-muted-foreground hover:text-foreground"
+                                onClick={() => setRemoteDialogOpen(true)}
+                            >
+                                <Globe className="h-2.5 w-2.5" />
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent side="top">
+                            <p>Add a remote to enable push/pull</p>
                         </TooltipContent>
                     </Tooltip>
                 )}
@@ -374,6 +504,13 @@ export default function GitStatusBar({ projectDir }: GitStatusBarProps) {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* Remote Config Dialog */}
+            <RemoteConfigDialog
+                open={remoteDialogOpen}
+                onOpenChange={setRemoteDialogOpen}
+                projectDir={projectDir}
+            />
         </>
     );
 }

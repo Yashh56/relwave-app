@@ -611,6 +611,428 @@ export class GitService {
         await this.git(dir, "add", "--", ...files);
         return this.commit(dir, message);
     }
+
+    // ==========================================
+    // Remote Management (P3)
+    // ==========================================
+
+    /**
+     * List all remotes with their fetch/push URLs.
+     */
+    async remoteList(dir: string): Promise<{ name: string; fetchUrl: string; pushUrl: string }[]> {
+        try {
+            const output = await this.git(dir, "remote", "-v");
+            if (!output) return [];
+
+            const map = new Map<string, { fetchUrl: string; pushUrl: string }>();
+            for (const line of output.split("\n")) {
+                const match = line.match(/^(\S+)\s+(\S+)\s+\((fetch|push)\)$/);
+                if (!match) continue;
+                const [, name, url, type] = match;
+                if (!map.has(name)) map.set(name, { fetchUrl: "", pushUrl: "" });
+                const entry = map.get(name)!;
+                if (type === "fetch") entry.fetchUrl = url;
+                else entry.pushUrl = url;
+            }
+
+            return Array.from(map.entries()).map(([name, urls]) => ({ name, ...urls }));
+        } catch {
+            return [];
+        }
+    }
+
+    /**
+     * Add a named remote
+     */
+    async remoteAdd(dir: string, name: string, url: string): Promise<void> {
+        await this.git(dir, "remote", "add", name, url);
+    }
+
+    /**
+     * Remove a named remote
+     */
+    async remoteRemove(dir: string, name: string): Promise<void> {
+        await this.git(dir, "remote", "remove", name);
+    }
+
+    /**
+     * Get the URL of a remote
+     */
+    async remoteGetUrl(dir: string, name = "origin"): Promise<string | null> {
+        try {
+            return await this.git(dir, "remote", "get-url", name);
+        } catch {
+            return null;
+        }
+    }
+
+    /**
+     * Change the URL of an existing remote
+     */
+    async remoteSetUrl(dir: string, name: string, url: string): Promise<void> {
+        await this.git(dir, "remote", "set-url", name, url);
+    }
+
+    // ==========================================
+    // Push / Pull / Fetch (P3)
+    // ==========================================
+
+    /**
+     * Push commits to a remote.
+     * Returns push output text.
+     */
+    async push(
+        dir: string,
+        remote = "origin",
+        branch?: string,
+        options?: { force?: boolean; setUpstream?: boolean }
+    ): Promise<string> {
+        const args = ["push"];
+        if (options?.force) args.push("--force-with-lease");
+        if (options?.setUpstream) args.push("--set-upstream");
+        args.push(remote);
+        if (branch) args.push(branch);
+        return this.git(dir, ...args);
+    }
+
+    /**
+     * Pull from a remote.
+     * Returns pull output text.
+     */
+    async pull(
+        dir: string,
+        remote = "origin",
+        branch?: string,
+        options?: { rebase?: boolean }
+    ): Promise<string> {
+        const args = ["pull"];
+        if (options?.rebase) args.push("--rebase");
+        args.push(remote);
+        if (branch) args.push(branch);
+        return this.git(dir, ...args);
+    }
+
+    /**
+     * Fetch from a remote (or all remotes).
+     */
+    async fetch(
+        dir: string,
+        remote?: string,
+        options?: { prune?: boolean; all?: boolean }
+    ): Promise<string> {
+        const args = ["fetch"];
+        if (options?.prune) args.push("--prune");
+        if (options?.all || !remote) {
+            args.push("--all");
+        } else {
+            args.push(remote);
+        }
+        return this.git(dir, ...args);
+    }
+
+    // ==========================================
+    // Merge & Rebase (P3)
+    // ==========================================
+
+    /**
+     * Merge a branch into the current branch.
+     * Returns merge output. Throws on conflict.
+     */
+    async merge(
+        dir: string,
+        branch: string,
+        options?: { noFF?: boolean; squash?: boolean; message?: string }
+    ): Promise<string> {
+        const args = ["merge"];
+        if (options?.noFF) args.push("--no-ff");
+        if (options?.squash) args.push("--squash");
+        if (options?.message) args.push("-m", options.message);
+        args.push(branch);
+        return this.git(dir, ...args);
+    }
+
+    /**
+     * Abort an in-progress merge
+     */
+    async abortMerge(dir: string): Promise<void> {
+        await this.git(dir, "merge", "--abort");
+    }
+
+    /**
+     * Rebase current branch onto target
+     */
+    async rebase(dir: string, onto: string): Promise<string> {
+        return this.git(dir, "rebase", onto);
+    }
+
+    /**
+     * Abort an in-progress rebase
+     */
+    async abortRebase(dir: string): Promise<void> {
+        await this.git(dir, "rebase", "--abort");
+    }
+
+    /**
+     * Continue a rebase after resolving conflicts
+     */
+    async continueRebase(dir: string): Promise<string> {
+        return this.git(dir, "rebase", "--continue");
+    }
+
+    // ==========================================
+    // History & Reversal (P3)
+    // ==========================================
+
+    /**
+     * Revert a specific commit (creates a new commit that undoes the changes)
+     */
+    async revert(dir: string, commitHash: string, options?: { noCommit?: boolean }): Promise<string> {
+        const args = ["revert"];
+        if (options?.noCommit) args.push("--no-commit");
+        args.push(commitHash);
+        return this.git(dir, ...args);
+    }
+
+    /**
+     * Cherry-pick a commit from another branch
+     */
+    async cherryPick(dir: string, commitHash: string, options?: { noCommit?: boolean }): Promise<string> {
+        const args = ["cherry-pick"];
+        if (options?.noCommit) args.push("--no-commit");
+        args.push(commitHash);
+        return this.git(dir, ...args);
+    }
+
+    /**
+     * Get line-by-line blame for a file.
+     * Returns array of blame entries.
+     */
+    async blame(dir: string, filePath: string): Promise<{
+        hash: string;
+        author: string;
+        date: string;
+        lineNumber: number;
+        content: string;
+    }[]> {
+        try {
+            const output = await this.git(
+                dir,
+                "blame",
+                "--porcelain",
+                "--",
+                filePath
+            );
+            if (!output) return [];
+
+            const entries: { hash: string; author: string; date: string; lineNumber: number; content: string }[] = [];
+            const lines = output.split("\n");
+            let i = 0;
+            while (i < lines.length) {
+                const header = lines[i];
+                const headerMatch = header.match(/^([0-9a-f]{40})\s+\d+\s+(\d+)/);
+                if (!headerMatch) { i++; continue; }
+                const hash = headerMatch[1].slice(0, 8);
+                const lineNumber = parseInt(headerMatch[2], 10);
+                let author = "";
+                let date = "";
+                i++;
+                // Read header fields until content line starting with \t
+                while (i < lines.length && !lines[i].startsWith("\t")) {
+                    if (lines[i].startsWith("author ")) author = lines[i].slice(7);
+                    if (lines[i].startsWith("author-time ")) {
+                        const ts = parseInt(lines[i].slice(12), 10);
+                        date = new Date(ts * 1000).toISOString();
+                    }
+                    i++;
+                }
+                const content = i < lines.length ? lines[i].slice(1) : "";
+                entries.push({ hash, author, date, lineNumber, content });
+                i++;
+            }
+            return entries;
+        } catch {
+            return [];
+        }
+    }
+
+    /**
+     * Show a file at a specific ref (alias for getFileAtRef for consistency)
+     */
+    async show(dir: string, ref: string, filePath: string): Promise<string | null> {
+        return this.getFileAtRef(dir, filePath, ref);
+    }
+
+    // ==========================================
+    // Stash Management (P3)
+    // ==========================================
+
+    /**
+     * List all stash entries
+     */
+    async stashList(dir: string): Promise<{ index: number; message: string; date: string }[]> {
+        try {
+            const SEP = "<<SEP>>";
+            const output = await this.git(
+                dir,
+                "stash",
+                "list",
+                `--format=%gd${SEP}%s${SEP}%aI`
+            );
+            if (!output) return [];
+
+            return output.split("\n").filter(Boolean).map((line) => {
+                const [ref, message, date] = line.split(SEP);
+                const indexMatch = ref.match(/\{(\d+)\}/);
+                return {
+                    index: indexMatch ? parseInt(indexMatch[1], 10) : 0,
+                    message: message || ref,
+                    date: date || "",
+                };
+            });
+        } catch {
+            return [];
+        }
+    }
+
+    /**
+     * Apply a specific stash entry (without removing it from the stash list)
+     */
+    async stashApply(dir: string, index = 0): Promise<void> {
+        await this.git(dir, "stash", "apply", `stash@{${index}}`);
+    }
+
+    /**
+     * Drop a specific stash entry
+     */
+    async stashDrop(dir: string, index = 0): Promise<void> {
+        await this.git(dir, "stash", "drop", `stash@{${index}}`);
+    }
+
+    /**
+     * Clear all stash entries
+     */
+    async stashClear(dir: string): Promise<void> {
+        await this.git(dir, "stash", "clear");
+    }
+
+    // ==========================================
+    // Clone (P3)
+    // ==========================================
+
+    /**
+     * Clone a repository. Returns the path of the cloned directory.
+     */
+    async clone(url: string, dest: string, branch?: string): Promise<string> {
+        const args = ["clone"];
+        if (branch) args.push("-b", branch);
+        args.push(url, dest);
+        // cwd doesn't matter for clone, use dest's parent
+        const parent = path.dirname(dest);
+        await this.git(parent, ...args);
+        return dest;
+    }
+
+    // ==========================================
+    // Conflict Resolution Helpers (P3)
+    // ==========================================
+
+    /**
+     * Check if there is a merge or rebase in progress
+     */
+    async getMergeState(dir: string): Promise<{
+        mergeInProgress: boolean;
+        rebaseInProgress: boolean;
+        conflictedFiles: string[];
+    }> {
+        let mergeInProgress = false;
+        let rebaseInProgress = false;
+
+        try {
+            const gitDir = await this.git(dir, "rev-parse", "--git-dir");
+            const absGitDir = path.resolve(dir, gitDir);
+            mergeInProgress = fsSync.existsSync(path.join(absGitDir, "MERGE_HEAD"));
+            rebaseInProgress =
+                fsSync.existsSync(path.join(absGitDir, "rebase-merge")) ||
+                fsSync.existsSync(path.join(absGitDir, "rebase-apply"));
+        } catch {
+            // Not a repo or other error
+        }
+
+        // Get list of conflicted files
+        const conflictedFiles: string[] = [];
+        try {
+            const output = await this.git(dir, "diff", "--name-only", "--diff-filter=U");
+            if (output) {
+                conflictedFiles.push(...output.split("\n").filter(Boolean));
+            }
+        } catch {
+            // Ignore
+        }
+
+        return { mergeInProgress, rebaseInProgress, conflictedFiles };
+    }
+
+    /**
+     * Mark conflicted files as resolved (stage them)
+     */
+    async markResolved(dir: string, files: string[]): Promise<void> {
+        if (files.length === 0) return;
+        await this.git(dir, "add", "--", ...files);
+    }
+
+    // ==========================================
+    // Protection & Safety (P3)
+    // ==========================================
+
+    /**
+     * Get the list of configured protected branch patterns.
+     * By convention, reads from .relwave-protected-branches in the repo root.
+     * Returns ["main", "production"] by default if the file doesn't exist.
+     */
+    getProtectedBranches(dir: string): string[] {
+        try {
+            const filePath = path.join(dir, ".relwave-protected-branches");
+            if (fsSync.existsSync(filePath)) {
+                return fsSync
+                    .readFileSync(filePath, "utf-8")
+                    .split("\n")
+                    .map((l) => l.trim())
+                    .filter(Boolean);
+            }
+        } catch {
+            // Ignore
+        }
+        return ["main", "production"];
+    }
+
+    /**
+     * Check if a branch name matches any protected pattern
+     */
+    isProtectedBranch(dir: string, branch: string): boolean {
+        const patterns = this.getProtectedBranches(dir);
+        return patterns.some((p) => {
+            if (p.includes("*")) {
+                const regex = new RegExp("^" + p.replace(/\*/g, ".*") + "$");
+                return regex.test(branch);
+            }
+            return p === branch;
+        });
+    }
+
+    /**
+     * Delete a local branch (prevent deletion of the current branch)
+     */
+    async deleteBranch(dir: string, name: string, force = false): Promise<void> {
+        const flag = force ? "-D" : "-d";
+        await this.git(dir, "branch", flag, name);
+    }
+
+    /**
+     * Rename the current branch
+     */
+    async renameBranch(dir: string, newName: string): Promise<void> {
+        await this.git(dir, "branch", "-m", newName);
+    }
 }
 
 export const gitServiceInstance = new GitService();

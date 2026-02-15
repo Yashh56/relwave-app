@@ -33,10 +33,8 @@ import SQLWorkspacePanel from "@/components/workspace/SQLWorkspacePanel";
 import QueryBuilderPanel from "@/components/query-builder/QueryBuilderPanel";
 import SchemaExplorerPanel from "@/components/schema-explorer/SchemaExplorerPanel";
 import ERDiagramPanel from "@/components/er-diagram/ERDiagramPanel";
-import SchemaDiffPanel from "@/components/schema-diff/SchemaDiffPanel";
-import MigrationTimelinePanel from "@/components/migration-timeline/MigrationTimelinePanel";
+import GitStatusPanel from "@/components/git/GitStatusPanel";
 import GitStatusBar from "@/components/common/GitStatusBar";
-import EnvironmentSwitcher from "@/components/common/EnvironmentSwitcher";
 
 const DatabaseDetail = () => {
   const { id: dbId } = useParams<{ id: string }>();
@@ -153,10 +151,8 @@ const DatabaseDetail = () => {
         return <SchemaExplorerPanel dbId={dbId || ''} projectId={projectId} />;
       case 'er-diagram':
         return <ERDiagramPanel projectId={projectId} />;
-      case 'schema-diff':
-        return <SchemaDiffPanel projectId={projectId} />;
-      case 'migration-timeline':
-        return <MigrationTimelinePanel projectId={projectId} />;
+      case 'git-status':
+        return <GitStatusPanel projectDir={projectDir} />;
       case 'data':
       default:
         return (
@@ -428,7 +424,6 @@ const DatabaseDetail = () => {
       {/* Bottom status bar with git info */}
       <div className="shrink-0 h-7 border-t border-border/30 bg-background/95 backdrop-blur-sm flex items-center px-2 ml-[60px] gap-4">
         <GitStatusBar projectDir={projectDir} />
-        <EnvironmentSwitcher projectId={projectId} />
         <div className="flex-1" />
         <span className="text-[10px] text-muted-foreground/60 font-mono">
           {databaseName || "Database"}

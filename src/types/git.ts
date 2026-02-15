@@ -68,3 +68,21 @@ export interface GitBranchInfo {
     /** Remote tracking branch */
     upstream: string | null;
 }
+
+// ==========================================
+// P3 — Remote, Push/Pull
+// ==========================================
+
+export interface GitRemoteInfo {
+    /** Remote name (e.g. "origin") */
+    name: string;
+    /** Fetch URL */
+    fetchUrl: string;
+    /** Push URL */
+    pushUrl: string;
+}
+
+export interface GitPushPullResult {
+    /** Command output text */
+    output: string;
+}
