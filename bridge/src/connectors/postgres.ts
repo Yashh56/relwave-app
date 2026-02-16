@@ -2,7 +2,7 @@
 import { Client } from "pg";
 import QueryStream from "pg-query-stream";
 import { Readable } from "stream";
-import { loadLocalMigrations, writeBaselineMigration } from "../utils/baselineMigration";
+import { loadLocalMigrations, writeBaselineMigration, generateBaselineMigrationSQL, BaselineSchemaInput } from "../utils/baselineMigration";
 import crypto from "crypto";
 import fs from "fs";
 import { ensureDir, getMigrationsDir } from "../utils/config";
@@ -1423,13 +1423,65 @@ export async function baselineIfNeeded(
     const hasMigrations = await hasAnyMigrations(client);
     if (hasMigrations) return { baselined: false };
 
+    // ── Introspect existing schema to generate real DDL ──
+    const schemas = await listSchemas(conn);
+    const SYSTEM_SCHEMAS = ["information_schema", "pg_catalog", "pg_toast"];
+    const baselineInput: BaselineSchemaInput[] = [];
+
+    for (const schema of schemas) {
+      if (SYSTEM_SCHEMAS.includes(schema.name)) continue;
+
+      const metadata = await getSchemaMetadataBatch(conn, schema.name);
+      // Filter out schema_migrations table (our own tracking table)
+      metadata.tables.delete("schema_migrations");
+
+      if (metadata.tables.size === 0 && metadata.enumTypes.length === 0) continue;
+
+      const tables = new Map<string, {
+        columns: ColumnDetail[];
+        primaryKeys: PrimaryKeyInfo[];
+        foreignKeys: ForeignKeyInfo[];
+        indexes: IndexInfo[];
+        uniqueConstraints: UniqueConstraintInfo[];
+        checkConstraints: CheckConstraintInfo[];
+      }>();
+
+      for (const [tableName, tableMeta] of metadata.tables) {
+        tables.set(tableName, {
+          columns: tableMeta.columns,
+          primaryKeys: tableMeta.primaryKeys,
+          foreignKeys: tableMeta.foreignKeys,
+          indexes: tableMeta.indexes,
+          uniqueConstraints: tableMeta.uniqueConstraints,
+          checkConstraints: tableMeta.checkConstraints,
+        });
+      }
+
+      baselineInput.push({
+        schemaName: schema.name,
+        tables,
+        enumTypes: metadata.enumTypes,
+      });
+    }
+
     const version = Date.now().toString();
     const name = "baseline_existing_schema";
+
+    let upSQL: string | undefined;
+    let downSQL: string | undefined;
+
+    if (baselineInput.length > 0) {
+      const baseline = generateBaselineMigrationSQL(baselineInput, "postgres");
+      upSQL = baseline.upSQL;
+      downSQL = baseline.downSQL;
+    }
 
     const filePath = writeBaselineMigration(
       migrationsDir,
       version,
-      name
+      name,
+      upSQL,
+      downSQL
     );
 
     const checksum = crypto
