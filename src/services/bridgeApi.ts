@@ -1,4 +1,6 @@
 import { AddDatabaseParams, ConnectionTestResult, CreateTableColumn, DatabaseConnection, DatabaseSchemaDetails, DatabaseStats, DiscoveredDatabase, RunQueryParams, TableRow, UpdateDatabaseParams } from "@/types/database";
+import { ProjectSummary, ProjectMetadata, CreateProjectParams, UpdateProjectParams, SchemaFile, SchemaSnapshot, ERDiagramFile, ERNode, QueriesFile, SavedQuery, ProjectExport } from "@/types/project";
+import { GitStatus, GitFileChange, GitLogEntry, GitBranchInfo, GitRemoteInfo, GitPushPullResult } from "@/types/git";
 import { bridgeRequest } from "./bridgeClient";
 
 
@@ -289,18 +291,32 @@ class BridgeApiService {
   /**
    * List all tables in a database
    */
-  async listTables(id: string): Promise<any[]> {
+  async listTables(id: string, schema?: string): Promise<any[]> {
     // Changed return type to any[] to match typical result shape [{schema, name, type}]
     try {
       if (!id) {
         throw new Error("Database ID is required");
       }
 
-      const result = await bridgeRequest("db.listTables", { id });
+      const result = await bridgeRequest("db.listTables", { id, schema });
       return result?.data || [];
     } catch (error: any) {
       console.error("Failed to list tables:", error);
       throw new Error(`Failed to list tables: ${error.message}`);
+    }
+  }
+
+  async listSchemas(id: string): Promise<string[]> {
+    try {
+      if (!id) {
+        throw new Error("Database ID is required");
+      }
+
+      const result = await bridgeRequest("db.listSchemas", { id });
+      return result?.data || [];
+    } catch (error: any) {
+      console.error("Failed to list schemas:", error);
+      throw new Error(`Failed to list schemas: ${error.message}`);
     }
   }
 
@@ -778,6 +794,456 @@ class BridgeApiService {
       console.error("Failed to discover databases:", error);
       return []; // Return empty array on error, don't throw
     }
+  }
+
+  // ------------------------------------
+  // 6. PROJECT METHODS (project.*)
+  // ------------------------------------
+
+  /**
+   * List all projects
+   */
+  async listProjects(): Promise<ProjectSummary[]> {
+    try {
+      const result = await bridgeRequest("project.list", {});
+      return result?.data || [];
+    } catch (error: any) {
+      console.error("Failed to list projects:", error);
+      throw new Error(`Failed to list projects: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get a single project by ID
+   */
+  async getProject(projectId: string): Promise<ProjectMetadata | null> {
+    try {
+      if (!projectId) throw new Error("Project ID is required");
+      const result = await bridgeRequest("project.get", { id: projectId });
+      return result?.data || null;
+    } catch (error: any) {
+      console.error("Failed to get project:", error);
+      throw new Error(`Failed to get project: ${error.message}`);
+    }
+  }
+
+  /**
+   * Find a project linked to a specific database connection.
+   * Returns null when no project is linked (not an error).
+   */
+  async getProjectByDatabaseId(databaseId: string): Promise<ProjectMetadata | null> {
+    try {
+      if (!databaseId) throw new Error("Database ID is required");
+      const result = await bridgeRequest("project.getByDatabaseId", { databaseId });
+      return result?.data || null;
+    } catch (error: any) {
+      console.error("Failed to get project by database ID:", error);
+      throw new Error(`Failed to get project by database ID: ${error.message}`);
+    }
+  }
+
+  /**
+   * Create a new project linked to a database connection
+   */
+  async createProject(params: CreateProjectParams): Promise<ProjectMetadata> {
+    try {
+      if (!params.databaseId || !params.name) {
+        throw new Error("databaseId and name are required");
+      }
+      const result = await bridgeRequest("project.create", params);
+      if (!result?.data) throw new Error("Failed to create project");
+      return result.data;
+    } catch (error: any) {
+      console.error("Failed to create project:", error);
+      throw new Error(`Failed to create project: ${error.message}`);
+    }
+  }
+
+  /**
+   * Update a project's metadata
+   */
+  async updateProject(params: UpdateProjectParams): Promise<ProjectMetadata> {
+    try {
+      if (!params.id) throw new Error("Project ID is required");
+      const result = await bridgeRequest("project.update", params);
+      if (!result?.data) throw new Error("Project not found");
+      return result.data;
+    } catch (error: any) {
+      console.error("Failed to update project:", error);
+      throw new Error(`Failed to update project: ${error.message}`);
+    }
+  }
+
+  /**
+   * Delete a project and all its files
+   */
+  async deleteProject(projectId: string): Promise<void> {
+    try {
+      if (!projectId) throw new Error("Project ID is required");
+      await bridgeRequest("project.delete", { id: projectId });
+    } catch (error: any) {
+      console.error("Failed to delete project:", error);
+      throw new Error(`Failed to delete project: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get cached schema for a project
+   */
+  async getProjectSchema(projectId: string): Promise<SchemaFile | null> {
+    try {
+      if (!projectId) throw new Error("Project ID is required");
+      const result = await bridgeRequest("project.getSchema", { projectId });
+      return result?.data || null;
+    } catch (error: any) {
+      console.error("Failed to get project schema:", error);
+      throw new Error(`Failed to get project schema: ${error.message}`);
+    }
+  }
+
+  /**
+   * Save/cache schema data for a project
+   */
+  async saveProjectSchema(projectId: string, schemas: SchemaSnapshot[]): Promise<SchemaFile> {
+    try {
+      if (!projectId || !schemas) throw new Error("projectId and schemas are required");
+      const result = await bridgeRequest("project.saveSchema", { projectId, schemas });
+      return result?.data;
+    } catch (error: any) {
+      console.error("Failed to save project schema:", error);
+      throw new Error(`Failed to save project schema: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get ER diagram layout for a project
+   */
+  async getProjectERDiagram(projectId: string): Promise<ERDiagramFile | null> {
+    try {
+      if (!projectId) throw new Error("Project ID is required");
+      const result = await bridgeRequest("project.getERDiagram", { projectId });
+      return result?.data || null;
+    } catch (error: any) {
+      console.error("Failed to get ER diagram:", error);
+      throw new Error(`Failed to get ER diagram: ${error.message}`);
+    }
+  }
+
+  /**
+   * Save ER diagram layout for a project
+   */
+  async saveProjectERDiagram(
+    projectId: string,
+    data: { nodes: ERNode[]; zoom?: number; panX?: number; panY?: number }
+  ): Promise<ERDiagramFile> {
+    try {
+      if (!projectId || !data.nodes) throw new Error("projectId and nodes are required");
+      const result = await bridgeRequest("project.saveERDiagram", { projectId, ...data });
+      return result?.data;
+    } catch (error: any) {
+      console.error("Failed to save ER diagram:", error);
+      throw new Error(`Failed to save ER diagram: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get saved queries for a project
+   */
+  async getProjectQueries(projectId: string): Promise<QueriesFile | null> {
+    try {
+      if (!projectId) throw new Error("Project ID is required");
+      const result = await bridgeRequest("project.getQueries", { projectId });
+      return result?.data || null;
+    } catch (error: any) {
+      console.error("Failed to get project queries:", error);
+      throw new Error(`Failed to get project queries: ${error.message}`);
+    }
+  }
+
+  /**
+   * Add a saved query to a project
+   */
+  async addProjectQuery(
+    projectId: string,
+    params: { name: string; sql: string; description?: string }
+  ): Promise<SavedQuery> {
+    try {
+      if (!projectId || !params.name || !params.sql) {
+        throw new Error("projectId, name, and sql are required");
+      }
+      const result = await bridgeRequest("project.addQuery", { projectId, ...params });
+      return result?.data;
+    } catch (error: any) {
+      console.error("Failed to add project query:", error);
+      throw new Error(`Failed to add project query: ${error.message}`);
+    }
+  }
+
+  /**
+   * Update a saved query in a project
+   */
+  async updateProjectQuery(
+    projectId: string,
+    queryId: string,
+    updates: { name?: string; sql?: string; description?: string }
+  ): Promise<SavedQuery> {
+    try {
+      if (!projectId || !queryId) throw new Error("projectId and queryId are required");
+      const result = await bridgeRequest("project.updateQuery", { projectId, queryId, ...updates });
+      if (!result?.data) throw new Error("Query not found");
+      return result.data;
+    } catch (error: any) {
+      console.error("Failed to update project query:", error);
+      throw new Error(`Failed to update project query: ${error.message}`);
+    }
+  }
+
+  /**
+   * Delete a saved query from a project
+   */
+  async deleteProjectQuery(projectId: string, queryId: string): Promise<void> {
+    try {
+      if (!projectId || !queryId) throw new Error("projectId and queryId are required");
+      await bridgeRequest("project.deleteQuery", { projectId, queryId });
+    } catch (error: any) {
+      console.error("Failed to delete project query:", error);
+      throw new Error(`Failed to delete project query: ${error.message}`);
+    }
+  }
+
+  /**
+   * Export full project bundle (metadata + schema + ER + queries)
+   */
+  async exportProject(projectId: string): Promise<ProjectExport | null> {
+    try {
+      if (!projectId) throw new Error("Project ID is required");
+      const result = await bridgeRequest("project.export", { projectId });
+      return result?.data || null;
+    } catch (error: any) {
+      console.error("Failed to export project:", error);
+      throw new Error(`Failed to export project: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get the filesystem directory path for a project
+   */
+  async getProjectDir(projectId: string): Promise<string | null> {
+    try {
+      if (!projectId) return null;
+      const result = await bridgeRequest("project.getDir", { projectId });
+      return result?.data?.dir || null;
+    } catch (error: any) {
+      console.error("Failed to get project dir:", error);
+      return null;
+    }
+  }
+
+  // ------------------------------------
+  // 8. GIT OPERATIONS (git.*)
+  // ------------------------------------
+
+  /**
+   * Get git repository status for a directory
+   */
+  async gitStatus(dir: string): Promise<GitStatus> {
+    const result = await bridgeRequest("git.status", { dir });
+    return result?.data;
+  }
+
+  /**
+   * Initialize a new git repo in the given directory
+   */
+  async gitInit(dir: string, defaultBranch = "main"): Promise<GitStatus> {
+    const result = await bridgeRequest("git.init", { dir, defaultBranch });
+    return result?.data;
+  }
+
+  /**
+   * Get list of changed files
+   */
+  async gitChanges(dir: string): Promise<GitFileChange[]> {
+    const result = await bridgeRequest("git.changes", { dir });
+    return result?.data || [];
+  }
+
+  /**
+   * Stage specific files
+   */
+  async gitStage(dir: string, files: string[]): Promise<void> {
+    await bridgeRequest("git.stage", { dir, files });
+  }
+
+  /**
+   * Stage all changes
+   */
+  async gitStageAll(dir: string): Promise<void> {
+    await bridgeRequest("git.stageAll", { dir });
+  }
+
+  /**
+   * Unstage specific files
+   */
+  async gitUnstage(dir: string, files: string[]): Promise<void> {
+    await bridgeRequest("git.unstage", { dir, files });
+  }
+
+  /**
+   * Commit staged changes
+   */
+  async gitCommit(dir: string, message: string): Promise<{ hash: string }> {
+    const result = await bridgeRequest("git.commit", { dir, message });
+    return result?.data;
+  }
+
+  /**
+   * Get recent commit history
+   */
+  async gitLog(dir: string, count = 20): Promise<GitLogEntry[]> {
+    const result = await bridgeRequest("git.log", { dir, count });
+    return result?.data || [];
+  }
+
+  /**
+   * List all branches
+   */
+  async gitBranches(dir: string): Promise<GitBranchInfo[]> {
+    const result = await bridgeRequest("git.branches", { dir });
+    return result?.data || [];
+  }
+
+  /**
+   * Create and checkout a new branch
+   */
+  async gitCreateBranch(dir: string, name: string): Promise<{ branch: string }> {
+    const result = await bridgeRequest("git.createBranch", { dir, name });
+    return result?.data;
+  }
+
+  /**
+   * Checkout an existing branch
+   */
+  async gitCheckout(dir: string, name: string): Promise<{ branch: string }> {
+    const result = await bridgeRequest("git.checkout", { dir, name });
+    return result?.data;
+  }
+
+  /**
+   * Discard unstaged changes for specific files
+   */
+  async gitDiscard(dir: string, files: string[]): Promise<void> {
+    await bridgeRequest("git.discard", { dir, files });
+  }
+
+  /**
+   * Stash all changes
+   */
+  async gitStash(dir: string, message?: string): Promise<void> {
+    await bridgeRequest("git.stash", { dir, message });
+  }
+
+  /**
+   * Pop latest stash
+   */
+  async gitStashPop(dir: string): Promise<void> {
+    await bridgeRequest("git.stashPop", { dir });
+  }
+
+  /**
+   * Get diff for a file (or all files)
+   */
+  async gitDiff(dir: string, file?: string, staged = false): Promise<string> {
+    const result = await bridgeRequest("git.diff", { dir, file, staged });
+    return result?.data?.diff || "";
+  }
+
+  /**
+   * Ensure .gitignore has RelWave rules
+   */
+  async gitEnsureIgnore(dir: string): Promise<{ modified: boolean }> {
+    const result = await bridgeRequest("git.ensureIgnore", { dir });
+    return result?.data;
+  }
+
+  // ------------------------------------
+  // 9. SCHEMA DIFF (schema.*)
+  // ------------------------------------
+
+  // ------------------------------------
+  // 13. GIT REMOTE OPERATIONS
+  // ------------------------------------
+
+  /** List all configured remotes */
+  async gitRemoteList(dir: string): Promise<GitRemoteInfo[]> {
+    const result = await bridgeRequest("git.remoteList", { dir });
+    return result?.data || [];
+  }
+
+  /** Add a named remote */
+  async gitRemoteAdd(dir: string, name: string, url: string): Promise<void> {
+    await bridgeRequest("git.remoteAdd", { dir, name, url });
+  }
+
+  /** Remove a named remote */
+  async gitRemoteRemove(dir: string, name: string): Promise<void> {
+    await bridgeRequest("git.remoteRemove", { dir, name });
+  }
+
+  /** Get the URL of a remote */
+  async gitRemoteGetUrl(dir: string, name = "origin"): Promise<string | null> {
+    const result = await bridgeRequest("git.remoteGetUrl", { dir, name });
+    return result?.data?.url || null;
+  }
+
+  /** Change the URL of an existing remote */
+  async gitRemoteSetUrl(dir: string, name: string, url: string): Promise<void> {
+    await bridgeRequest("git.remoteSetUrl", { dir, name, url });
+  }
+
+  // ------------------------------------
+  // 14. GIT PUSH / PULL / FETCH (P3)
+  // ------------------------------------
+
+  /** Push commits to a remote */
+  async gitPush(
+    dir: string,
+    remote = "origin",
+    branch?: string,
+    options?: { force?: boolean; setUpstream?: boolean }
+  ): Promise<GitPushPullResult> {
+    const result = await bridgeRequest("git.push", { dir, remote, branch, ...options });
+    return result?.data || { output: "" };
+  }
+
+  /** Pull from a remote */
+  async gitPull(
+    dir: string,
+    remote = "origin",
+    branch?: string,
+    options?: { rebase?: boolean }
+  ): Promise<GitPushPullResult> {
+    const result = await bridgeRequest("git.pull", { dir, remote, branch, ...options });
+    return result?.data || { output: "" };
+  }
+
+  /** Fetch from a remote (or all) */
+  async gitFetch(
+    dir: string,
+    remote?: string,
+    options?: { prune?: boolean; all?: boolean }
+  ): Promise<GitPushPullResult> {
+    const result = await bridgeRequest("git.fetch", { dir, remote, ...options });
+    return result?.data || { output: "" };
+  }
+
+  // ------------------------------------
+  // 15. GIT REVERT (Rollback)
+  // ------------------------------------
+
+  /** Revert a specific commit */
+  async gitRevert(dir: string, hash: string, noCommit = false): Promise<GitPushPullResult> {
+    const result = await bridgeRequest("git.revert", { dir, hash, noCommit });
+    return result?.data || { output: "" };
   }
 }
 

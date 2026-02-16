@@ -1,4 +1,4 @@
-import { Home, Database, Search, GitBranch, Settings, Layers, Terminal } from 'lucide-react';
+import { Home, Database, Search, GitBranch, GitCommitHorizontal, Settings, Layers, Terminal, FolderOpen } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
@@ -7,7 +7,7 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 
-export type PanelType = 'data' | 'sql-workspace' | 'query-builder' | 'schema-explorer' | 'er-diagram';
+export type PanelType = 'data' | 'sql-workspace' | 'query-builder' | 'schema-explorer' | 'er-diagram' | 'git-status';
 
 interface VerticalIconBarProps {
     dbId?: string;
@@ -17,6 +17,7 @@ interface VerticalIconBarProps {
 
 const globalNavigationItems = [
     { icon: Home, label: 'Dashboard', path: '/' },
+    { icon: FolderOpen, label: 'Projects', path: '/projects' },
     { icon: Settings, label: 'Settings', path: '/settings' },
 ];
 
@@ -37,6 +38,7 @@ export default function VerticalIconBar({ dbId, activePanel, onPanelChange }: Ve
         { icon: Search, label: 'Query Builder', panel: 'query-builder' },
         { icon: GitBranch, label: 'Schema Explorer', panel: 'schema-explorer' },
         { icon: Database, label: 'ER Diagram', panel: 'er-diagram' },
+        { icon: GitCommitHorizontal, label: 'Git Status', panel: 'git-status' },
     ] : [];
 
     return (

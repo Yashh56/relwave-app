@@ -5,7 +5,7 @@ import { Readable } from "stream";
 import { loadLocalMigrations, writeBaselineMigration } from "../utils/baselineMigration";
 import crypto from "crypto";
 import fs from "fs";
-import { ensureDir, getMigrationsDir } from "../services/dbStore";
+import { ensureDir, getMigrationsDir } from "../utils/config";
 import {
   CacheEntry,
   CACHE_TTL,
@@ -1867,5 +1867,25 @@ export async function searchTable(
     try {
       await client.end();
     } catch (_) { }
+  }
+}
+
+/**
+ * listSchemaNames: Retrieves just the names of schemas.
+ * Lightweight version of listSchemas.
+ */
+export async function listSchemaNames(connection: PGConfig): Promise<string[]> {
+  // Check cache first (re-use schemas cache if available, or a new cache if needed)
+  // For now, simpler to just query as it's very fast
+  const client = createClient(connection);
+
+  try {
+    await client.connect();
+    const res = await client.query(PG_LIST_SCHEMAS);
+    return res.rows.map((r: any) => r.name);
+  } finally {
+    try {
+      await client.end();
+    } catch (e) { }
   }
 }

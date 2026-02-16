@@ -11,8 +11,10 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useBridgeQuery } from "@/hooks/useBridgeQuery";
 import { useDatabaseDetails } from "@/hooks/useDatabaseDetails";
-import { useMigrations } from "@/hooks/useDbQueries";
+import { useMigrations, useFullSchema } from "@/hooks/useDbQueries";
 import { useExport } from "@/hooks/useExport";
+import { useProjectSync } from "@/hooks/useProjectSync";
+import { useProjectDir } from "@/hooks/useProjectQueries";
 import BridgeLoader from "@/components/feedback/BridgeLoader";
 import { Spinner } from "@/components/ui/spinner";
 import VerticalIconBar, { PanelType } from "@/components/common/VerticalIconBar";
@@ -31,6 +33,8 @@ import SQLWorkspacePanel from "@/components/workspace/SQLWorkspacePanel";
 import QueryBuilderPanel from "@/components/query-builder/QueryBuilderPanel";
 import SchemaExplorerPanel from "@/components/schema-explorer/SchemaExplorerPanel";
 import ERDiagramPanel from "@/components/er-diagram/ERDiagramPanel";
+import GitStatusPanel from "@/components/git/GitStatusPanel";
+import GitStatusBar from "@/components/common/GitStatusBar";
 
 const DatabaseDetail = () => {
   const { id: dbId } = useParams<{ id: string }>();
@@ -70,6 +74,9 @@ const DatabaseDetail = () => {
     handlePageChange,
     handlePageSizeChange,
     refetchTableData,
+    schemas,
+    selectedSchema,
+    setSelectedSchema,
   } = useDatabaseDetails({
     dbId,
     bridgeReady: bridgeReady ?? false,
@@ -86,6 +93,13 @@ const DatabaseDetail = () => {
     applied: [],
   };
   const baselined = migrationsResponse?.baselined || false;
+
+  // --- Project auto-sync ---
+  // Fetches schema (React Query deduplicates with child components)
+  // and auto-saves to the linked project's JSON files in the background.
+  const { data: schemaData } = useFullSchema(dbId);
+  const { projectId } = useProjectSync(dbId, schemaData ?? undefined);
+  const { data: projectDir } = useProjectDir(projectId);
 
   if (bridgeLoading || bridgeReady === undefined) {
     return <BridgeLoader />;
@@ -134,9 +148,11 @@ const DatabaseDetail = () => {
       case 'query-builder':
         return <QueryBuilderPanel dbId={dbId || ''} />;
       case 'schema-explorer':
-        return <SchemaExplorerPanel dbId={dbId || ''} />;
+        return <SchemaExplorerPanel dbId={dbId || ''} projectId={projectId} />;
       case 'er-diagram':
-        return <ERDiagramPanel />;
+        return <ERDiagramPanel projectId={projectId} />;
+      case 'git-status':
+        return <GitStatusPanel projectDir={projectDir} />;
       case 'data':
       default:
         return (
@@ -159,9 +175,28 @@ const DatabaseDetail = () => {
                     )}
                   </Button>
                   <div>
-                    <h1 className="text-lg font-semibold">{databaseName || 'Database'}</h1>
+                    <div className="flex items-center gap-2">
+                      <h1 className="text-lg font-semibold">{databaseName || 'Database'}</h1>
+                      {schemas.length > 0 && (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="outline" size="sm" className="h-6 text-xs px-2 ml-2 border-dashed">
+                              {selectedSchema}
+                              <ChevronDown className="h-3 w-3 ml-1" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="start">
+                            {schemas.map(s => (
+                              <DropdownMenuItem key={s} onClick={() => setSelectedSchema(s)}>
+                                {s}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      )}
+                    </div>
                     <p className="text-xs text-muted-foreground">
-                      {tables.length} tables
+                      {tables.length} tables in {selectedSchema}
                     </p>
                   </div>
                 </div>
@@ -232,6 +267,7 @@ const DatabaseDetail = () => {
                   dbId={dbId || ''}
                   tables={tables}
                   selectedTable={selectedTable}
+                  selectedSchema={selectedSchema}
                   onSelectTable={handleTableSelect}
                   loading={loadingTables}
                 />
@@ -372,16 +408,27 @@ const DatabaseDetail = () => {
   };
 
   return (
-    <div className="h-[calc(100vh-32px)] flex bg-background text-foreground overflow-hidden">
-      <VerticalIconBar
-        dbId={dbId}
-        activePanel={activePanel}
-        onPanelChange={setActivePanel}
-      />
+    <div className="h-[calc(100vh-32px)] flex flex-col bg-background text-foreground overflow-hidden">
+      <div className="flex-1 flex overflow-hidden">
+        <VerticalIconBar
+          dbId={dbId}
+          activePanel={activePanel}
+          onPanelChange={setActivePanel}
+        />
 
-      <main className="flex-1 ml-[60px] flex flex-col overflow-hidden">
-        {renderPanelContent()}
-      </main>
+        <main className="flex-1 ml-[60px] flex flex-col overflow-hidden">
+          {renderPanelContent()}
+        </main>
+      </div>
+
+      {/* Bottom status bar with git info */}
+      <div className="shrink-0 h-7 border-t border-border/30 bg-background/95 backdrop-blur-sm flex items-center px-2 ml-[60px] gap-4">
+        <GitStatusBar projectDir={projectDir} />
+        <div className="flex-1" />
+        <span className="text-[10px] text-muted-foreground/60 font-mono">
+          {databaseName || "Database"}
+        </span>
+      </div>
 
       {/* Migrations Panel */}
       <SlideOutPanel

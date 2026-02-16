@@ -7,7 +7,7 @@ import mysql, {
 import { loadLocalMigrations, writeBaselineMigration } from "../utils/baselineMigration";
 import crypto from "crypto";
 import fs from "fs";
-import { ensureDir, getMigrationsDir } from "../services/dbStore";
+import { ensureDir, getMigrationsDir } from "../utils/config";
 import {
   CacheEntry,
   CACHE_TTL,
@@ -1735,6 +1735,23 @@ export async function searchTable(
     return { rows: rows as any[], total };
   } catch (error) {
     throw new Error(`Failed to search table ${schemaName}.${tableName}: ${error}`);
+  } finally {
+    connection.release();
+    await pool.end();
+  }
+}
+
+/**
+ * listSchemaNames: Retrieves just the names of schemas (databases).
+ * Lightweight version for schema selector.
+ */
+export async function listSchemaNames(cfg: MySQLConfig): Promise<string[]> {
+  const pool = mysql.createPool(createPoolConfig(cfg));
+  const connection = await pool.getConnection();
+
+  try {
+    const [rows] = await connection.query(LIST_SCHEMAS);
+    return (rows as any[]).map((r: any) => r.name);
   } finally {
     connection.release();
     await pool.end();

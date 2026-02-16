@@ -7,6 +7,9 @@ import { DatabaseHandlers } from "./handlers/databaseHandlers";
 import { SessionHandlers } from "./handlers/sessionHandlers";
 import { StatsHandlers } from "./handlers/statsHandlers";
 import { MigrationHandlers } from "./handlers/migrationHandlers";
+import { ProjectHandlers } from "./handlers/projectHandlers";
+import { GitHandlers } from "./handlers/gitHandlers";
+import { GitAdvancedHandlers } from "./handlers/gitAdvancedHandlers";
 import { discoveryService } from "./services/discoveryService";
 import { Logger } from "pino";
 
@@ -52,6 +55,9 @@ export function registerDbHandlers(
     dbService,
     queryExecutor
   );
+  const projectHandlers = new ProjectHandlers(rpc, logger);
+  const gitHandlers = new GitHandlers(rpc, logger);
+  const gitAdvancedHandlers = new GitAdvancedHandlers(rpc, logger);
 
   // ==========================================
   // SESSION MANAGEMENT HANDLERS
@@ -131,6 +137,9 @@ export function registerDbHandlers(
   rpcRegister("db.getSchema", (p, id) =>
     databaseHandlers.handleGetSchema(p, id)
   );
+  rpcRegister("db.listSchemas", (p, id) =>
+    databaseHandlers.handleListSchemas(p, id)
+  );
 
   // ==========================================
   // MIGRATION HANDLERS
@@ -164,6 +173,106 @@ export function registerDbHandlers(
   rpcRegister("db.getTotalStats", (p, id) =>
     statsHandlers.handleGetTotalStats(p, id)
   );
+
+  // ==========================================
+  // PROJECT HANDLERS
+  // ==========================================
+  rpcRegister("project.list", (p, id) =>
+    projectHandlers.handleListProjects(p, id)
+  );
+  rpcRegister("project.get", (p, id) =>
+    projectHandlers.handleGetProject(p, id)
+  );
+  rpcRegister("project.getByDatabaseId", (p, id) =>
+    projectHandlers.handleGetProjectByDatabaseId(p, id)
+  );
+  rpcRegister("project.create", (p, id) =>
+    projectHandlers.handleCreateProject(p, id)
+  );
+  rpcRegister("project.update", (p, id) =>
+    projectHandlers.handleUpdateProject(p, id)
+  );
+  rpcRegister("project.delete", (p, id) =>
+    projectHandlers.handleDeleteProject(p, id)
+  );
+  rpcRegister("project.getSchema", (p, id) =>
+    projectHandlers.handleGetSchema(p, id)
+  );
+  rpcRegister("project.saveSchema", (p, id) =>
+    projectHandlers.handleSaveSchema(p, id)
+  );
+  rpcRegister("project.getERDiagram", (p, id) =>
+    projectHandlers.handleGetERDiagram(p, id)
+  );
+  rpcRegister("project.saveERDiagram", (p, id) =>
+    projectHandlers.handleSaveERDiagram(p, id)
+  );
+  rpcRegister("project.getQueries", (p, id) =>
+    projectHandlers.handleGetQueries(p, id)
+  );
+  rpcRegister("project.addQuery", (p, id) =>
+    projectHandlers.handleAddQuery(p, id)
+  );
+  rpcRegister("project.updateQuery", (p, id) =>
+    projectHandlers.handleUpdateQuery(p, id)
+  );
+  rpcRegister("project.deleteQuery", (p, id) =>
+    projectHandlers.handleDeleteQuery(p, id)
+  );
+  rpcRegister("project.export", (p, id) =>
+    projectHandlers.handleExportProject(p, id)
+  );
+  rpcRegister("project.getDir", (p, id) =>
+    projectHandlers.handleGetProjectDir(p, id)
+  );
+  rpcRegister("project.getLocalConfig", (p, id) =>
+    projectHandlers.handleGetLocalConfig(p, id)
+  );
+  rpcRegister("project.saveLocalConfig", (p, id) =>
+    projectHandlers.handleSaveLocalConfig(p, id)
+  );
+  rpcRegister("project.ensureGitignore", (p, id) =>
+    projectHandlers.handleEnsureGitignore(p, id)
+  );
+
+  // ==========================================
+  // GIT HANDLERS
+  // ==========================================
+  rpcRegister("git.status", (p, id) => gitHandlers.handleStatus(p, id));
+  rpcRegister("git.init", (p, id) => gitHandlers.handleInit(p, id));
+  rpcRegister("git.changes", (p, id) => gitHandlers.handleChanges(p, id));
+  rpcRegister("git.stage", (p, id) => gitHandlers.handleStage(p, id));
+  rpcRegister("git.stageAll", (p, id) => gitHandlers.handleStageAll(p, id));
+  rpcRegister("git.unstage", (p, id) => gitHandlers.handleUnstage(p, id));
+  rpcRegister("git.commit", (p, id) => gitHandlers.handleCommit(p, id));
+  rpcRegister("git.log", (p, id) => gitHandlers.handleLog(p, id));
+  rpcRegister("git.branches", (p, id) => gitHandlers.handleBranches(p, id));
+  rpcRegister("git.createBranch", (p, id) => gitHandlers.handleCreateBranch(p, id));
+  rpcRegister("git.checkout", (p, id) => gitHandlers.handleCheckout(p, id));
+  rpcRegister("git.discard", (p, id) => gitHandlers.handleDiscard(p, id));
+  rpcRegister("git.stash", (p, id) => gitHandlers.handleStash(p, id));
+  rpcRegister("git.stashPop", (p, id) => gitHandlers.handleStashPop(p, id));
+  rpcRegister("git.diff", (p, id) => gitHandlers.handleDiff(p, id));
+  rpcRegister("git.ensureIgnore", (p, id) => gitHandlers.handleEnsureIgnore(p, id));
+
+  // ==========================================
+  // GIT ADVANCED HANDLERS
+  // ==========================================
+
+  // Remote management
+  rpcRegister("git.remoteList", (p, id) => gitAdvancedHandlers.handleRemoteList(p, id));
+  rpcRegister("git.remoteAdd", (p, id) => gitAdvancedHandlers.handleRemoteAdd(p, id));
+  rpcRegister("git.remoteRemove", (p, id) => gitAdvancedHandlers.handleRemoteRemove(p, id));
+  rpcRegister("git.remoteGetUrl", (p, id) => gitAdvancedHandlers.handleRemoteGetUrl(p, id));
+  rpcRegister("git.remoteSetUrl", (p, id) => gitAdvancedHandlers.handleRemoteSetUrl(p, id));
+
+  // Push / Pull / Fetch
+  rpcRegister("git.push", (p, id) => gitAdvancedHandlers.handlePush(p, id));
+  rpcRegister("git.pull", (p, id) => gitAdvancedHandlers.handlePull(p, id));
+  rpcRegister("git.fetch", (p, id) => gitAdvancedHandlers.handleFetch(p, id));
+
+  // Rollback
+  rpcRegister("git.revert", (p, id) => gitAdvancedHandlers.handleRevert(p, id));
 
   // ==========================================
   // DATABASE DISCOVERY HANDLERS
