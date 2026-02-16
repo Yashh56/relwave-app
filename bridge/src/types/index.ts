@@ -20,7 +20,7 @@ export enum DBType {
 
 export type Rpc = {
     sendResponse: (id: number | string, payload: any) => void;
-    sendError: (id: number | string, err: { code?: string; message: string }) => void;
+    sendError: (id: number | string, err: { code?: string; message: string; details?: any }) => void;
     sendNotification?: (method: string, params?: any) => void;
 };
 
