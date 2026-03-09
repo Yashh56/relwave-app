@@ -137,6 +137,13 @@ export class StatsHandlers {
       const sizeBytes = sizeMB * MB_TO_BYTES;
 
       return { tables, rows, sizeBytes };
+    } else if (dbType === DBType.SQLITE) {
+      const tables = Number(stats.total_tables) || 0;
+      const rows = Number(stats.total_rows) || 0;
+      const sizeMB = Number(stats.total_db_size_mb) || 0;
+      const sizeBytes = sizeMB * MB_TO_BYTES;
+
+      return { tables, rows, sizeBytes };
     }
   }
 }

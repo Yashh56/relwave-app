@@ -171,6 +171,8 @@ export class DatabaseHandlers {
           dbType = "mysql";
         } else if (connection.type?.toLowerCase().includes("postgres")) {
           dbType = "postgres";
+        } else if (connection.type?.toLowerCase().includes("sqlite")) {
+          dbType = "sqlite";
         } else {
           dbType = connection.type;
         }
