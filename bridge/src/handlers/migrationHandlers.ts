@@ -167,6 +167,8 @@ export class MigrationHandlers {
                 await this.queryExecutor.postgres.applyMigration(conn, migrationFilePath);
             } else if (dbType === "mariadb") {
                 await this.queryExecutor.mariadb.applyMigration(conn, migrationFilePath);
+            } else if (dbType === "sqlite") {
+                await this.queryExecutor.sqlite.applyMigration(conn, migrationFilePath);
             }
 
             this.rpc.sendResponse(id, { ok: true });
@@ -211,6 +213,8 @@ export class MigrationHandlers {
                 await this.queryExecutor.postgres.rollbackMigration(conn, version, migrationFilePath);
             } else if (dbType === "mariadb") {
                 await this.queryExecutor.mariadb.rollbackMigration(conn, version, migrationFilePath);
+            } else if (dbType === "sqlite") {
+                await this.queryExecutor.sqlite.rollbackMigration(conn, version, migrationFilePath);
             }
 
             this.rpc.sendResponse(id, { ok: true });

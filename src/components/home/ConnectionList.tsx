@@ -95,7 +95,7 @@ export function ConnectionList({
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-medium truncate">{db.name}</p>
                         <p className="text-[10px] text-muted-foreground truncate font-mono">
-                          {db.type} • {db.host}
+                          {db.type} • {db.type === "sqlite" ? db.database : db.host}
                         </p>
                       </div>
                     </button>

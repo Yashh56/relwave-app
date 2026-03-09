@@ -1,8 +1,8 @@
 
-export type DatabaseType = "postgresql" | "mysql";
+export type DatabaseType = "postgresql" | "mysql" | "sqlite";
 
 export interface DiscoveredDatabase {
-    type: "postgresql" | "mysql" | "mariadb";
+    type: "postgresql" | "mysql" | "mariadb" | "sqlite";
     host: string;
     port: number;
     source: "local" | "docker";
@@ -32,9 +32,9 @@ export interface DatabaseConnection {
 export interface AddDatabaseParams {
     name: string;
     type: string;
-    host: string;
-    port: number;
-    user: string;
+    host?: string;
+    port?: number;
+    user?: string;
     database: string;
     password?: string;
     notes?: string;

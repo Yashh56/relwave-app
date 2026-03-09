@@ -9,6 +9,7 @@ export class DBTypeDetector {
       if (normalized.includes("postgres") || normalized.includes("pg")) {
         return DBType.POSTGRES;
       }
+      if (normalized.includes("sqlite")) return DBType.SQLITE;
     }
     return DBType.POSTGRES; // default  
   }

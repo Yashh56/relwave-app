@@ -123,6 +123,14 @@ export class QueryHandlers {
           limit,
           page
         );
+      } else if (dbType === 'sqlite') {
+        data = await this.queryExecutor.sqlite.fetchTableData(
+          conn,
+          schemaName,
+          tableName,
+          limit,
+          page
+        );
       }
 
       this.rpc.sendResponse(id, { ok: true, data });
@@ -158,6 +166,12 @@ export class QueryHandlers {
         );
       } else if (dbType === 'mariadb') {
         primaryKeys = await this.queryExecutor.mariadb.listPrimaryKeys(
+          conn,
+          schemaName,
+          tableName
+        );
+      } else if (dbType === 'sqlite') {
+        primaryKeys = await this.queryExecutor.sqlite.listPrimaryKeys(
           conn,
           schemaName,
           tableName
@@ -210,6 +224,15 @@ export class QueryHandlers {
           foreignKeys
         );
         this.queryExecutor.mariadb.mariadbCache.clearForConnection(conn);
+      } else if (dbType === 'sqlite') {
+        result = await this.queryExecutor.sqlite.createTable(
+          conn,
+          schemaName,
+          tableName,
+          columns,
+          foreignKeys
+        );
+        this.queryExecutor.sqlite.sqliteCache.clearForConnection(conn);
       }
 
       this.rpc.sendResponse(id, { ok: true, result });
@@ -250,6 +273,13 @@ export class QueryHandlers {
           indexes
         );
         this.queryExecutor.mariadb.mariadbCache.clearForConnection(conn);
+      } else if (dbType === 'sqlite') {
+        result = await this.queryExecutor.sqlite.createIndexes(
+          conn,
+          schemaName,
+          indexes
+        );
+        this.queryExecutor.sqlite.sqliteCache.clearForConnection(conn);
       }
 
       this.rpc.sendResponse(id, { ok: true, result });
@@ -293,6 +323,14 @@ export class QueryHandlers {
           operations
         );
         this.queryExecutor.mariadb.mariadbCache.clearForConnection(conn);
+      } else if (dbType === 'sqlite') {
+        result = await this.queryExecutor.sqlite.alterTable(
+          conn,
+          schemaName,
+          tableName,
+          operations
+        );
+        this.queryExecutor.sqlite.sqliteCache.clearForConnection(conn);
       }
 
       this.rpc.sendResponse(id, { ok: true, result });
@@ -333,6 +371,13 @@ export class QueryHandlers {
           tableName
         );
         this.queryExecutor.mariadb.mariadbCache.clearForConnection(conn);
+      } else if (dbType === 'sqlite') {
+        result = await this.queryExecutor.sqlite.dropTable(
+          conn,
+          schemaName,
+          tableName
+        );
+        this.queryExecutor.sqlite.sqliteCache.clearForConnection(conn);
       }
 
       this.rpc.sendResponse(id, { ok: true, result });
@@ -359,6 +404,8 @@ export class QueryHandlers {
         result = await this.queryExecutor.postgres.connectToDatabase(conn, dbId)
       } else if (dbType === 'mariadb') {
         result = await this.queryExecutor.mariadb.connectToDatabase(conn, dbId)
+      } else if (dbType === 'sqlite') {
+        result = await this.queryExecutor.sqlite.connectToDatabase(conn, dbId)
       }
       this.rpc.sendResponse(id, { ok: true, result });
     } catch (e: any) {
@@ -403,6 +450,14 @@ export class QueryHandlers {
           rowData
         );
         this.queryExecutor.mariadb.mariadbCache.clearForConnection(conn);
+      } else if (dbType === 'sqlite') {
+        result = await this.queryExecutor.sqlite.insertRow(
+          conn,
+          schemaName,
+          tableName,
+          rowData
+        );
+        this.queryExecutor.sqlite.sqliteCache.clearForConnection(conn);
       }
 
       this.rpc.sendResponse(id, { ok: true, result });
@@ -454,6 +509,16 @@ export class QueryHandlers {
           rowData
         );
         this.queryExecutor.mariadb.mariadbCache.clearForConnection(conn);
+      } else if (dbType === 'sqlite') {
+        result = await this.queryExecutor.sqlite.updateRow(
+          conn,
+          schemaName,
+          tableName,
+          primaryKeyColumn,
+          primaryKeyValue,
+          rowData
+        );
+        this.queryExecutor.sqlite.sqliteCache.clearForConnection(conn);
       }
 
       this.rpc.sendResponse(id, { ok: true, result });
@@ -509,6 +574,15 @@ export class QueryHandlers {
           primaryKeyValue
         );
         this.queryExecutor.mariadb.mariadbCache.clearForConnection(conn);
+      } else if (dbType === 'sqlite') {
+        result = await this.queryExecutor.sqlite.deleteRow(
+          conn,
+          schemaName,
+          tableName,
+          primaryKeyColumn,
+          primaryKeyValue
+        );
+        this.queryExecutor.sqlite.sqliteCache.clearForConnection(conn);
       }
 
       this.rpc.sendResponse(id, { ok: true, deleted: result });
@@ -552,6 +626,16 @@ export class QueryHandlers {
         );
       } else if (dbType === 'mariadb') {
         result = await this.queryExecutor.mariadb.searchTable(
+          conn,
+          schemaName,
+          tableName,
+          searchTerm,
+          column,
+          page || 1,
+          pageSize || 50
+        );
+      } else if (dbType === 'sqlite') {
+        result = await this.queryExecutor.sqlite.searchTable(
           conn,
           schemaName,
           tableName,

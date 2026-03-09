@@ -2,12 +2,13 @@
 
 This document provides a comprehensive breakdown of all features and capabilities in RelWave. For installation and setup instructions, see the main [README](README.md).
 
-**Tech Stack:** Tauri + React 18 + TypeScript + Tailwind CSS + shadcn/ui + React Query + ReactFlow + Recharts + CodeMirror
+**Tech Stack:** Tauri + React 18 + TypeScript + Tailwind CSS + shadcn/ui + React Query + ReactFlow + Recharts + CodeMirror + better-sqlite3
 
 ---
 
 ## Table of Contents
 
+- [Supported Databases](#supported-databases)
 - [Core Pages and Navigation](#core-pages-and-navigation)
 - [Git Version Control](#git-version-control)
 - [Visual Tools](#visual-tools)
@@ -16,6 +17,26 @@ This document provides a comprehensive breakdown of all features and capabilitie
 - [Performance](#performance)
 - [Cross-Platform Support](#cross-platform-support)
 - [Design Principles](#design-principles)
+
+---
+
+## Supported Databases
+
+| Database | Connection Type | Schema Explorer | ER Diagram | Query Builder | Migrations | CRUD |
+| -------- | --------------- | --------------- | ---------- | ------------- | ---------- | ---- |
+| PostgreSQL | Host/port + SSL | ✅ | ✅ | ✅ | ✅ | ✅ |
+| MySQL | Host/port + SSL | ✅ | ✅ | ✅ | ✅ | ✅ |
+| MariaDB | Host/port + SSL | ✅ | ✅ | ✅ | ✅ | ✅ |
+| SQLite | Local file path | ✅ | ✅ | ✅ | ✅ | ✅ |
+
+### SQLite-Specific Features
+
+- **File-based connections** — no server required; connect directly to `.db`, `.sqlite`, `.sqlite3`, `.s3db` files
+- **Native file picker** — Tauri file dialog for browsing and selecting database files
+- **Read-only mode** — open databases in read-only mode when write access isn't needed
+- **PRAGMA-based introspection** — uses `table_xinfo`, `foreign_key_list`, `index_list`, and `index_info` for full schema discovery
+- **Synchronous driver** — uses `better-sqlite3` for efficient, synchronous access to SQLite databases
+- **Full test coverage** — 69 tests covering connector operations and caching (38 integration + 31 unit)
 
 ---
 
@@ -28,8 +49,9 @@ The main landing page for managing database connections. Features a clean, IDE-i
 **Connection Management**
 
 - Add new database connections with detailed configuration (name, type, host, port, user, password, SSL options)
+- **SQLite support** — connect to local `.db`, `.sqlite`, `.sqlite3`, `.s3db` files via native file picker
 - Connect via URL — paste connection strings like `postgres://user:pass@host:port/db`
-- Auto-parse URLs to populate connection form fields
+- Auto-parse URLs to populate connection form fields (including `sqlite://` protocol)
 - Delete existing database connections
 - Test connections with real-time feedback
 - Connection status indicators for all databases
@@ -38,6 +60,7 @@ The main landing page for managing database connections. Features a clean, IDE-i
 
 - Automatically discover databases running on the local machine
 - TCP port scanning for PostgreSQL (5432–5434) and MySQL (3306–3308)
+- SQLite file-based connections (no host/port — uses native file browser)
 - Docker container detection with image recognition
 - Docker credential extraction — reads `POSTGRES_USER`, `POSTGRES_PASSWORD`, `MYSQL_ROOT_PASSWORD`, etc. from container environment variables
 - One-click add with pre-filled connection details
@@ -104,7 +127,7 @@ Detailed view for individual database operations with a split-panel layout.
 **Search**
 
 - Cross-column search across all table fields
-- Case-insensitive matching (ILIKE for PostgreSQL, LIKE for MySQL/MariaDB)
+- Case-insensitive matching (ILIKE for PostgreSQL, LIKE for MySQL/MariaDB/SQLite)
 - Paginated search results
 - Real-time result count display
 - Clear search to return to the default view
@@ -435,6 +458,15 @@ RelWave includes native Git integration powered by `simple-git`, providing a ful
 - Toggle to collapse/expand with smooth width transition
 - Persistent state across sessions
 
+### Database Engine Colors
+
+| Engine | Color |
+| ------ | ----- |
+| PostgreSQL | Blue |
+| MySQL | Orange |
+| MariaDB | Purple |
+| SQLite | Cyan |
+
 ### Theming
 
 - Dark and light mode with seamless switching
@@ -542,6 +574,6 @@ All database and Git operations use a JSON-RPC protocol over stdin/stdout. The b
 
 ---
 
-**Last Updated:** February 2026
+**Last Updated:** March 2026
 
 This document is maintained alongside the application and updated with each release.
