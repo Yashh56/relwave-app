@@ -48,6 +48,7 @@ const ENGINE_COLORS: Record<string, { bg: string; text: string }> = {
   postgresql: { bg: "bg-blue-500/10", text: "text-blue-500" },
   mysql: { bg: "bg-orange-500/10", text: "text-orange-500" },
   mariadb: { bg: "bg-sky-500/10", text: "text-sky-500" },
+  sqlite: { bg: "bg-cyan-500/10", text: "text-cyan-500" },
 };
 
 export function ProjectDetailView({

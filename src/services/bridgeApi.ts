@@ -160,7 +160,10 @@ class BridgeApiService {
   async addDatabase(params: AddDatabaseParams): Promise<DatabaseConnection> {
     try {
       // Validate required fields
-      const required = ["name", "type", "host", "port", "user", "database"];
+      const isSQLite = params.type === "sqlite";
+      const required = isSQLite
+        ? ["name", "type", "database"]
+        : ["name", "type", "host", "port", "user", "database"];
       for (const field of required) {
         if (!params[field as keyof AddDatabaseParams]) {
           throw new Error(`Missing required field: ${field}`);

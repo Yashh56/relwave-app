@@ -36,8 +36,25 @@ export function parseConnectionUrl(url: string): ParsedConnectionUrl | null {
             type = "postgresql";
         } else if (protocol === "mysql") {
             type = "mysql";
+        } else if (protocol === "sqlite") {
+            type = "sqlite";
         } else {
             return null; // Unsupported protocol
+        }
+
+        // SQLite uses path only, no host/port/auth
+        if (type === "sqlite") {
+            const dbPath = decodeURIComponent((parsed.hostname || "") + parsed.pathname);
+            return {
+                type,
+                host: "",
+                port: "",
+                user: "",
+                password: "",
+                database: dbPath,
+                ssl: false,
+                sslmode: "",
+            };
         }
 
         // Extract components
@@ -81,6 +98,9 @@ export function buildConnectionUrl(params: {
     database: string;
     sslmode?: string;
 }): string {
+    if (params.type === "sqlite") {
+        return `sqlite://${encodeURIComponent(params.database)}`;
+    }
     const protocol = params.type === "mysql" ? "mysql" : "postgres";
     const auth = params.password
         ? `${encodeURIComponent(params.user)}:${encodeURIComponent(params.password)}`

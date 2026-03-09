@@ -26,6 +26,7 @@ import {
   AddConnectionDialog,
   DeleteDialog,
   REQUIRED_FIELDS,
+  SQLITE_REQUIRED_FIELDS,
   ConnectionFormData,
 } from "@/components/home";
 
@@ -118,7 +119,9 @@ const Index = () => {
 
 
   const handleAddDatabase = async (formData: ConnectionFormData) => {
-    const missing = REQUIRED_FIELDS.filter(field => !formData[field as keyof typeof formData]);
+    const isSQLite = formData.type === "sqlite";
+    const requiredFields = isSQLite ? SQLITE_REQUIRED_FIELDS : REQUIRED_FIELDS;
+    const missing = requiredFields.filter(field => !formData[field as keyof typeof formData]);
     if (missing.length) {
       toast.error("Missing required fields", { description: `Please fill in: ${missing.join(", ")}` });
       return;
@@ -126,8 +129,8 @@ const Index = () => {
     try {
       await addDatabaseMutation.mutateAsync({
         ...formData,
-        port: parseInt(formData.port),
-        sslmode: formData.ssl ? (formData.sslmode || "require") : "disable"
+        port: isSQLite ? 0 : parseInt(formData.port),
+        sslmode: isSQLite ? "disable" : (formData.ssl ? (formData.sslmode || "require") : "disable")
       });
       toast.success("Database connection added");
       setIsDialogOpen(false);
