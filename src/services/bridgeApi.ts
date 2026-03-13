@@ -1,5 +1,6 @@
 import { AddDatabaseParams, ConnectionTestResult, CreateTableColumn, DatabaseConnection, DatabaseSchemaDetails, DatabaseStats, DiscoveredDatabase, RunQueryParams, TableRow, UpdateDatabaseParams } from "@/types/database";
-import { ProjectSummary, ProjectMetadata, CreateProjectParams, UpdateProjectParams, SchemaFile, SchemaSnapshot, ERDiagramFile, ERNode, QueriesFile, SavedQuery, ProjectExport, ImportProjectParams, ScanImportResult } from "@/types/project";
+import { ProjectSummary, ProjectMetadata, CreateProjectParams, UpdateProjectParams, SchemaFile, SchemaSnapshot, ERDiagramFile, ERNode, QueriesFile, SavedQuery, ProjectExport, ImportProjectParams, ScanImportResult, AnnotationsFile } from "@/types/project";
+import type { TLEditorSnapshot } from "tldraw";
 import { GitStatus, GitFileChange, GitLogEntry, GitBranchInfo, GitRemoteInfo, GitPushPullResult } from "@/types/git";
 import { bridgeRequest } from "./bridgeClient";
 
@@ -946,6 +947,40 @@ class BridgeApiService {
     } catch (error: any) {
       console.error("Failed to save ER diagram:", error);
       throw new Error(`Failed to save ER diagram: ${error.message}`);
+    }
+  }
+
+  /**
+   * Get annotations for a project
+   */
+  async getProjectAnnotations(projectId: string): Promise<AnnotationsFile | null> {
+    try {
+      if (!projectId) throw new Error("Project ID is required");
+      const result = await bridgeRequest("project.getAnnotations", { projectId });
+      return result?.data || null;
+    } catch (error: any) {
+      console.error("Failed to get annotations:", error);
+      throw new Error(`Failed to get annotations: ${error.message}`);
+    }
+  }
+
+  /**
+   * Save annotations for a project
+   */
+  async saveProjectAnnotations(
+    projectId: string,
+    snapshot: TLEditorSnapshot
+  ): Promise<AnnotationsFile> {
+    try {
+      if (!projectId) throw new Error("Project ID is required");
+      if (!snapshot || typeof snapshot !== "object" || Object.keys(snapshot).length === 0) {
+        throw new Error("A non-empty snapshot object is required");
+      }
+      const result = await bridgeRequest("project.saveAnnotations", { projectId, snapshot });
+      return result?.data;
+    } catch (error: any) {
+      console.error("Failed to save annotations:", error);
+      throw new Error(`Failed to save annotations: ${error.message}`);
     }
   }
 
