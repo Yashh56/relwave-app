@@ -11,11 +11,13 @@ export * from './cache';
 export * from './common';
 export * from './mysql';
 export * from './postgres';
+export * from './sqlite';
 
 export enum DBType {
     POSTGRES = "postgres",
     MYSQL = "mysql",
     MARIADB = "mariadb",
+    SQLITE = "sqlite",
 }
 
 export type Rpc = {

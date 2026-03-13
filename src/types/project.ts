@@ -1,3 +1,5 @@
+import type { TLEditorSnapshot } from "tldraw";
+
 // ==========================================
 // Project Types — mirrors bridge ProjectStore types
 // ==========================================
@@ -55,6 +57,13 @@ export interface ERDiagramFile {
   updatedAt: string;
 }
 
+export interface AnnotationsFile {
+  version: number;
+  projectId: string;
+  snapshot: TLEditorSnapshot;
+  updatedAt: string;
+}
+
 export interface SchemaSnapshot {
   name: string;
   tables: TableSnapshot[];
@@ -102,6 +111,7 @@ export interface ProjectExport {
   metadata: ProjectMetadata;
   schema: SchemaFile | null;
   erDiagram: ERDiagramFile | null;
+  annotations: AnnotationsFile | null;
   queries: QueriesFile | null;
 }
 

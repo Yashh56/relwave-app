@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "RelWave",
-  "version": "0.3.0-beta.1",
-  "identifier": "com.yashs.RelWave",
+  "version": "0.4.0-beta.1",
+  "identifier": "tech.relwave.app",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",

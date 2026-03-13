@@ -2,6 +2,7 @@
 import { describe, it, expect, test } from "@jest/globals";
 import { ConnectionBuilder } from "../src/services/connectionBuilder"; // Adjust path as needed
 import { DatabaseConfig, DBType } from "../src/types";
+import { SQLiteConfig } from "../src/types/sqlite";
 
 // Define a standardized mock database object for inputs
 const mockDbInput = {
@@ -101,7 +102,7 @@ describe("ConnectionBuilder", () => {
         dbInput,
         password,
         DBType.MYSQL
-      );
+      ) as DatabaseConfig;
 
       // Assert
       expect(config.port).toBe(3306);
@@ -146,5 +147,31 @@ describe("ConnectionBuilder", () => {
       expect(config.port).toBe(5432);
       expect(config.password).toBe("test");
     })
+  })
+
+  describe("static buildSQLiteConnection", () => {
+    test("should build SQLite config with path from database field", () => {
+      const dbInput = { database: "/tmp/test.db" };
+      const config = ConnectionBuilder.buildSQLiteConnection(dbInput);
+      expect(config.path).toBe("/tmp/test.db");
+    });
+
+    test("should build SQLite config with path from path field", () => {
+      const dbInput = { path: "/tmp/test.db" };
+      const config = ConnectionBuilder.buildSQLiteConnection(dbInput);
+      expect(config.path).toBe("/tmp/test.db");
+    });
+
+    test("should set readonly when specified", () => {
+      const dbInput = { database: "/tmp/test.db", readonly: true };
+      const config = ConnectionBuilder.buildSQLiteConnection(dbInput);
+      expect(config.readonly).toBe(true);
+    });
+
+    test("buildConnection with DBType.SQLITE should return SQLiteConfig", () => {
+      const dbInput = { database: "/tmp/test.db" };
+      const config = ConnectionBuilder.buildConnection(dbInput, null, DBType.SQLITE) as SQLiteConfig;
+      expect(config.path).toBe("/tmp/test.db");
+    });
   })
 });

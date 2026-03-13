@@ -20,6 +20,17 @@ import { cn } from "@/lib/utils";
 import { DatabaseDetailProps } from "./types";
 import { formatRelativeTime } from "./utils";
 
+const DB_COLORS: Record<string, { bg: string; text: string }> = {
+  postgresql: { bg: "bg-blue-500/10", text: "text-blue-500" },
+  mysql: { bg: "bg-orange-500/10", text: "text-orange-500" },
+  mariadb: { bg: "bg-teal-500/10", text: "text-teal-500" },
+  sqlite: { bg: "bg-cyan-500/10", text: "text-cyan-500" },
+};
+
+function getDbColors(type: string) {
+  return DB_COLORS[type] || { bg: "bg-primary/10", text: "text-primary" };
+}
+
 export function DatabaseDetail({
     database,
     isConnected,
@@ -38,17 +49,13 @@ export function DatabaseDetail({
                         <div
                             className={cn(
                                 "h-14 w-14 rounded-xl flex items-center justify-center",
-                                database.type === "postgresql"
-                                    ? "bg-blue-500/10"
-                                    : "bg-orange-500/10"
+                                getDbColors(database.type).bg
                             )}
                         >
                             <Database
                                 className={cn(
                                     "h-7 w-7",
-                                    database.type === "postgresql"
-                                        ? "text-blue-500"
-                                        : "text-orange-500"
+                                    getDbColors(database.type).text
                                 )}
                             />
                         </div>
@@ -68,7 +75,9 @@ export function DatabaseDetail({
                                 </span>
                             </div>
                             <p className="text-sm text-muted-foreground font-mono mt-0.5">
-                                {database.host}:{database.port}/{database.database}
+                                {database.type === "sqlite"
+                                    ? database.database
+                                    : `${database.host}:${database.port}/${database.database}`}
                             </p>
                         </div>
                     </div>
@@ -153,22 +162,28 @@ export function DatabaseDetail({
                         <h3 className="text-sm font-medium">Connection Details</h3>
                     </div>
                     <div className="p-4 space-y-3">
+                        {database.type !== "sqlite" && (
+                          <>
+                            <div className="flex items-center justify-between py-2 border-b border-border/30">
+                                <span className="text-sm text-muted-foreground">Host</span>
+                                <span className="text-sm font-mono">{database.host}</span>
+                            </div>
+                            <div className="flex items-center justify-between py-2 border-b border-border/30">
+                                <span className="text-sm text-muted-foreground">Port</span>
+                                <span className="text-sm font-mono">{database.port}</span>
+                            </div>
+                          </>
+                        )}
                         <div className="flex items-center justify-between py-2 border-b border-border/30">
-                            <span className="text-sm text-muted-foreground">Host</span>
-                            <span className="text-sm font-mono">{database.host}</span>
-                        </div>
-                        <div className="flex items-center justify-between py-2 border-b border-border/30">
-                            <span className="text-sm text-muted-foreground">Port</span>
-                            <span className="text-sm font-mono">{database.port}</span>
-                        </div>
-                        <div className="flex items-center justify-between py-2 border-b border-border/30">
-                            <span className="text-sm text-muted-foreground">Database</span>
+                            <span className="text-sm text-muted-foreground">{database.type === "sqlite" ? "File" : "Database"}</span>
                             <span className="text-sm font-mono">{database.database}</span>
                         </div>
-                        <div className="flex items-center justify-between py-2 border-b border-border/30">
-                            <span className="text-sm text-muted-foreground">User</span>
-                            <span className="text-sm font-mono">{database.user}</span>
-                        </div>
+                        {database.type !== "sqlite" && (
+                          <div className="flex items-center justify-between py-2 border-b border-border/30">
+                              <span className="text-sm text-muted-foreground">User</span>
+                              <span className="text-sm font-mono">{database.user}</span>
+                          </div>
+                        )}
                         <div className="flex items-center justify-between py-2">
                             <span className="text-sm text-muted-foreground">Created</span>
                             <span className="text-sm">

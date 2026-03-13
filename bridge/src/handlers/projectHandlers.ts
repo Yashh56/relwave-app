@@ -211,6 +211,42 @@ export class ProjectHandlers {
         }
     }
 
+    async handleGetAnnotations(params: any, id: number | string) {
+        try {
+            const { projectId } = params || {};
+            if (!projectId) {
+                return this.rpc.sendError(id, {
+                    code: "BAD_REQUEST",
+                    message: "Missing projectId",
+                });
+            }
+
+            const annotations = await projectStoreInstance.getAnnotations(projectId);
+            this.rpc.sendResponse(id, { ok: true, data: annotations });
+        } catch (e: any) {
+            this.logger?.error({ e }, "project.getAnnotations failed");
+            this.rpc.sendError(id, { code: "IO_ERROR", message: String(e) });
+        }
+    }
+
+    async handleSaveAnnotations(params: any, id: number | string) {
+        try {
+            const { projectId, snapshot } = params || {};
+            if (!projectId || !snapshot) {
+                return this.rpc.sendError(id, {
+                    code: "BAD_REQUEST",
+                    message: "Missing projectId or snapshot",
+                });
+            }
+
+            const result = await projectStoreInstance.saveAnnotations(projectId, snapshot);
+            this.rpc.sendResponse(id, { ok: true, data: result });
+        } catch (e: any) {
+            this.logger?.error({ e }, "project.saveAnnotations failed");
+            this.rpc.sendError(id, { code: "IO_ERROR", message: String(e) });
+        }
+    }
+
     async handleGetQueries(params: any, id: number | string) {
         try {
             const { projectId } = params || {};

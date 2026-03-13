@@ -37,6 +37,7 @@ const ENGINE_COLORS: Record<string, string> = {
   postgresql: "text-blue-500",
   mysql: "text-orange-500",
   mariadb: "text-sky-500",
+  sqlite: "text-cyan-500",
 };
 
 export function ProjectList({

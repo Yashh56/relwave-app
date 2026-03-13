@@ -25,6 +25,11 @@ const DB_TYPE_COLORS = {
         text: "text-teal-500",
         border: "border-teal-500/20",
     },
+    sqlite: {
+        bg: "bg-cyan-500/10",
+        text: "text-cyan-500",
+        border: "border-cyan-500/20",
+    },
 };
 
 export function DiscoveredDatabasesCard({

@@ -66,6 +66,13 @@ export type ERDiagramFile = {
     updatedAt: string;
 };
 
+export type AnnotationsFile = {
+    version: number;
+    projectId: string;
+    snapshot: Record<string, unknown>;
+    updatedAt: string;
+};
+
 export type SchemaFile = {
     version: number;
     projectId: string;
@@ -142,6 +149,7 @@ const PROJECT_FILES = {
     readme: "README.md",
     schema: path.join("schema", "schema.json"),
     erDiagram: path.join("diagrams", "er.json"),
+    annotations: path.join("diagrams", "annotations.json"),
     queries: path.join("queries", "queries.json"),
 } as const;
 
@@ -650,6 +658,32 @@ export class ProjectStore {
         return file;
     }
 
+    async getAnnotations(projectId: string): Promise<AnnotationsFile | null> {
+        return this.readJSON<AnnotationsFile>(
+            this.projectFile(projectId, PROJECT_FILES.annotations)
+        );
+    }
+
+    async saveAnnotations(
+        projectId: string,
+        snapshot: Record<string, unknown>
+    ): Promise<AnnotationsFile> {
+        const now = new Date().toISOString();
+        const file: AnnotationsFile = {
+            version: 1,
+            projectId,
+            snapshot,
+            updatedAt: now,
+        };
+
+        await this.writeJSON(
+            this.projectFile(projectId, PROJECT_FILES.annotations),
+            file
+        );
+
+        return file;
+    }
+
     async getQueries(projectId: string): Promise<QueriesFile | null> {
         return this.readJSON<QueriesFile>(
             this.projectFile(projectId, PROJECT_FILES.queries)
@@ -731,18 +765,20 @@ export class ProjectStore {
         metadata: ProjectMetadata;
         schema: SchemaFile | null;
         erDiagram: ERDiagramFile | null;
+        annotations: AnnotationsFile | null;
         queries: QueriesFile | null;
     } | null> {
         const metadata = await this.getProject(projectId);
         if (!metadata) return null;
 
-        const [schema, erDiagram, queries] = await Promise.all([
+        const [schema, erDiagram, annotations, queries] = await Promise.all([
             this.getSchema(projectId),
             this.getERDiagram(projectId),
+            this.getAnnotations(projectId),
             this.getQueries(projectId),
         ]);
 
-        return { metadata, schema, erDiagram, queries };
+        return { metadata, schema, erDiagram, annotations, queries };
     }
 
     // ==========================================
@@ -898,7 +934,8 @@ export class ProjectStore {
             "├── schema/",
             "│   └── schema.json         # Cached database schema snapshot",
             "├── diagrams/",
-            "│   └── er.json             # ER diagram layout",
+            "│   ├── er.json             # ER diagram layout",
+            "│   └── annotations.json    # ER diagram annotations (tldraw)",
             "└── queries/",
             "    └── queries.json         # Saved SQL queries",
             "```",

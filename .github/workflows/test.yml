@@ -12,6 +12,10 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # Note: SQLite tests are self-contained (no service needed).
+    # They create a temporary database file and seed it in beforeAll().
+    # better-sqlite3 native module is compiled during pnpm install.
+
     services:
       postgres:
         image: postgres:16
@@ -91,6 +95,8 @@ jobs:
       REAL_MARIADB_PASSWORD: testpass
       REAL_MARIADB_DATABASE: testdb
       REAL_MARIADB_SSL: "false"
+
+      # SQLite — no env vars needed; tests use a temp file
 
     steps:
       - name: Checkout code

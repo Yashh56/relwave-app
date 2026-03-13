@@ -14,7 +14,7 @@ export class DatabaseService {
     return this.dbStore.getDB(dbId);
   }
 
-  async getDatabaseConnection(dbId: string) {
+  async getDatabaseConnection(dbId: string): Promise<{ db: any; conn: any; dbType: DBType }> {
     const db = await this.dbStore.getDB(dbId);
     if (!db) throw new Error("Database not found");
 
@@ -32,7 +32,10 @@ export class DatabaseService {
   }
 
   async addDatabase(payload: any) {
-    const required = ["name", "host", "port", "user", "database", "type"];
+    const isSQLite = payload.type?.toLowerCase().includes('sqlite');
+    const required = isSQLite
+      ? ["name", "database", "type"]
+      : ["name", "host", "port", "user", "database", "type"];
     for (const field of required) {
       if (!payload[field]) {
         throw new Error(`Missing required field: ${field}`);

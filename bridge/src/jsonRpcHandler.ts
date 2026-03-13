@@ -207,6 +207,12 @@ export function registerDbHandlers(
   rpcRegister("project.saveERDiagram", (p, id) =>
     projectHandlers.handleSaveERDiagram(p, id)
   );
+  rpcRegister("project.getAnnotations", (p, id) =>
+    projectHandlers.handleGetAnnotations(p, id)
+  );
+  rpcRegister("project.saveAnnotations", (p, id) =>
+    projectHandlers.handleSaveAnnotations(p, id)
+  );
   rpcRegister("project.getQueries", (p, id) =>
     projectHandlers.handleGetQueries(p, id)
   );

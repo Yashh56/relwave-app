@@ -1,6 +1,7 @@
 import * as postgresConnector from "../connectors/postgres";
 import * as mysqlConnector from "../connectors/mysql";
 import * as mariadbConnector from "../connectors/mariadb";
+import * as sqliteConnector from "../connectors/sqlite";
 import { DBType, Rpc, QueryParams, DatabaseConfig } from "../types";
 
 // Concurrency limit for parallel processing
@@ -47,12 +48,13 @@ export class QueryExecutor {
   constructor(
     public postgres = postgresConnector,
     public mysql = mysqlConnector,
-    public mariadb = mariadbConnector
+    public mariadb = mariadbConnector,
+    public sqlite = sqliteConnector
   ) { }
 
   async executeQuery(
     params: QueryParams,
-    conn: DatabaseConfig,
+    conn: any,
     dbType: DBType,
     rpc: Rpc,
     onCancel: (cancelFn: () => Promise<void>) => void
@@ -120,43 +122,57 @@ export class QueryExecutor {
         onBatch,
         onDone
       );
+    } else if (dbType === DBType.SQLITE) {
+      runner = this.sqlite.streamQueryCancelable(
+        conn,
+        sql,
+        batchSize,
+        onBatch,
+        onDone
+      );
     }
 
     onCancel(runner.cancel);
     return { runner, totalRows, start };
   }
 
-  async testConnection(conn: DatabaseConfig, dbType: DBType): Promise<any> {
+  async testConnection(conn: any, dbType: DBType): Promise<any> {
     if (dbType === DBType.MYSQL) {
       return await this.mysql.testConnection(conn);
     } else if (dbType === DBType.POSTGRES) {
       return await this.postgres.testConnection(conn);
+    } else if (dbType === DBType.SQLITE) {
+      return await this.sqlite.testConnection(conn);
     } else {
       return await this.mariadb.testConnection(conn);
     }
   }
 
-  async listTables(conn: DatabaseConfig, dbType: DBType, schema?: string) {
+  async listTables(conn: any, dbType: DBType, schema?: string) {
     if (dbType === DBType.MYSQL) {
       return this.mysql.listTables(conn, schema);
     } else if (dbType === DBType.POSTGRES) {
       return this.postgres.listTables(conn, schema);
     } else if (dbType === DBType.MARIADB) {
       return this.mariadb.listTables(conn, schema);
+    } else if (dbType === DBType.SQLITE) {
+      return this.sqlite.listTables(conn, schema);
     }
   }
 
-  async getStats(conn: DatabaseConfig, dbType: DBType) {
+  async getStats(conn: any, dbType: DBType) {
     if (dbType === DBType.MYSQL) {
       return this.mysql.getDBStats(conn);
     } else if (dbType === DBType.POSTGRES) {
       return this.postgres.getDBStats(conn);
     } else if (dbType === DBType.MARIADB) {
       return this.mariadb.getDBStats(conn);
+    } else if (dbType === DBType.SQLITE) {
+      return this.sqlite.getDBStats(conn);
     }
   }
 
-  async listSchemas(conn: DatabaseConfig, dbType: DBType): Promise<any> {
+  async listSchemas(conn: any, dbType: DBType): Promise<any> {
     if (dbType === DBType.MYSQL) {
       const schemas = await this.mysql.listSchemas(conn);
 
@@ -318,16 +334,66 @@ export class QueryExecutor {
         name: conn.database,
         schemas: finalSchemas.filter(Boolean), // Remove null entries from failed schemas
       };
+    } else if (dbType === DBType.SQLITE) {
+      // SQLite - only has 'main' schema
+      const schemas = await this.sqlite.listSchemas(conn);
+
+      const finalSchemas = await parallelMap(schemas, async (schema) => {
+        try {
+          const tablesInSchema = await this.sqlite.listTables(conn, schema.name);
+          const batchData = await this.sqlite.getSchemaMetadataBatch(conn, schema.name);
+
+          const finalTables = tablesInSchema.map((table) => {
+            const tableData = batchData.tables.get(table.name);
+
+            const columns = tableData?.columns.map((col) => ({
+              name: col.name,
+              type: col.type,
+              nullable: !col.not_nullable,
+              isPrimaryKey: col.is_primary_key === true,
+              isForeignKey: col.is_foreign_key === true,
+              defaultValue: col.default_value || null,
+              isUnique: false,
+            })) || [];
+
+            return {
+              name: table.name,
+              type: table.type,
+              columns: columns,
+              primaryKeys: tableData?.primaryKeys || [],
+              foreignKeys: tableData?.foreignKeys || [],
+              indexes: tableData?.indexes || [],
+              uniqueConstraints: tableData?.uniqueConstraints || [],
+              checkConstraints: tableData?.checkConstraints || [],
+            };
+          });
+
+          return {
+            name: schema.name,
+            tables: finalTables,
+          };
+        } catch (e: any) {
+          console.warn(`Skipping schema ${schema.name} due to error: ${e.message}`);
+          return null;
+        }
+      });
+
+      return {
+        name: conn.path || conn.database,
+        schemas: finalSchemas.filter(Boolean),
+      };
     }
   }
 
-  async listSchemaNames(conn: DatabaseConfig, dbType: DBType): Promise<string[]> {
+  async listSchemaNames(conn: any, dbType: DBType): Promise<string[]> {
     if (dbType === DBType.POSTGRES) {
       return this.postgres.listSchemaNames(conn);
     } else if (dbType === DBType.MARIADB) {
       return this.mariadb.listSchemaNames(conn);
     } else if (dbType === DBType.MYSQL) {
       return this.mysql.listSchemaNames(conn);
+    } else if (dbType === DBType.SQLITE) {
+      return this.sqlite.listSchemaNames(conn);
     }
     return ["public"];
   }

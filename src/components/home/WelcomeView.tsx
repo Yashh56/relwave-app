@@ -15,6 +15,17 @@ import { formatRelativeTime } from "./utils";
 import { DiscoveredDatabasesCard } from "./DiscoveredDatabasesCard";
 import { DiscoveredDatabase } from "@/types/database";
 
+const DB_COLORS: Record<string, { bg: string; text: string }> = {
+  postgresql: { bg: "bg-blue-500/10", text: "text-blue-500" },
+  mysql: { bg: "bg-orange-500/10", text: "text-orange-500" },
+  mariadb: { bg: "bg-teal-500/10", text: "text-teal-500" },
+  sqlite: { bg: "bg-cyan-500/10", text: "text-cyan-500" },
+};
+
+function getDbColors(type: string) {
+  return DB_COLORS[type] || { bg: "bg-primary/10", text: "text-primary" };
+}
+
 export function WelcomeView({
   databases,
   recentDatabases,
@@ -126,17 +137,13 @@ export function WelcomeView({
                   <div
                     className={cn(
                       "h-10 w-10 rounded-lg flex items-center justify-center shrink-0",
-                      db.type === "postgresql"
-                        ? "bg-blue-500/10"
-                        : "bg-orange-500/10"
+                      getDbColors(db.type).bg
                     )}
                   >
                     <Database
                       className={cn(
                         "h-5 w-5",
-                        db.type === "postgresql"
-                          ? "text-blue-500"
-                          : "text-orange-500"
+                        getDbColors(db.type).text
                       )}
                     />
                   </div>
