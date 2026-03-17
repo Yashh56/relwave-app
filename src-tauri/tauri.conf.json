@@ -1,12 +1,12 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "RelWave",
-  "version": "0.4.0-beta.1",
+  "version": "v0.4.0-beta.2",
   "identifier": "tech.relwave.app",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1420",
-    "beforeBuildCommand": "npm run build",
+    "beforeBuildCommand": "npm run build && npm run package-bridge",
     "frontendDist": "../dist"
   },
   "app": {
@@ -31,6 +31,9 @@
       "nsis",
       "deb",
       "appimage"
+    ],
+    "resources": [
+      "resources/better_sqlite3.node"
     ],
     "icon": [
       "icons/32x32.png",
