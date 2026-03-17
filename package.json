@@ -1,7 +1,7 @@
 {
   "name": "relwave",
   "private": true,
-  "version": "v0.4.0-beta.2",
+  "version": "0.4.0-beta.2",
   "type": "module",
   "scripts": {
     "dev": "vite",
@@ -9,8 +9,8 @@
     "preview": "vite preview",
     "tauri": "tauri ",
     "beforeDevCommand": "npm --prefix bridge run dev",
-    "copy-sqlite-binding": "pnpm --dir bridge run copy:native",
-    "package-bridge": "pnpm --dir bridge run build:pkg"
+    "copy-sqlite-binding": "npm --prefix bridge run copy:native",
+    "package-bridge": "npm --prefix bridge run build:pkg"
   },
   "pkg": {
     "scripts": [],

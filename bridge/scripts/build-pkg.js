@@ -16,8 +16,8 @@ if (!targetScript) {
   process.exit(1);
 }
 
-const pnpmCommand = process.platform === "win32" ? "pnpm.cmd" : "pnpm";
-const result = spawnSync(pnpmCommand, ["run", targetScript], {
+const npmCommand = process.platform === "win32" ? "npm.cmd" : "npm";
+const result = spawnSync(npmCommand, ["run", targetScript], {
   stdio: "inherit",
 });
 

@@ -1,6 +1,6 @@
 {
   "name": "db-visualizer-bridge",
-  "version": "v0.4.0-beta.2",
+  "version": "0.4.0-beta.2",
   "type": "commonjs",
   "main": "dist/index.cjs",
   "scripts": {
@@ -9,8 +9,8 @@
     "build": "esbuild src/index.ts --bundle --platform=node --outfile=dist/index.cjs --format=cjs --packages=external",
     "copy:native": "node scripts/copy-native.js",
     "build:pkg": "node scripts/build-pkg.js",
-    "build:pkg:win": "pnpm run build && pnpm run copy:native && pnpm exec pkg . --target node18-win-x64 --output ../src-tauri/resources/bridge-x86_64-pc-windows-msvc.exe",
-    "build:pkg:linux": "pnpm run build && pnpm run copy:native && pnpm exec pkg . --target node18-linux-x64 --output ../src-tauri/resources/bridge-x86_64-unknown-linux-gnu",
+    "build:pkg:win": "npm run build && npm run copy:native && pkg . --target node18-win-x64 --output ../src-tauri/resources/bridge-x86_64-pc-windows-msvc.exe",
+    "build:pkg:linux": "npm run build && npm run copy:native && pkg . --target node18-linux-x64 --output ../src-tauri/resources/bridge-x86_64-unknown-linux-gnu",
     "test": "jest",
     "test:watch": "jest --watchAll --detectOpenHandles"
   },
