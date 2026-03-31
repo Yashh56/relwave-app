@@ -10,31 +10,31 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useBridgeQuery } from "@/hooks/useBridgeQuery";
-import { useDatabaseDetails } from "@/hooks/useDatabaseDetails";
-import { useMigrations, useFullSchema } from "@/hooks/useDbQueries";
-import { useExport } from "@/hooks/useExport";
-import { useProjectSync } from "@/hooks/useProjectSync";
-import { useProjectDir } from "@/hooks/useProjectQueries";
-import BridgeLoader from "@/components/feedback/BridgeLoader";
+import { useDatabaseDetails } from "@/features/database/hooks/useDatabaseDetails";
+import { useMigrations, useFullSchema } from "@/features/project/hooks/useDbQueries";
+import { useExport } from "@/features/database/hooks/useExport";
+import { useProjectSync } from "@/features/project/hooks/useProjectSync";
+import { useProjectDir } from "@/features/project/hooks/useProjectQueries";
+import BridgeLoader from "@/components/BridgeLoader";
 import { Spinner } from "@/components/ui/spinner";
-import VerticalIconBar, { PanelType } from "@/components/common/VerticalIconBar";
-import SlideOutPanel from "@/components/common/SlideOutPanel";
-import TablesExplorerPanel from "@/components/database/TablesExplorerPanel";
-import ContentViewerPanel from "@/components/database/ContentViewerPanel";
-import { MigrationsPanel } from "@/components/database";
-import InsertDataDialog from "@/components/database/InsertDataDialog";
-import EditRowDialog from "@/components/database/EditRowDialog";
-import ConfirmDialog from "@/components/common/ConfirmDialog";
-import { ChartVisualization } from "@/components/chart/ChartVisualization";
+import VerticalIconBar, { PanelType } from "@/components/VerticalIconBar";
+import SlideOutPanel from "@/components/SlideOutPanel";
 import { bridgeApi } from "@/services/bridgeApi";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
-import SQLWorkspacePanel from "@/components/workspace/SQLWorkspacePanel";
-import QueryBuilderPanel from "@/components/query-builder/QueryBuilderPanel";
-import SchemaExplorerPanel from "@/components/schema-explorer/SchemaExplorerPanel";
-import ERDiagramPanel from "@/components/er-diagram/ERDiagramPanel";
-import GitStatusPanel from "@/components/git/GitStatusPanel";
-import GitStatusBar from "@/components/common/GitStatusBar";
+import SQLWorkspacePanel from "@/features/workspace/components/SQLWorkspacePanel";
+import GitStatusPanel from "@/features/git/components/GitStatusPanel";
+import GitStatusBar from "@/features/git/components/GitStatusBar";
+import TablesExplorerPanel from "@/features/database/components/TablesExplorerPanel";
+import ContentViewerPanel from "@/features/database/components/ContentViewerPanel";
+import { MigrationsPanel } from "@/features/database/components";
+import InsertDataDialog from "@/features/database/components/InsertDataDialog";
+import { ChartVisualization } from "@/features/chart/components";
+import EditRowDialog from "@/features/database/components/EditRowDialog";
+import ConfirmDialog from "@/components/ConfirmDialog";
+import ERDiagramPanel from "@/features/er-diagram/components/ERDiagramPanel";
+import { QueryBuilderPanel } from "@/features/query-builder/components";
+import { SchemaExplorerPanel } from "@/features/schema-explorer/components";
 
 const DatabaseDetail = () => {
   const { id: dbId } = useParams<{ id: string }>();
@@ -416,13 +416,13 @@ const DatabaseDetail = () => {
           onPanelChange={setActivePanel}
         />
 
-        <main className="flex-1 ml-[60px] flex flex-col overflow-hidden">
+        <main className="flex-1 ml-15 flex flex-col overflow-hidden">
           {renderPanelContent()}
         </main>
       </div>
 
       {/* Bottom status bar with git info */}
-      <div className="shrink-0 h-7 border-t border-border/30 bg-background/95 backdrop-blur-sm flex items-center px-2 ml-[60px] gap-4">
+      <div className="shrink-0 h-7 border-t border-border/30 bg-background/95 backdrop-blur-sm flex items-center px-2 ml-15 gap-4">
         <GitStatusBar projectDir={projectDir} />
         <div className="flex-1" />
         <span className="text-[10px] text-muted-foreground/60 font-mono">

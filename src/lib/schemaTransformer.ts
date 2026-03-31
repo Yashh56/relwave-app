@@ -1,5 +1,5 @@
-import { ColumnDetails, DatabaseSchemaDetails, ForeignKeyInfo, TableSchemaDetails } from "@/types/database";
-import type { ERNode } from "@/types/project";
+import { ColumnDetails, DatabaseSchemaDetails, ForeignKeyInfo, TableSchemaDetails } from '@/features/database/types';
+import type { ERNode } from "@/features/project/types";
 import { Edge, MarkerType, Node } from "reactflow";
 import dagre from "dagre";
 
@@ -29,10 +29,10 @@ const getNodeDimensions = (table: TableSchemaDetails) => {
   const headerHeight = 40;
   const columnHeight = 28;
   const footerHeight = 30;
-  
+
   const width = Math.max(baseWidth, table.name.length * 10 + 80);
   const height = headerHeight + (table.columns.length * columnHeight) + footerHeight;
-  
+
   return { width, height };
 };
 
@@ -44,8 +44,8 @@ const applyDagreLayout = (
 ): Node<TableNodeData>[] => {
   const dagreGraph = new dagre.graphlib.Graph();
   dagreGraph.setDefaultEdgeLabel(() => ({}));
-  dagreGraph.setGraph({ 
-    rankdir: direction, 
+  dagreGraph.setGraph({
+    rankdir: direction,
     nodesep: 80,
     ranksep: 150,
     marginx: 50,
@@ -54,9 +54,9 @@ const applyDagreLayout = (
 
   // Add nodes to dagre
   nodes.forEach((node) => {
-    dagreGraph.setNode(node.id, { 
-      width: node.width || 220, 
-      height: node.height || 200 
+    dagreGraph.setNode(node.id, {
+      width: node.width || 220,
+      height: node.height || 200
     });
   });
 
@@ -89,7 +89,7 @@ export const transformSchemaToER = (
   const nodes: Node<TableNodeData>[] = [];
   const edges: Edge<any>[] = [];
   let nodeIndex = 0;
-  
+
   // Colors
   const PRIMARY_CYAN = "#06B6D4"; // Tailwind cyan-500
   const SCHEMA_COLORS: Record<string, string> = {
@@ -117,7 +117,7 @@ export const transformSchemaToER = (
   // First pass: Create all nodes with enriched column data
   schema.schemas.forEach((schemaGroup) => {
     const schemaColor = SCHEMA_COLORS[schemaGroup.name] || "#6B7280";
-    
+
     schemaGroup.tables.forEach((table) => {
       const tableName = `${schemaGroup.name}.${table.name}`;
       const fkMap = buildFkMap(table.foreignKeys);
@@ -182,8 +182,8 @@ export const transformSchemaToER = (
               sourceHandle: sourceHandleId,
               targetHandle: targetHandleId,
               animated: false,
-              style: { 
-                stroke: PRIMARY_CYAN, 
+              style: {
+                stroke: PRIMARY_CYAN,
                 strokeWidth: 2,
               },
               // Crow's foot marker for "many" side (source)

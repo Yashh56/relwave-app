@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useBridgeQuery } from "@/hooks/useBridgeQuery";
-import { useDatabases, queryKeys } from "@/hooks/useDbQueries";
+import { useDatabases, queryKeys } from "@/features/project/hooks/useDbQueries";
 import {
     useProjects,
     useCreateProject,
@@ -12,18 +12,18 @@ import {
     useProjectERDiagram,
     useProjectQueries,
     projectKeys,
-} from "@/hooks/useProjectQueries";
+} from "@/features/project/hooks/useProjectQueries";
 import { bridgeApi } from "@/services/bridgeApi";
-import BridgeLoader from "@/components/feedback/BridgeLoader";
-import BridgeFailed from "@/components/feedback/BridgeFailed";
-import VerticalIconBar from "@/components/common/VerticalIconBar";
+import BridgeLoader from "@/components/BridgeLoader";
+import BridgeFailed from "@/components/BridgeFailed";
+import VerticalIconBar from "@/components/VerticalIconBar";
 import {
     ProjectList,
     CreateProjectDialog,
     DeleteProjectDialog,
     ImportProjectDialog,
     ProjectDetailView,
-} from "@/components/project";
+} from "@/features/project/components";
 import { FolderOpen, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -155,7 +155,7 @@ const Projects = () => {
     return (
         <div className="h-[calc(100vh-32px)] flex bg-background text-foreground overflow-hidden">
             <VerticalIconBar />
-            <main className="flex-1 ml-[60px] flex">
+            <main className="flex-1 ml-15 flex">
                 {/* Left panel */}
                 <ProjectList
                     projects={projects}

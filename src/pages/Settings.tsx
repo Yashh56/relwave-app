@@ -1,5 +1,5 @@
-import VerticalIconBar from "@/components/common/VerticalIconBar";
-import { CheckForUpdates, ColorVariant, DeveloperMode, Header, Preview, ThemeMode, Version } from "@/components/settings";
+import VerticalIconBar from "@/components/VerticalIconBar";
+import { CheckForUpdates, ColorVariant, DeveloperMode, Header, Preview, ThemeMode, Version } from "@/features/settings/components";
 
 const Settings = () => {
     return (

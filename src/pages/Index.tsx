@@ -8,15 +8,15 @@ import {
   useAddDatabase,
   useDeleteDatabase,
   usePrefetch
-} from "@/hooks/useDbQueries";
+} from "@/features/project/hooks/useDbQueries";
 import {
   useCachedConnectionStatus,
   useCachedTotalStats,
   useCachedDbStats,
-} from "@/hooks/useCachedData";
-import BridgeLoader from "@/components/feedback/BridgeLoader";
-import BridgeFailed from "@/components/feedback/BridgeFailed";
-import VerticalIconBar from "@/components/common/VerticalIconBar";
+} from "@/features/database/hooks/useCachedData";
+import BridgeLoader from "@/components/BridgeLoader";
+import BridgeFailed from "@/components/BridgeFailed";
+import VerticalIconBar from "@/components/VerticalIconBar";
 import { bytesToMBString } from "@/lib/bytesToMB";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -25,10 +25,8 @@ import {
   WelcomeView,
   AddConnectionDialog,
   DeleteDialog,
-  REQUIRED_FIELDS,
-  SQLITE_REQUIRED_FIELDS,
-  ConnectionFormData,
-} from "@/components/home";
+} from "@/features/home/components";
+import { ConnectionFormData, REQUIRED_FIELDS, SQLITE_REQUIRED_FIELDS } from "@/features/home/types";
 
 const Index = () => {
   const navigate = useNavigate();
@@ -200,7 +198,7 @@ const Index = () => {
   return (
     <div className="h-[calc(100vh-32px)] flex bg-background text-foreground overflow-hidden">
       <VerticalIconBar />
-      <main className="flex-1 ml-[60px] flex">
+      <main className="flex-1 ml-15 flex">
         {/* Left Panel - Database List */}
         <ConnectionList
           databases={databases}

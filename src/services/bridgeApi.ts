@@ -1,7 +1,40 @@
-import { AddDatabaseParams, ConnectionTestResult, CreateTableColumn, DatabaseConnection, DatabaseSchemaDetails, DatabaseStats, DiscoveredDatabase, RunQueryParams, TableRow, UpdateDatabaseParams } from "@/types/database";
-import { ProjectSummary, ProjectMetadata, CreateProjectParams, UpdateProjectParams, SchemaFile, SchemaSnapshot, ERDiagramFile, ERNode, QueriesFile, SavedQuery, ProjectExport, ImportProjectParams, ScanImportResult, AnnotationsFile } from "@/types/project";
+import {
+  AddDatabaseParams,
+  ConnectionTestResult,
+  CreateTableColumn,
+  DatabaseConnection,
+  DatabaseSchemaDetails,
+  DatabaseStats,
+  DiscoveredDatabase,
+  RunQueryParams,
+  TableRow,
+  UpdateDatabaseParams
+} from '@/features/database/types';
+import {
+  ProjectSummary,
+  ProjectMetadata,
+  CreateProjectParams,
+  UpdateProjectParams,
+  SchemaFile,
+  SchemaSnapshot,
+  ERDiagramFile,
+  ERNode,
+  QueriesFile,
+  SavedQuery,
+  ProjectExport,
+  ImportProjectParams,
+  ScanImportResult,
+  AnnotationsFile
+} from "@/features/project/types";
 import type { TLEditorSnapshot } from "tldraw";
-import { GitStatus, GitFileChange, GitLogEntry, GitBranchInfo, GitRemoteInfo, GitPushPullResult } from "@/types/git";
+import {
+  GitStatus,
+  GitFileChange,
+  GitLogEntry,
+  GitBranchInfo,
+  GitRemoteInfo,
+  GitPushPullResult
+} from "@/features/git/types";
 import { bridgeRequest } from "./bridgeClient";
 
 
