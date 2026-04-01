@@ -1,6 +1,6 @@
 import { Theme } from '@tauri-apps/api/window';
 import { Check, LucideProps, Monitor, Moon, Sun } from 'lucide-react';
-import { useTheme } from "@/components/ThemeProvider";
+import { useTheme } from "@/components/providers/ThemeProvider";
 
 export default function ThemeMode() {
     const { theme, setTheme } = useTheme();

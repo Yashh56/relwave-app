@@ -1,6 +1,6 @@
 import { Database, AlertCircle, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { DataTable } from "@/components/DataTable";
+import { DataTable } from "@/components/shared/DataTable";
 import { QueryTab } from "../types";
 
 interface ResultsPanelProps {

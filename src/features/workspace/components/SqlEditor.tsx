@@ -3,7 +3,7 @@ import CodeMirror from "@uiw/react-codemirror";
 import { sql, PostgreSQL, MySQL } from "@codemirror/lang-sql";
 import { oneDark } from "@codemirror/theme-one-dark";
 import { EditorView } from "@codemirror/view";
-import { useTheme } from "@/components/ThemeProvider";
+import { useTheme } from "@/components/providers/ThemeProvider";
 
 interface SqlEditorProps {
   value: string;

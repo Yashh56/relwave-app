@@ -54,7 +54,7 @@ import {
 } from "@/features/git/hooks/useGitAdvanced";
 import { toast } from "sonner";
 import type { GitBranchInfo } from "@/features/git/types";
-import RemoteConfigDialog from "../../../components/RemoteConfigDialog";
+import RemoteConfigDialog from "../../../dev/RemoteConfigDialog";
 
 interface GitStatusBarProps {
     projectDir: string | null | undefined;

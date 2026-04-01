@@ -1,6 +1,6 @@
 import { Code } from "lucide-react";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { DataTable } from "@/components/DataTable";
+import { DataTable } from "@/components/shared/DataTable";
 import { TableRow } from "@/features/database/types";
 
 interface SQLResultsPanelProps {

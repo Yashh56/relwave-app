@@ -1,7 +1,7 @@
 import { RefreshCw, Plus, TrendingUp, Search, X, Loader2, Table } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { DataTable } from '@/components/DataTable';
+import { DataTable } from '@/components/shared/DataTable';
 import { TableRow } from '@/features/database/types';
 
 interface ContentViewerPanelProps {
