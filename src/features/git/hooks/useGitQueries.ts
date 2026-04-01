@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { bridgeApi } from "@/services/bridgeApi";
-import { isBridgeReady } from "@/services/bridgeClient";
+import { isBridgeReady } from "@/services/bridge/bridgeClient";
 import type { GitStatus, GitFileChange, GitLogEntry, GitBranchInfo } from "@/features/git/types";
+import { gitService } from "@/services/bridge/git";
 
 export const gitKeys = {
     all: ["git"] as const,
@@ -25,7 +25,7 @@ export function useGitStatus(dir: string | null | undefined) {
 
     return useQuery<GitStatus>({
         queryKey: gitKeys.status(dir ?? ""),
-        queryFn: () => bridgeApi.gitStatus(dir!),
+        queryFn: () => gitService.gitStatus(dir!),
         enabled: !!dir && bridgeReady,
         staleTime: STALE.status,
         refetchInterval: 15_000,  // poll every 15s for live status
@@ -40,7 +40,7 @@ export function useGitChanges(dir: string | null | undefined) {
 
     return useQuery<GitFileChange[]>({
         queryKey: gitKeys.changes(dir ?? ""),
-        queryFn: () => bridgeApi.gitChanges(dir!),
+        queryFn: () => gitService.gitChanges(dir!),
         enabled: !!dir && bridgeReady,
         staleTime: STALE.changes,
     });
@@ -53,7 +53,7 @@ export function useGitLog(dir: string | null | undefined, count = 20) {
 
     return useQuery<GitLogEntry[]>({
         queryKey: gitKeys.log(dir ?? ""),
-        queryFn: () => bridgeApi.gitLog(dir!, count),
+        queryFn: () => gitService.gitLog(dir!, count),
         enabled: !!dir && bridgeReady,
         staleTime: STALE.log,
     });
@@ -66,7 +66,7 @@ export function useGitBranches(dir: string | null | undefined) {
 
     return useQuery<GitBranchInfo[]>({
         queryKey: gitKeys.branches(dir ?? ""),
-        queryFn: () => bridgeApi.gitBranches(dir!),
+        queryFn: () => gitService.gitBranches(dir!),
         enabled: !!dir && bridgeReady,
         staleTime: STALE.branches,
     });
@@ -86,7 +86,7 @@ function useInvalidateGit(dir: string | null | undefined) {
 export function useGitInit(dir: string | null | undefined) {
     const invalidate = useInvalidateGit(dir);
     return useMutation({
-        mutationFn: () => bridgeApi.gitInit(dir!),
+        mutationFn: () => gitService.gitInit(dir!),
         onSuccess: invalidate,
     });
 }
@@ -94,7 +94,7 @@ export function useGitInit(dir: string | null | undefined) {
 export function useGitStageAll(dir: string | null | undefined) {
     const invalidate = useInvalidateGit(dir);
     return useMutation({
-        mutationFn: () => bridgeApi.gitStageAll(dir!),
+        mutationFn: () => gitService.gitStageAll(dir!),
         onSuccess: invalidate,
     });
 }
@@ -102,7 +102,7 @@ export function useGitStageAll(dir: string | null | undefined) {
 export function useGitCommit(dir: string | null | undefined) {
     const invalidate = useInvalidateGit(dir);
     return useMutation({
-        mutationFn: (message: string) => bridgeApi.gitCommit(dir!, message),
+        mutationFn: (message: string) => gitService.gitCommit(dir!, message),
         onSuccess: invalidate,
     });
 }
@@ -110,7 +110,7 @@ export function useGitCommit(dir: string | null | undefined) {
 export function useGitCheckout(dir: string | null | undefined) {
     const invalidate = useInvalidateGit(dir);
     return useMutation({
-        mutationFn: (branchName: string) => bridgeApi.gitCheckout(dir!, branchName),
+        mutationFn: (branchName: string) => gitService.gitCheckout(dir!, branchName),
         onSuccess: invalidate,
     });
 }
@@ -118,7 +118,7 @@ export function useGitCheckout(dir: string | null | undefined) {
 export function useGitCreateBranch(dir: string | null | undefined) {
     const invalidate = useInvalidateGit(dir);
     return useMutation({
-        mutationFn: (name: string) => bridgeApi.gitCreateBranch(dir!, name),
+        mutationFn: (name: string) => gitService.gitCreateBranch(dir!, name),
         onSuccess: invalidate,
     });
 }
@@ -126,7 +126,7 @@ export function useGitCreateBranch(dir: string | null | undefined) {
 export function useGitStash(dir: string | null | undefined) {
     const invalidate = useInvalidateGit(dir);
     return useMutation({
-        mutationFn: (message?: string) => bridgeApi.gitStash(dir!, message),
+        mutationFn: (message?: string) => gitService.gitStash(dir!, message),
         onSuccess: invalidate,
     });
 }
@@ -134,7 +134,7 @@ export function useGitStash(dir: string | null | undefined) {
 export function useGitStashPop(dir: string | null | undefined) {
     const invalidate = useInvalidateGit(dir);
     return useMutation({
-        mutationFn: () => bridgeApi.gitStashPop(dir!),
+        mutationFn: () => gitService.gitStashPop(dir!),
         onSuccess: invalidate,
     });
 }

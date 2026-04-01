@@ -21,9 +21,9 @@ import {
     SelectTrigger,
     SelectValue,
 } from "@/components/ui/select";
-import { bridgeApi } from "@/services/bridgeApi";
 import { ColumnDetails, ForeignKeyInfo } from "@/features/database/types";
 import { databaseService } from "@/services/bridge/database";
+import { queryService } from "@/services/bridge/query";
 
 interface InsertDataDialogProps {
     open: boolean;
@@ -127,7 +127,7 @@ export default function InsertDataDialog({
 
         try {
             // Fetch first 100 rows from referenced table
-            const result = await bridgeApi.fetchTableData(
+            const result = await queryService.fetchTableData(
                 dbId,
                 fk.target_schema,
                 fk.target_table,

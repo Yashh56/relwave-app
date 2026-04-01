@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { startBridgeListeners, isBridgeReady } from "@/services/bridgeClient";
+import { startBridgeListeners, isBridgeReady } from "@/services/bridge/bridgeClient";
 
 export function useBridgeQuery() {
   return useQuery({

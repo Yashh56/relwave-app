@@ -19,7 +19,6 @@ import { toast } from "sonner";
 import { transformSchemaToER } from "@/lib/schemaTransformer";
 import { Spinner } from "@/components/ui/spinner";
 import { useERDiagramData } from "@/features/er-diagram/hooks/useERDiagramData";
-import { bridgeApi } from "@/services/bridgeApi";
 import { ColumnDetails, DatabaseSchemaDetails, ForeignKeyInfo, TableSchemaDetails } from "@/features/database/types";
 import type { ERNode } from "@/features/project/types";
 import {

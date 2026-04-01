@@ -13,7 +13,7 @@ import {
     ImportProjectParams,
     ScanImportResult,
     AnnotationsFile
-} from "@/features/project/types"; import { bridgeRequest } from "../bridgeClient";
+} from "@/features/project/types"; import { bridgeRequest } from "./bridgeClient";
 import { TLEditorSnapshot } from "tldraw";
 
 class ProjectService {

@@ -37,10 +37,10 @@ import {
     useGitBranches,
 } from "@/features/git/hooks/useGitQueries";
 import { useGitRevert } from "@/features/git/hooks/useGitAdvanced";
-import { bridgeApi } from "@/services/bridgeApi";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 import type { GitFileChange, GitLogEntry } from "@/features/git/types";
+import { gitService } from "@/services/bridge/git";
 
 // ─── Helpers ──────────────────────────────────────────
 
@@ -155,7 +155,7 @@ export default function GitStatusPanel({ projectDir }: GitStatusPanelProps) {
         setDiffLoading(true);
         setDiffDialogOpen(true);
         try {
-            const diff = await bridgeApi.gitDiff(projectDir!, file, isStaged);
+            const diff = await gitService.gitDiff(projectDir!, file, isStaged);
             setDiffContent(diff || "(no diff available)");
         } catch {
             setDiffContent("Failed to load diff.");

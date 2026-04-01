@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
-import { bridgeApi } from "@/services/bridgeApi";
 import { DiscoveredDatabase } from "@/features/database/types";
+import { databaseService } from "@/services/bridge/database";
 
 interface UseDiscoveredDatabasesReturn {
     databases: DiscoveredDatabase[];
@@ -25,7 +25,7 @@ export function useDiscoveredDatabases(): UseDiscoveredDatabasesReturn {
         setError(null);
 
         try {
-            const discovered = await bridgeApi.discoverDatabases();
+            const discovered = await databaseService.discoverDatabases();
             setDatabases(discovered);
             setLastScanned(new Date());
         } catch (err: any) {

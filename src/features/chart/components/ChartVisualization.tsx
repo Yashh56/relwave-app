@@ -12,8 +12,8 @@ import { toast } from "sonner";
 import { ChartConfigPanel } from "./ChartConfigPanel";
 import ChartRenderer from "./ChartRenderer";
 import { ColumnDetails, SelectedTable } from '@/features/database/types';
-import { bridgeApi } from "@/services/bridgeApi";
 import { databaseService } from "@/services/bridge/database";
+import { queryService } from "@/services/bridge/query";
 
 interface ChartVisualizationProps {
   selectedTable: SelectedTable;
@@ -127,7 +127,7 @@ export const ChartVisualization = ({ selectedTable, dbId }: ChartVisualizationPr
                     LIMIT 50
                 `;
 
-        await bridgeApi.runQuery({
+        await queryService.runQuery({
           sessionId,
           dbId: dbId || "",
           sql: sql.trim(),

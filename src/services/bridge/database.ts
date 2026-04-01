@@ -9,7 +9,7 @@ import {
     RunQueryParams,
     TableRow,
     UpdateDatabaseParams
-} from '@/features/database/types'; import { bridgeRequest } from "../bridgeClient";
+} from '@/features/database/types'; import { bridgeRequest } from "./bridgeClient";
 
 class DatabaseService {
     // ------------------------------------
@@ -537,6 +537,20 @@ class DatabaseService {
         } catch (error: any) {
             console.error("Failed to search table:", error);
             throw new Error(`Failed to search table: ${error.message}`);
+        }
+    }
+
+    /**
+     * Discover locally running databases (on localhost or Docker)
+     * Scans common database ports and detects Docker containers
+     */
+    async discoverDatabases(): Promise<DiscoveredDatabase[]> {
+        try {
+            const result = await bridgeRequest("db.discover", {});
+            return result?.data || [];
+        } catch (error: any) {
+            console.error("Failed to discover databases:", error);
+            return []; // Return empty array on error, don't throw
         }
     }
 }

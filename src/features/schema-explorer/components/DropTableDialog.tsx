@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Loader2, AlertTriangle } from "lucide-react";
 import { DropMode } from "@/features/database/types";
-import { bridgeApi } from "@/services/bridgeApi";
+import { migrationService } from "@/services/bridge/migration";
 
 interface DropTableDialogProps {
     open: boolean;
@@ -68,7 +68,7 @@ export default function DropTableDialog({
 
         try {
             // Generate migration instead of dropping table directly
-            const result = await bridgeApi.generateDropMigration({
+            const result = await migrationService.generateDropMigration({
                 dbId,
                 schemaName,
                 tableName,
@@ -76,7 +76,7 @@ export default function DropTableDialog({
             });
 
             // Auto-apply the migration immediately
-            await bridgeApi.applyMigration(dbId, result.version);
+            await migrationService.applyMigration(dbId, result.version);
 
             toast.success("Table dropped successfully!", {
                 description: `Migration ${result.filename} was generated and applied. You can rollback from the Migrations panel if needed.`,

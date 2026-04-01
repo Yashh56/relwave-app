@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { isBridgeReady } from "@/services/bridgeClient";
+import { isBridgeReady } from "@/services/bridge/bridgeClient";
 import {
   CreateProjectParams,
   UpdateProjectParams,

@@ -21,7 +21,8 @@ import {
 import { Loader2, Settings, Plus, Trash2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlterTableOperation, CreateTableColumn } from "@/features/database/types";
-import { bridgeApi } from "@/services/bridgeApi";
+import { migrationService } from "@/services/bridge/migration";
+
 
 const DATA_TYPES = [
     { value: "INT", label: "Integer" },
@@ -140,7 +141,7 @@ export default function AlterTableDialog({
 
         try {
             // Generate migration instead of altering table directly
-            const result = await bridgeApi.generateAlterMigration({
+            const result = await migrationService.generateAlterMigration({
                 dbId,
                 schemaName,
                 tableName,
@@ -148,7 +149,7 @@ export default function AlterTableDialog({
             });
 
             // Auto-apply the migration immediately
-            await bridgeApi.applyMigration(dbId, result.version);
+            await migrationService.applyMigration(dbId, result.version);
 
             toast.success("Table altered successfully!", {
                 description: `Migration ${result.filename} was generated and applied. You can rollback from the Migrations panel if needed.`,

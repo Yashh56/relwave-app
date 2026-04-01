@@ -13,8 +13,8 @@ import { Loader2, Table } from "lucide-react";
 import TableDesignerForm from "./TableDesignerForm";
 import AddIndexesDialog from "./AddIndexesDialog";
 import { CreateTableColumn, ForeignKeyConstraint } from "@/features/database/types";
-import { bridgeApi } from "@/services/bridgeApi";
 import { databaseService } from "@/services/bridge/database";
+import { migrationService } from "@/services/bridge/migration";
 
 interface CreateTableDialogProps {
     open: boolean;
@@ -147,7 +147,7 @@ export default function CreateTableDialog({
             }));
 
             // Generate migration instead of creating table directly
-            const result = await bridgeApi.generateCreateMigration({
+            const result = await migrationService.generateCreateMigration({
                 dbId,
                 schemaName,
                 tableName: tableName.trim(),
@@ -160,7 +160,7 @@ export default function CreateTableDialog({
             });
 
             // Auto-apply the migration immediately
-            await bridgeApi.applyMigration(dbId, result.version);
+            await migrationService.applyMigration(dbId, result.version);
 
             toast.success("Table created successfully!", {
                 description: `Migration ${result.filename} was generated and applied. You can rollback from the Migrations panel if needed.`,

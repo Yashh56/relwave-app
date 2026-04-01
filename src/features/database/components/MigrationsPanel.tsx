@@ -7,8 +7,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { LocalMigration, AppliedMigration, MigrationsData } from "@/features/database/types";
 import { cn } from "@/lib/utils";
 import { useQueryClient } from "@tanstack/react-query";
-import { bridgeApi } from "@/services/bridgeApi";
 import { toast } from "sonner";
+import { migrationService } from "@/services/bridge/migration";
 
 interface MigrationsPanelProps {
     migrations: MigrationsData;
@@ -61,7 +61,7 @@ export default function MigrationsPanel({ migrations, baselined, dbId }: Migrati
 
     const handleApply = async (version: string, name: string) => {
         try {
-            await bridgeApi.applyMigration(dbId, version);
+            await migrationService.applyMigration(dbId, version);
             toast.success("Migration applied successfully", {
                 description: `Applied migration: ${name}`,
             });
@@ -78,7 +78,7 @@ export default function MigrationsPanel({ migrations, baselined, dbId }: Migrati
 
     const handleRollback = async (version: string, name: string) => {
         try {
-            await bridgeApi.rollbackMigration(dbId, version);
+            await migrationService.rollbackMigration(dbId, version);
             toast.success("Migration rolled back successfully", {
                 description: `Rolled back migration: ${name}`,
             });
@@ -94,7 +94,7 @@ export default function MigrationsPanel({ migrations, baselined, dbId }: Migrati
 
     const handleDelete = async (version: string, name: string) => {
         try {
-            await bridgeApi.deleteMigration(dbId, version);
+            await migrationService.deleteMigration(dbId, version);
             toast.success("Migration deleted successfully", {
                 description: `Deleted migration: ${name}`,
             });
@@ -108,7 +108,7 @@ export default function MigrationsPanel({ migrations, baselined, dbId }: Migrati
 
     const handleViewSQL = async (version: string, name: string) => {
         try {
-            const sql = await bridgeApi.getMigrationSQL(dbId, version);
+            const sql = await migrationService.getMigrationSQL(dbId, version);
             setSqlContent(sql);
             setSelectedMigration({ version, name });
             setShowSQLDialog(true);

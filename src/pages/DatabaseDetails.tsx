@@ -19,7 +19,6 @@ import BridgeLoader from "@/components/feedback/BridgeLoader";
 import { Spinner } from "@/components/ui/spinner";
 import VerticalIconBar, { PanelType } from "@/components/layout/VerticalIconBar";
 import SlideOutPanel from "@/components/SlideOutPanel";
-import { bridgeApi } from "@/services/bridgeApi";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import SQLWorkspacePanel from "@/features/workspace/components/SQLWorkspacePanel";

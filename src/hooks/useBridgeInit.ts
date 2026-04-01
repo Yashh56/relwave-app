@@ -5,7 +5,7 @@ import {
   stopBridgeListeners,
   isBridgeReady,
   waitForTauri
-} from "@/services/bridgeClient";
+} from "@/services/bridge/bridgeClient";
 
 /**
  * Initializes the Tauri bridge once the app is ready.

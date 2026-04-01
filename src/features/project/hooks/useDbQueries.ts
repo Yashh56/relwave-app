@@ -1,8 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { bridgeApi } from "@/services/bridgeApi";
 import { TableInfo } from "@/features/database/types";
-import { isBridgeReady } from "@/services/bridgeClient";
+import { isBridgeReady } from "@/services/bridge/bridgeClient";
 import { databaseService } from "@/services/bridge/database";
+import { queryService } from "@/services/bridge/query";
 
 // ============================================
 // Query Keys - Centralized for cache management
@@ -137,7 +137,7 @@ export function useTableData(
 ) {
   return useQuery({
     queryKey: queryKeys.tableData(dbId!, schema!, table!, page, pageSize),
-    queryFn: () => bridgeApi.fetchTableData(dbId!, schema!, table!, pageSize, page),
+    queryFn: () => queryService.fetchTableData(dbId!, schema!, table!, pageSize, page),
     enabled: !!dbId && !!schema && !!table,
     staleTime: STALE_TIMES.tableData,
     placeholderData: (previousData) => previousData, // Keep showing old data while fetching
@@ -266,7 +266,7 @@ export function useDeleteDatabase() {
  */
 export function useTestConnection() {
   return useMutation({
-    mutationFn: databaseService.testConnection.bind(bridgeApi),
+    mutationFn: databaseService.testConnection.bind(databaseService),
   });
 }
 
@@ -304,7 +304,7 @@ export function usePrefetch() {
     ) => {
       queryClient.prefetchQuery({
         queryKey: queryKeys.tableData(dbId, schema, table, currentPage + 1, pageSize),
-        queryFn: () => bridgeApi.fetchTableData(dbId, schema, table, pageSize, currentPage + 1),
+        queryFn: () => queryService.fetchTableData(dbId, schema, table, pageSize, currentPage + 1),
         staleTime: STALE_TIMES.tableData,
       });
     },

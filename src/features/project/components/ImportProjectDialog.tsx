@@ -19,7 +19,6 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
-import { bridgeApi } from "@/services/bridgeApi";
 import type { ScanImportResult } from "@/features/project/types";
 import { projectService } from "@/services/bridge/project";
 import { databaseService } from "@/services/bridge/database";

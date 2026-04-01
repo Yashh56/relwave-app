@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { bridgeApi } from "@/services/bridgeApi";
 import { useDatabase, useTables, useTableData, usePrefetch, useInvalidateCache, useSchemaNames } from "@/features/project/hooks/useDbQueries";
 import { QueryProgress, SelectedTable, TableInfo, TableRow } from "@/features/database/types";
+import { sessionService } from "@/services/bridge/session";
+import { queryService } from "@/services/bridge/query";
 
 interface UseDatabaseDetailsOptions {
     dbId: string | undefined;
@@ -171,7 +172,7 @@ export function useDatabaseDetails({
         if (!querySessionId) return;
 
         try {
-            const cancelled = await bridgeApi.cancelSession(querySessionId);
+            const cancelled = await sessionService.cancelSession(querySessionId);
             if (cancelled) {
                 toast.info("Cancelling query...", { description: "Stopping query execution" });
             }
@@ -200,12 +201,12 @@ export function useDatabaseDetails({
             setHasExecutedQuery(true);
             setIsExecuting(true);
 
-            const sessionId = await bridgeApi.createSession();
+            const sessionId = await sessionService.createSession();
             setQuerySessionId(sessionId);
 
             toast.info("Executing query...", { description: "Query started, receiving results..." });
 
-            await bridgeApi.runQuery({
+            await queryService.runQuery({
                 sessionId,
                 dbId,
                 sql: query,

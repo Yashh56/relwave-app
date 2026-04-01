@@ -3,10 +3,10 @@
 // ==========================================
 
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { bridgeApi } from "@/services/bridgeApi";
-import { isBridgeReady } from "@/services/bridgeClient";
+import { isBridgeReady } from "@/services/bridge/bridgeClient";
 import { gitKeys } from "@/features/git/hooks/useGitQueries";
 import type { GitRemoteInfo, GitPushPullResult } from "@/features/git/types";
+import { gitService } from "@/services/bridge/git";
 
 // ─── Query keys ──────────────────────────────────────────────
 
@@ -42,7 +42,7 @@ export function useGitRemotes(dir: string | null | undefined) {
     const ready = useBridgeEnabled();
     return useQuery<GitRemoteInfo[]>({
         queryKey: gitAdvancedKeys.remotes(dir ?? ""),
-        queryFn: () => bridgeApi.gitRemoteList(dir!),
+        queryFn: () => gitService.gitRemoteList(dir!),
         enabled: !!dir && ready,
         staleTime: STALE.remotes,
     });
@@ -52,7 +52,7 @@ export function useGitRemoteAdd(dir: string | null | undefined) {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: ({ name, url }: { name: string; url: string }) =>
-            bridgeApi.gitRemoteAdd(dir!, name, url),
+            gitService.gitRemoteAdd(dir!, name, url),
         onSuccess: () => {
             if (dir) qc.invalidateQueries({ queryKey: gitAdvancedKeys.remotes(dir) });
         },
@@ -62,7 +62,7 @@ export function useGitRemoteAdd(dir: string | null | undefined) {
 export function useGitRemoteRemove(dir: string | null | undefined) {
     const qc = useQueryClient();
     return useMutation({
-        mutationFn: (name: string) => bridgeApi.gitRemoteRemove(dir!, name),
+        mutationFn: (name: string) => gitService.gitRemoteRemove(dir!, name),
         onSuccess: () => {
             if (dir) qc.invalidateQueries({ queryKey: gitAdvancedKeys.remotes(dir) });
         },
@@ -73,7 +73,7 @@ export function useGitRemoteSetUrl(dir: string | null | undefined) {
     const qc = useQueryClient();
     return useMutation({
         mutationFn: ({ name, url }: { name: string; url: string }) =>
-            bridgeApi.gitRemoteSetUrl(dir!, name, url),
+            gitService.gitRemoteSetUrl(dir!, name, url),
         onSuccess: () => {
             if (dir) qc.invalidateQueries({ queryKey: gitAdvancedKeys.remotes(dir) });
         },
@@ -93,7 +93,7 @@ export function useGitPush(dir: string | null | undefined) {
         setUpstream?: boolean;
     } | void>({
         mutationFn: (opts) =>
-            bridgeApi.gitPush(
+            gitService.gitPush(
                 dir!,
                 opts?.remote,
                 opts?.branch,
@@ -111,7 +111,7 @@ export function useGitPull(dir: string | null | undefined) {
         rebase?: boolean;
     } | void>({
         mutationFn: (opts) =>
-            bridgeApi.gitPull(
+            gitService.gitPull(
                 dir!,
                 opts?.remote,
                 opts?.branch,
@@ -129,7 +129,7 @@ export function useGitFetch(dir: string | null | undefined) {
         all?: boolean;
     } | void>({
         mutationFn: (opts) =>
-            bridgeApi.gitFetch(dir!, opts?.remote, { prune: opts?.prune, all: opts?.all }),
+            gitService.gitFetch(dir!, opts?.remote, { prune: opts?.prune, all: opts?.all }),
         onSuccess: invalidate,
     });
 }
@@ -141,7 +141,7 @@ export function useGitFetch(dir: string | null | undefined) {
 export function useGitRevert(dir: string | null | undefined) {
     const invalidate = useInvalidateAll(dir);
     return useMutation<GitPushPullResult, Error, { hash: string; noCommit?: boolean }>({
-        mutationFn: (opts) => bridgeApi.gitRevert(dir!, opts.hash, opts.noCommit),
+        mutationFn: (opts) => gitService.gitRevert(dir!, opts.hash, opts.noCommit),
         onSuccess: invalidate,
     });
 }

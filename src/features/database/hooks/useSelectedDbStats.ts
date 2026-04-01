@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { useCachedDbStats } from "./useCachedData";
 import { bytesToMBString } from "@/lib/bytesToMB";
 import { databaseService } from "@/services/bridge/database";
-import { bridgeApi } from "@/services/bridgeApi";
 
 export const useSelectedDbStats = (
     bridgeReady: boolean,

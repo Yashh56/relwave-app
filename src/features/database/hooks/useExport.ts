@@ -5,7 +5,6 @@
 
 import { useState, useCallback } from "react";
 import { toast } from "sonner";
-import { bridgeApi } from "@/services/bridgeApi";
 import {
   convertData,
   downloadFile,
@@ -15,6 +14,7 @@ import {
 } from "@/lib/dataExport";
 import { TableInfo, TableRow } from "@/features/database/types";
 import { databaseService } from "@/services/bridge/database";
+import { queryService } from "@/services/bridge/query";
 
 interface ExportProgress {
   currentTable: string;
@@ -50,7 +50,7 @@ export function useExport({ dbId, databaseName }: UseExportOptions) {
     let hasMore = true;
 
     while (hasMore) {
-      const result = await bridgeApi.fetchTableData(
+      const result = await queryService.fetchTableData(
         dbId,
         schemaName,
         tableName,

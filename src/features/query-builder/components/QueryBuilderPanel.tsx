@@ -14,17 +14,14 @@ import { useDatabase } from "@/features/project/hooks/useDbQueries";
 import { Spinner } from "@/components/ui/spinner";
 import { useBridgeQuery } from "@/hooks/useBridgeQuery";
 import { TableRow } from "@/features/database/types";
-import { bridgeApi } from "@/services/bridgeApi";
-
-// Sub-components
 import { BuilderHeader } from "./BuilderHeader";
 import { BuilderSidebar } from "./BuilderSidebar";
 import { DiagramCanvas } from "./DiagramCanvas";
 import { SQLResultsPanel } from "./SQLResultsPanel";
 import { BuilderStatusBar } from "./BuilderStatusBar";
-
-// Types
 import { QueryFilter, ColumnOption } from "../types";
+import { sessionService } from "@/services/bridge/session";
+import { queryService } from "@/services/bridge/query";
 
 interface QueryBuilderPanelProps {
     dbId: string;
@@ -275,10 +272,10 @@ const QueryBuilderPanel = ({ dbId }: QueryBuilderPanelProps) => {
             setQueryProgress(null);
             setIsExecuting(true);
 
-            const sessionId = await bridgeApi.createSession();
+            const sessionId = await sessionService.createSession();
             setQuerySessionId(sessionId);
 
-            await bridgeApi.runQuery({
+            await queryService.runQuery({
                 sessionId,
                 dbId,
                 sql: generatedSQL,
@@ -292,7 +289,7 @@ const QueryBuilderPanel = ({ dbId }: QueryBuilderPanelProps) => {
     const handleCancelQuery = useCallback(async () => {
         if (!querySessionId) return;
         try {
-            await bridgeApi.cancelSession(querySessionId);
+            await sessionService.cancelSession(querySessionId);
             toast.info("Query cancelled");
         } catch (error: any) {
             toast.error("Failed to cancel", { description: error.message });
