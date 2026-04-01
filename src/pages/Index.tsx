@@ -33,6 +33,7 @@ const IndexContent = ({ bridgeReady }: { bridgeReady: boolean }) => {
         selectedDatabase,
         selectedDbStats,
         loading,
+        welcomeMessage,
 
         // Status + stats
         status,
@@ -111,6 +112,7 @@ const IndexContent = ({ bridgeReady }: { bridgeReady: boolean }) => {
                             connectedCount={connectedCount}
                             totalTables={totalTables}
                             totalSize={totalSize}
+                            welcomeMessage={welcomeMessage}
                             statsLoading={showStatsLoading}
                             onAddClick={() => handleDialogClose(true)}
                             onSelectDb={setSelectedDb}

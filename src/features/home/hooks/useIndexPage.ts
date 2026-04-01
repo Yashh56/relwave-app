@@ -9,6 +9,7 @@ import { useDatabaseStats } from "../../database/hooks/useDatabaseStats";
 import { useSelectedDbStats } from "../../database/hooks/useSelectedDbStats";
 import { databaseService } from "@/services/bridge/database";
 import { DatabaseConnection } from "@/features/database/types";
+import { useWelcomeMessage } from "@/features/database/hooks/useWelcomeMessage";
 
 export const useIndexPage = (bridgeReady: boolean) => {
     const navigate = useNavigate();
@@ -26,6 +27,8 @@ export const useIndexPage = (bridgeReady: boolean) => {
         refetchStatus,
     } = useDatabaseStats(bridgeReady, databases.length > 0);
 
+    const welcomeMessage = useWelcomeMessage();
+
     // Mutations
     const addDatabaseMutation = useAddDatabase();
     const deleteDatabaseMutation = useDeleteDatabase();
@@ -41,7 +44,7 @@ export const useIndexPage = (bridgeReady: boolean) => {
 
     // Selected db derived state
     const selectedDatabase = useMemo(
-        () => (selectedDb ? databases.find((db:DatabaseConnection) => db.id === selectedDb) ?? null : null),
+        () => (selectedDb ? databases.find((db: DatabaseConnection) => db.id === selectedDb) ?? null : null),
         [databases, selectedDb]
     );
     const isSelectedConnected = selectedDb ? status.get(selectedDb) === "connected" : false;
@@ -53,7 +56,7 @@ export const useIndexPage = (bridgeReady: boolean) => {
     const filteredDatabases = useMemo(
         () =>
             databases.filter(
-                (db:DatabaseConnection) =>
+                (db: DatabaseConnection) =>
                     db.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                     db.host.toLowerCase().includes(searchQuery.toLowerCase())
             ),
@@ -182,6 +185,7 @@ export const useIndexPage = (bridgeReady: boolean) => {
         selectedDatabase,
         selectedDbStats,
         loading,
+        welcomeMessage,
 
         // Status + stats
         status,

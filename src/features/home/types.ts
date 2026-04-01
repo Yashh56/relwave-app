@@ -36,6 +36,7 @@ export interface WelcomeViewProps {
     totalTables: number | string;
     totalSize: string;
     statsLoading: boolean;
+    welcomeMessage: string;
     onAddClick: () => void;
     onSelectDb: (id: string) => void;
     onDatabaseClick: (id: string) => void;

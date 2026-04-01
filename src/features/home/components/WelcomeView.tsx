@@ -33,6 +33,7 @@ export function WelcomeView({
   totalTables,
   totalSize,
   statsLoading,
+  welcomeMessage,
   onAddClick,
   onSelectDb,
   onDatabaseClick,
@@ -40,8 +41,6 @@ export function WelcomeView({
   onDiscoveredDatabaseAdd,
 }: WelcomeViewProps) {
 
-  const texts = ['Welcome to Relwave', 'Good to see you again!', 'Ready to dive into your data?', 'Your database companion awaits!', 'Let’s explore your data together!'];
-  const randomText = texts[Math.floor(Math.random() * texts.length)];
   return (
     <div className="h-full flex flex-col p-6">
       {/* Welcome Header */}
@@ -51,7 +50,7 @@ export function WelcomeView({
             <Sparkles className="h-5 w-5 text-primary" />
           </div>
           <div>
-            <h1 className="text-xl font-semibold">{randomText}</h1>
+            <h1 className="text-xl font-semibold">{welcomeMessage}</h1>
             <p className="text-sm text-muted-foreground">
               Select a connection or add a new one
             </p>
