@@ -7,12 +7,12 @@ import Index from "./pages/Index";
 import DatabaseDetail from './pages/DatabaseDetails';
 import Projects from './pages/Projects';
 import NotFound from './pages/NotFound';
-import { ThemeProvider } from './components/common/ThemeProvider';
+import { ThemeProvider } from './components/providers/ThemeProvider';
 import Settings from './pages/Settings';
-import { useBridgeInit } from "@/hooks/useBridgeInit";
+import { useBridgeInit } from "@/services/bridge/useBridgeInit";
 import { useEffect } from 'react';
-import { DeveloperContextMenu } from './components/common/DeveloperContextMenu';
-import { UpdateNotification } from './components/common/UpdateNotification';
+import { DeveloperContextMenu } from './components/dev/DeveloperContextMenu';
+import { UpdateNotification } from './components/shared/UpdateNotification';
 
 const queryClient = new QueryClient();
 
@@ -35,7 +35,7 @@ function ThemeVariantInitializer() {
 }
 
 
-import TitleBar from './components/common/TitleBar';
+import TitleBar from './components/layout/TitleBar';
 
 function AppRoot() {
   useEffect(() => {

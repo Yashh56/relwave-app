@@ -3,12 +3,12 @@ import type {
     SchemaGroup,
     TableSchemaDetails,
     ColumnDetails,
-} from "@/types/database";
+} from "@/features/database/types";
 import type {
     SchemaSnapshot,
     TableSnapshot,
     ColumnSnapshot,
-} from "@/types/project";
+} from "@/features/project/types";
 
 // ================================================================
 // Shared converters between project snapshot format and live DB format.
