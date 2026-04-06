@@ -85,6 +85,7 @@ const Projects = () => {
                         <ProjectsEmptyState
                             hasProjects={projects.length > 0}
                             onCreateClick={() => setIsCreateOpen(true)}
+                            onImportClick={() => setIsImportOpen(true)}
                         />
                     )}
                 </div>
