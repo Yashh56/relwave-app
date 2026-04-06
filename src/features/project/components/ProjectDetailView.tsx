@@ -1,5 +1,4 @@
 import {
-  Database,
   Clock,
   Layers,
   GitBranch,
@@ -9,7 +8,6 @@ import {
   Trash2,
   Download,
   FolderOpen,
-  Pencil,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,6 +18,14 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { ProjectSummary } from "@/features/project/types";
+import {
+  Card,
+  CardAction,
+  CardContent,
+  CardFooter,
+  CardHeader,
+  CardTitle
+} from "@/components/ui/card";
 
 interface ProjectDetailViewProps {
   project: ProjectSummary;
@@ -138,52 +144,52 @@ export function ProjectDetailView({
         <h3 className="text-sm font-semibold mb-4">Project Data</h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {/* Schema card */}
-          <div className="p-5 rounded-xl border border-border/50 bg-card hover:border-border transition-colors">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="h-9 w-9 rounded-lg bg-violet-500/10 flex items-center justify-center">
+          <Card className="@container/card">
+            <CardHeader className="flex items-center gap-3 mb-3">
+              <CardAction className="h-9 w-9 rounded-lg bg-violet-500/10 flex items-center justify-center">
                 <Layers className="h-4.5 w-4.5 text-violet-500" />
-              </div>
-              <h4 className="text-sm font-medium">Schema Cache</h4>
-            </div>
-            <p className="text-2xl font-bold tabular-nums font-mono">
+              </CardAction>
+              <CardTitle className="text-sm font-medium">Schema Cache</CardTitle>
+            </CardHeader>
+            <CardContent className="text-2xl font-bold tabular-nums font-mono">
               {schemaCount ?? "—"}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
+            </CardContent>
+            <CardFooter className="text-xs text-muted-foreground mt-1">
               Cached schemas
-            </p>
-          </div>
+            </CardFooter>
+          </Card>
 
           {/* ER Diagram card */}
-          <div className="p-5 rounded-xl border border-border/50 bg-card hover:border-border transition-colors">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="h-9 w-9 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+          <Card className="@container/card">
+            <CardHeader className="flex items-center gap-3 mb-3">
+              <CardAction className="h-9 w-9 rounded-lg bg-emerald-500/10 flex items-center justify-center">
                 <GitBranch className="h-4.5 w-4.5 text-emerald-500" />
-              </div>
-              <h4 className="text-sm font-medium">ER Diagram</h4>
-            </div>
-            <p className="text-2xl font-bold tabular-nums font-mono">
+              </CardAction>
+              <CardTitle className="text-sm font-medium">ER Diagram</CardTitle>
+            </CardHeader>
+            <CardContent className="text-2xl font-bold tabular-nums font-mono">
               {hasERLayout ? "Saved" : "—"}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
+            </CardContent>
+            <CardFooter className="text-xs text-muted-foreground mt-1">
               Diagram layout
-            </p>
-          </div>
+            </CardFooter>
+          </Card>
 
           {/* Queries card */}
-          <div className="p-5 rounded-xl border border-border/50 bg-card hover:border-border transition-colors">
-            <div className="flex items-center gap-3 mb-3">
-              <div className="h-9 w-9 rounded-lg bg-amber-500/10 flex items-center justify-center">
+          <Card className="@container/card">
+            <CardHeader className="flex items-center gap-3 mb-3">
+              <CardAction className="h-9 w-9 rounded-lg bg-amber-500/10 flex items-center justify-center">
                 <FileCode2 className="h-4.5 w-4.5 text-amber-500" />
-              </div>
-              <h4 className="text-sm font-medium">Saved Queries</h4>
-            </div>
-            <p className="text-2xl font-bold tabular-nums font-mono">
+              </CardAction>
+              <CardTitle className="text-sm font-medium">Saved Queries</CardTitle>
+            </CardHeader>
+            <CardContent className="text-2xl font-bold tabular-nums font-mono">
               {queryCount ?? "—"}
-            </p>
-            <p className="text-xs text-muted-foreground mt-1">
+            </CardContent>
+            <CardFooter className="text-xs text-muted-foreground mt-1">
               Stored queries
-            </p>
-          </div>
+            </CardFooter>
+          </Card>
         </div>
       </div>
     </div>

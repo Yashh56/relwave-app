@@ -66,44 +66,63 @@ export function WelcomeView({
       {/* Stats Overview */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
         <Card className="@container/card">
-          <CardHeader>
-            <CardDescription>Total Connections</CardDescription>
-            <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-              {databases.length}
-            </CardTitle>
+          <CardHeader className="flex flex-row items-start justify-between">
+            <div className="space-y-1">
+              <CardDescription>Total Connections</CardDescription>
+              <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+                {databases.length}
+              </CardTitle>
+            </div>
             <CardAction>
               <Database className="h-4.5 w-4.5 text-primary" />
             </CardAction>
           </CardHeader>
         </Card>
+
         <Card className="@container/card">
-          <CardHeader>
-            <CardDescription>Online Now</CardDescription>
-            <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-              {connectedCount}
-            </CardTitle>
+          <CardHeader className="flex flex-row items-start justify-between">
+            <div className="space-y-1">
+              <CardDescription>Online Now</CardDescription>
+              <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+                {connectedCount}
+              </CardTitle>
+            </div>
             <CardAction>
               <CircleDot className="h-4.5 w-4.5 text-emerald-500" />
             </CardAction>
           </CardHeader>
         </Card>
+
         <Card className="@container/card">
-          <CardHeader>
-            <CardDescription>Total Tables</CardDescription>
-            <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-              {statsLoading ? <Spinner className="h-4.5 w-4.5 text-violet-500" /> : totalTables}
-            </CardTitle>
+          <CardHeader className="flex flex-row items-start justify-between">
+            <div className="space-y-1">
+              <CardDescription>Total Tables</CardDescription>
+              <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+                {statsLoading ? (
+                  <Spinner className="h-4.5 w-4.5 text-violet-500" />
+                ) : (
+                  totalTables
+                )}
+              </CardTitle>
+            </div>
             <CardAction>
               <Layers className="h-4.5 w-4.5 text-violet-500" />
             </CardAction>
           </CardHeader>
         </Card>
+
         <Card className="@container/card">
-          <CardHeader>
-            <CardDescription>Data Size</CardDescription>
-            <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
-              {statsLoading ? <Spinner className="h-4.5 w-4.5 text-amber-500" /> : totalSize}
-            </CardTitle>
+          <CardHeader className="flex flex-row items-start justify-between">
+            <div className="space-y-1">
+              <CardDescription>Data Size</CardDescription>
+              <CardTitle className="text-2xl font-semibold tabular-nums @[250px]/card:text-3xl">
+                {statsLoading ? (
+                  <Spinner className="h-4.5 w-4.5 text-amber-500" />
+                ) : (
+                  totalSize
+                )}
+              </CardTitle>
+            </div>
             <CardAction>
               <HardDrive className="h-4.5 w-4.5 text-amber-500" />
             </CardAction>
@@ -130,17 +149,18 @@ export function WelcomeView({
               {recentDatabases.map((db, index) => {
                 const isConnected = status.get(db.id) === "connected";
                 return (
-                  <button
+                  <Button
+                    variant="ghost"
                     key={db.id}
                     onClick={() => onSelectDb(db.id)}
                     onMouseEnter={() => onDatabaseHover(db.id)}
                     disabled={!isConnected}
                     className={cn(
-                      "w-full flex items-center gap-4 px-4 py-3 text-left transition-colors",
+                      "w-full h-auto justify-start flex items-center gap-4 px-4 py-3 rounded-none text-left transition-colors",
                       index !== recentDatabases.length - 1 &&
                       "border-b border-border/30",
                       isConnected
-                        ? "hover:bg-muted/50"
+                        ? "hover:bg-muted/50 text-foreground"
                         : "opacity-50 cursor-not-allowed"
                     )}
                   >
@@ -164,7 +184,7 @@ export function WelcomeView({
                       </p>
                     </div>
                     <ChevronRight className="h-4 w-4 text-muted-foreground/50" />
-                  </button>
+                  </Button>
                 );
               })}
             </div>
