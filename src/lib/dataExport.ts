@@ -1,4 +1,4 @@
-import { TableRow } from "@/types/database";
+import { TableRow } from "@/features/database/types";
 
 export type ExportFormat = "csv" | "json";
 
