@@ -10,7 +10,7 @@ import NotFound from './pages/NotFound';
 import { ThemeProvider } from './components/providers/ThemeProvider';
 import Settings from './pages/Settings';
 import { useBridgeInit } from "@/services/bridge/useBridgeInit";
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { DeveloperContextMenu } from './components/dev/DeveloperContextMenu';
 import { UpdateNotification } from './components/shared/UpdateNotification';
 import TitleBar from './components/layout/TitleBar';
@@ -47,6 +47,38 @@ function GlobalSidebar() {
   return <VerticalIconBar />;
 }
 
+function AnimatedRoutes() {
+  const location = useLocation();
+  const [displayLocation, setDisplayLocation] = useState(location);
+  const [transitionStage, setTransitionStage] = useState<'in' | 'out'>('in');
+
+  useEffect(() => {
+    if (location.pathname === displayLocation.pathname) {
+      return;
+    }
+
+    setTransitionStage('out');
+    const timer = window.setTimeout(() => {
+      setDisplayLocation(location);
+      setTransitionStage('in');
+    }, 130);
+
+    return () => window.clearTimeout(timer);
+  }, [location, displayLocation.pathname]);
+
+  return (
+    <div className={`route-transition route-transition--${transitionStage}`}>
+      <Routes location={displayLocation}>
+        <Route path="/" element={<Index />} />
+        <Route path="/projects" element={<Projects />} />
+        <Route path="/:id" element={<DatabaseDetail />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </div>
+  );
+}
+
 function AppRoot() {
   useEffect(() => {
     const handleSelectAll = (e: KeyboardEvent) => {
@@ -75,13 +107,7 @@ function AppRoot() {
             <div className="pt-8">
               <BrowserRouter>
                 <GlobalSidebar />
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  <Route path="/projects" element={<Projects />} />
-                  <Route path="/:id" element={<DatabaseDetail />} />
-                  <Route path="/settings" element={<Settings />} />
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
+                <AnimatedRoutes />
               </BrowserRouter>
             </div>
           </DeveloperContextMenu>
