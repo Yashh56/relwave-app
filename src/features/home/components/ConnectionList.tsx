@@ -10,6 +10,8 @@ import {
 } from "@/components/ui/context-menu";
 import { cn } from "@/lib/utils";
 import { ConnectionListProps } from "../types";
+import { Spinner } from "@/components/ui/spinner";
+import { Card, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 
 export function ConnectionList({
   databases,
@@ -33,7 +35,9 @@ export function ConnectionList({
       {/* Header */}
       <div className="p-4 border-b border-border/50">
         <div className="flex items-center justify-between mb-3">
-          <h1 className="text-sm font-semibold">Connections</h1>
+          <h2 className="scroll-m-20 pb-2 text-3xl font-semibold tracking-tight first:mt-0">
+            Connections
+          </h2>
           <Button
             variant="ghost"
             size="icon"
@@ -127,18 +131,22 @@ export function ConnectionList({
       {/* Quick Stats Footer */}
       <div className="p-3 border-t border-border/50 bg-background/50">
         <div className="grid grid-cols-2 gap-2">
-          <div className="text-center p-2 rounded-md bg-muted/30">
-            <p className="text-lg font-bold tabular-nums font-mono">
-              {connectedCount}/{databases.length}
-            </p>
-            <p className="text-[10px] text-muted-foreground">Online</p>
-          </div>
-          <div className="text-center p-2 rounded-md bg-muted/30">
-            <p className="text-lg font-bold tabular-nums font-mono">
-              {statsLoading ? "—" : totalTables}
-            </p>
-            <p className="text-[10px] text-muted-foreground">Tables</p>
-          </div>
+          <Card className="text-center p-2 rounded-md">
+            <CardContent>
+              <CardTitle className="text-lg font-bold tabular-nums font-mono">
+                {connectedCount}/{databases.length}
+              </CardTitle>
+              <CardDescription className="text-[10px] text-muted-foreground">Online</CardDescription>
+            </CardContent>
+          </Card>
+          <Card className="text-center p-2 rounded-md">
+            <CardContent>
+              <CardTitle className="text-lg font-bold tabular-nums font-mono">
+                {statsLoading ? <Spinner className="h-4.5 w-4.5 text-amber-500" /> : totalTables}
+              </CardTitle>
+              <CardDescription className="text-[10px] text-muted-foreground">Tables</CardDescription>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>

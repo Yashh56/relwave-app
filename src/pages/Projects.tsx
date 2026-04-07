@@ -10,7 +10,6 @@ import {
 import { ProjectsEmptyState } from "@/features/project/components/ProjectsEmptyState";
 import BridgeLoader from "@/components/feedback/BridgeLoader";
 import BridgeFailed from "@/components/feedback/BridgeFailed";
-import VerticalIconBar from "@/components/layout/VerticalIconBar";
 
 const Projects = () => {
     const { data: bridgeReady, isLoading: bridgeLoading } = useBridgeQuery();
@@ -51,8 +50,6 @@ const Projects = () => {
 
     return (
         <div className="h-[calc(100vh-32px)] flex bg-background text-foreground overflow-hidden">
-            <VerticalIconBar />
-
             <main className="flex-1 ml-15 flex">
                 {/* Left panel */}
                 <ProjectList
@@ -80,11 +77,13 @@ const Projects = () => {
                             onOpen={() => handleOpen(selectedProjectData.id)}
                             onDelete={() => openDeleteDialog(selectedProjectData.id, selectedProjectData.name)}
                             onExport={() => handleExport(selectedProjectData.id)}
+                            onBack={() => setSelectedProject(null)}
                         />
                     ) : (
                         <ProjectsEmptyState
                             hasProjects={projects.length > 0}
                             onCreateClick={() => setIsCreateOpen(true)}
+                            onImportClick={() => setIsImportOpen(true)}
                         />
                     )}
                 </div>

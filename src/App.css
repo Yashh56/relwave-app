@@ -258,6 +258,33 @@ code,
   }
 
   /* Firefox */
+
+  /* Route transition helpers for smoother page changes */
+  .route-transition {
+    will-change: opacity, transform;
+  }
+
+  .route-transition--in {
+    opacity: 1;
+    transform: translateY(0);
+    transition: opacity 260ms cubic-bezier(0.22, 1, 0.36, 1), transform 260ms cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  .route-transition--out {
+    opacity: 0.72;
+    transform: translateY(2px);
+    transition: opacity 130ms cubic-bezier(0.4, 0, 1, 1), transform 130ms cubic-bezier(0.4, 0, 1, 1);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .route-transition,
+    .route-transition--in,
+    .route-transition--out {
+      opacity: 1;
+      transform: none;
+      transition: none;
+    }
+  }
   * {
     scrollbar-width: thin;
     scrollbar-color: rgba(156, 163, 175, 0.3) transparent;

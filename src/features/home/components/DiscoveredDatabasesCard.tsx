@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useDiscoveredDatabases } from "@/features/database/hooks/useDiscoveredDatabases";
 import { DiscoveredDatabase } from "@/features/database/types";
+import { Card, CardAction, CardContent, CardDescription, CardTitle } from "@/components/ui/card";
 
 interface DiscoveredDatabasesCardProps {
     onAddDatabase: (db: DiscoveredDatabase) => void;
@@ -83,7 +84,7 @@ export function DiscoveredDatabasesCard({
                     {databases.map((db, index) => {
                         const colors = DB_TYPE_COLORS[db.type] || DB_TYPE_COLORS.postgresql;
                         return (
-                            <div
+                            <Card
                                 key={`${db.host}:${db.port}-${index}`}
                                 className={cn(
                                     "group relative rounded-xl border bg-card p-4 transition-all hover:shadow-md",
@@ -92,7 +93,7 @@ export function DiscoveredDatabasesCard({
                             >
                                 <div className="flex items-start gap-3">
                                     {/* Database Icon */}
-                                    <div
+                                    <CardAction
                                         className={cn(
                                             "h-10 w-10 rounded-lg flex items-center justify-center shrink-0",
                                             colors.bg
@@ -103,20 +104,20 @@ export function DiscoveredDatabasesCard({
                                         ) : (
                                             <Monitor className={cn("h-5 w-5", colors.text)} />
                                         )}
-                                    </div>
+                                    </CardAction>
 
                                     {/* Details */}
-                                    <div className="flex-1 min-w-0">
+                                    <CardContent className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 mb-1">
-                                            <span
+                                            <CardTitle
                                                 className={cn(
                                                     "text-xs font-medium uppercase tracking-wide",
                                                     colors.text
                                                 )}
                                             >
                                                 {db.type}
-                                            </span>
-                                            <span
+                                            </CardTitle>
+                                            <CardDescription
                                                 className={cn(
                                                     "text-[10px] px-1.5 py-0.5 rounded-full",
                                                     db.source === "docker"
@@ -125,23 +126,23 @@ export function DiscoveredDatabasesCard({
                                                 )}
                                             >
                                                 {db.source === "docker" ? "Docker" : "Local"}
-                                            </span>
+                                            </CardDescription>
                                         </div>
 
-                                        <p className="font-mono text-xs text-muted-foreground truncate">
+                                        <CardDescription className="font-mono text-xs text-muted-foreground truncate">
                                             {db.host}:{db.port}
-                                        </p>
+                                        </CardDescription>
 
                                         {db.containerName && (
-                                            <p className="text-[10px] text-muted-foreground/70 truncate mt-0.5">
+                                            <CardDescription className="text-[10px] text-muted-foreground/70 truncate mt-0.5">
                                                 Container: {db.containerName}
-                                            </p>
+                                            </CardDescription>
                                         )}
 
-                                        <p className="text-xs text-muted-foreground mt-1">
+                                        <CardDescription className="text-xs text-muted-foreground mt-1">
                                             Suggested: <span className="font-medium">{db.suggestedName}</span>
-                                        </p>
-                                    </div>
+                                        </CardDescription>
+                                    </CardContent>
 
                                     {/* Add Button */}
                                     <Button
@@ -154,16 +155,16 @@ export function DiscoveredDatabasesCard({
                                         <Plus className="h-4 w-4" />
                                     </Button>
                                 </div>
-                            </div>
+                            </Card>
                         );
                     })}
                 </div>
             )}
 
             {lastScanned && !isScanning && (
-                <p className="text-[10px] text-muted-foreground/50 mt-2 text-right">
+                <CardDescription className="text-[10px] text-muted-foreground/50 mt-2 text-right">
                     Last scanned: {lastScanned.toLocaleTimeString()}
-                </p>
+                </CardDescription>
             )}
         </div>
     );

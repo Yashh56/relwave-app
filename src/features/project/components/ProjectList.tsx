@@ -17,6 +17,8 @@ import {
 } from "@/components/ui/context-menu";
 import { cn } from "@/lib/utils";
 import { ProjectSummary } from "@/features/project/types";
+import { Empty, EmptyContent, EmptyDescription } from "@/components/ui/empty";
+import { Spinner } from "@/components/ui/spinner";
 
 interface ProjectListProps {
   projects: ProjectSummary[];
@@ -58,7 +60,9 @@ export function ProjectList({
       {/* Header */}
       <div className="p-4 border-b border-border/50">
         <div className="flex items-center justify-between mb-3">
-          <h1 className="text-sm font-semibold">Projects</h1>
+          <h2 className="scroll-m-20 pb-2 text-3xl font-semibold tracking-tight first:mt-0">
+            Projects
+          </h2>
           <div className="flex items-center gap-1">
             <Button
               variant="ghost"
@@ -95,27 +99,29 @@ export function ProjectList({
       <div className="flex-1 overflow-y-auto py-2">
         {loading ? (
           <div className="flex items-center justify-center py-8">
-            <div className="h-5 w-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+            <Spinner className="h-5 w-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
           </div>
         ) : filteredProjects.length === 0 ? (
-          <div className="px-4 py-8 text-center">
-            <FolderOpen className="h-8 w-8 text-muted-foreground/30 mx-auto mb-2" />
-            <p className="text-xs text-muted-foreground">
+          <Empty>
+            <FolderOpen className="h-8 w-8 text-muted-foreground/30" />
+            <EmptyDescription className="text-xs text-muted-foreground">
               {projects.length === 0
                 ? "No projects yet"
                 : "No matches found"}
-            </p>
+            </EmptyDescription>
             {projects.length === 0 && (
-              <Button
-                variant="link"
-                size="sm"
-                className="mt-1 text-xs"
-                onClick={onCreateClick}
-              >
-                Create your first project
-              </Button>
+              <EmptyContent>
+                <Button
+                  variant="link"
+                  size="sm"
+                  className="text-xs"
+                  onClick={onCreateClick}
+                >
+                  Create your first project
+                </Button>
+              </EmptyContent>
             )}
-          </div>
+          </Empty>
         ) : (
           <div className="space-y-0.5 px-2">
             {filteredProjects.map((project) => {
@@ -127,14 +133,15 @@ export function ProjectList({
               return (
                 <ContextMenu key={project.id}>
                   <ContextMenuTrigger asChild>
-                    <button
+                    <Button
+                      variant="ghost"
                       onClick={() => setSelectedProject(project.id)}
                       onDoubleClick={() => onOpen(project.id)}
                       className={cn(
-                        "w-full flex items-center gap-2.5 px-2.5 py-2 rounded-md text-left transition-colors",
+                        "w-full h-auto justify-start flex items-center gap-3.5 px-2.5 py-2 rounded-md text-left transition-colors",
                         isSelected
                           ? "bg-accent text-accent-foreground"
-                          : "hover:bg-accent/50"
+                          : "hover:bg-accent/50 text-foreground"
                       )}
                     >
                       <Database className={cn("h-4 w-4 shrink-0", engineColor)} />
@@ -149,7 +156,7 @@ export function ProjectList({
                             : ""}
                         </p>
                       </div>
-                    </button>
+                    </Button>
                   </ContextMenuTrigger>
                   <ContextMenuContent>
                     <ContextMenuItem onClick={() => onOpen(project.id)}>

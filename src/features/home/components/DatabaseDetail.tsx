@@ -8,6 +8,7 @@ import {
     MoreHorizontal,
     Trash2,
     CircleDot,
+    ArrowLeft,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -18,7 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { cn } from "@/lib/utils";
 import { DatabaseDetailProps } from "../types";
-import { formatRelativeTime } from "../utils";
+import { DatabaseOverviewPanel } from "./DatabaseOverviewPanel";
 
 const DB_COLORS: Record<string, { bg: string; text: string }> = {
     postgresql: { bg: "bg-blue-500/10", text: "text-blue-500" },
@@ -37,6 +38,7 @@ export function DatabaseDetail({
     onTest,
     onOpen,
     onDelete,
+    onBack,
     size,
     tables
 }: DatabaseDetailProps) {
@@ -60,6 +62,12 @@ export function DatabaseDetail({
                             />
                         </div>
                         <div>
+                            <div className="mb-2">
+                                <Button variant="ghost" size="sm" onClick={onBack} className="h-8 px-2 text-muted-foreground -ml-2">
+                                    <ArrowLeft className="h-4 w-4 mr-1.5" />
+                                    Back
+                                </Button>
+                            </div>
                             <div className="flex items-center gap-2">
                                 <h2 className="text-xl font-semibold">{database.name}</h2>
                                 <span
@@ -121,78 +129,13 @@ export function DatabaseDetail({
             </div>
 
             {/* Detail Content */}
-            <div className="flex-1 p-6">
-                {/* Stats Grid */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-                    <div className="p-4 rounded-xl border border-border/50 bg-card">
-                        <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                            <Database className="h-4 w-4" />
-                            <span className="text-xs">Engine</span>
-                        </div>
-                        <p className="text-lg font-semibold capitalize font-mono">{database.type}</p>
-                    </div>
-                    <div className="p-4 rounded-xl border border-border/50 bg-card">
-                        <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                            <Clock className="h-4 w-4" />
-                            <span className="text-xs">Last Accessed</span>
-                        </div>
-                        <p className="text-lg font-semibold">
-                            {formatRelativeTime(database.lastAccessedAt)}
-                        </p>
-                    </div>
-                    <div className="p-4 rounded-xl border border-border/50 bg-card">
-                        <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                            <Table2 className="h-4 w-4" />
-                            <span className="text-xs">Tables</span>
-                        </div>
-                        <p className="text-lg font-semibold tabular-nums font-mono">{tables}</p>
-                    </div>
-                    <div className="p-4 rounded-xl border border-border/50 bg-card">
-                        <div className="flex items-center gap-2 text-muted-foreground mb-2">
-                            <HardDrive className="h-4 w-4" />
-                            <span className="text-xs">Size</span>
-                        </div>
-                        <p className="text-lg font-semibold tabular-nums font-mono">{size}</p>
-                    </div>
-                </div>
-
-                {/* Connection Details */}
-                <div className="rounded-xl border border-border/50 bg-card overflow-hidden">
-                    <div className="px-4 py-3 border-b border-border/50 bg-muted/30">
-                        <h3 className="text-sm font-medium">Connection Details</h3>
-                    </div>
-                    <div className="p-4 space-y-3">
-                        {database.type !== "sqlite" && (
-                            <>
-                                <div className="flex items-center justify-between py-2 border-b border-border/30">
-                                    <span className="text-sm text-muted-foreground">Host</span>
-                                    <span className="text-sm font-mono">{database.host}</span>
-                                </div>
-                                <div className="flex items-center justify-between py-2 border-b border-border/30">
-                                    <span className="text-sm text-muted-foreground">Port</span>
-                                    <span className="text-sm font-mono">{database.port}</span>
-                                </div>
-                            </>
-                        )}
-                        <div className="flex items-center justify-between py-2 border-b border-border/30">
-                            <span className="text-sm text-muted-foreground">{database.type === "sqlite" ? "File" : "Database"}</span>
-                            <span className="text-sm font-mono">{database.database}</span>
-                        </div>
-                        {database.type !== "sqlite" && (
-                            <div className="flex items-center justify-between py-2 border-b border-border/30">
-                                <span className="text-sm text-muted-foreground">User</span>
-                                <span className="text-sm font-mono">{database.user}</span>
-                            </div>
-                        )}
-                        <div className="flex items-center justify-between py-2">
-                            <span className="text-sm text-muted-foreground">Created</span>
-                            <span className="text-sm">
-                                {new Date(database.createdAt).toLocaleDateString()}
-                            </span>
-                        </div>
-                    </div>
-                </div>
+            <div>
+                <DatabaseOverviewPanel
+                    database={database}
+                    size={size}
+                    tables={tables}
+                />
             </div>
-        </div>
+        </div >
     );
 }
