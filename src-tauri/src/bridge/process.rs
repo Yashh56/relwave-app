@@ -2,6 +2,8 @@ use std::io::{BufRead, BufReader};
 use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
 use std::sync::{Arc, Mutex};
+#[cfg(not(debug_assertions))]
+use tauri::path::BaseDirectory;
 use tauri::{AppHandle, Emitter, Manager};
 
 #[cfg(target_os = "windows")]
@@ -69,7 +71,16 @@ fn get_exe_dir() -> Option<PathBuf> {
 }
 
 #[cfg(not(debug_assertions))]
-fn find_sqlite_native_binding(base_dir: &Path) -> Option<PathBuf> {
+fn find_sqlite_native_binding(app_handle: &AppHandle, base_dir: &Path) -> Option<PathBuf> {
+    if let Ok(resolved) = app_handle
+        .path()
+        .resolve("better_sqlite3.node", BaseDirectory::Resource)
+    {
+        if resolved.exists() {
+            return Some(resolved);
+        }
+    }
+
     let mut candidates = vec![
         base_dir.join("better_sqlite3.node"),
         base_dir.join("bridge").join("better_sqlite3.node"),
@@ -148,7 +159,7 @@ fn spawn_bridge_process(app_handle: &AppHandle) -> Result<Child, String> {
     {
         // Try bundled bridge executable (compiled with pkg)
         if let Some(resource_path) = get_resource_path(app_handle) {
-            if let Some(child) = try_bundled_exe(&resource_path) {
+            if let Some(child) = try_bundled_exe(app_handle, &resource_path) {
                 return Ok(child);
             }
             if let Some(child) = try_bundled_scripts(&resource_path) {
@@ -158,7 +169,7 @@ fn spawn_bridge_process(app_handle: &AppHandle) -> Result<Child, String> {
 
         // Try exe directory (works for deb/appimage on Linux)
         if let Some(exe_dir) = get_exe_dir() {
-            if let Some(child) = try_exe_dir_binary(&exe_dir) {
+            if let Some(child) = try_exe_dir_binary(app_handle, &exe_dir) {
                 return Ok(child);
             }
             if let Some(child) = try_exe_dir_scripts(&exe_dir) {
@@ -185,7 +196,7 @@ fn spawn_bridge_process(app_handle: &AppHandle) -> Result<Child, String> {
 }
 
 #[cfg(not(debug_assertions))]
-fn try_bundled_exe(resource_path: &Path) -> Option<Child> {
+fn try_bundled_exe(app_handle: &AppHandle, resource_path: &Path) -> Option<Child> {
     // Try platform-specific binary names first
     #[cfg(target_os = "windows")]
     let bridge_candidates = vec![
@@ -205,7 +216,7 @@ fn try_bundled_exe(resource_path: &Path) -> Option<Child> {
     for bridge_exe in bridge_candidates {
         if bridge_exe.exists() {
             if let Some(exe_str) = bridge_exe.to_str() {
-                let binding_path = find_sqlite_native_binding(resource_path);
+                let binding_path = find_sqlite_native_binding(app_handle, resource_path);
                 let result = if let Some(binding) = binding_path.as_ref().and_then(|p| p.to_str()) {
                     try_spawn_with_env(exe_str, &[], &[("RELWAVE_SQLITE_NATIVE_BINDING", binding)])
                 } else {
@@ -226,7 +237,7 @@ fn try_bundled_exe(resource_path: &Path) -> Option<Child> {
 
     if bridge_exe_up.exists() {
         if let Some(exe_str) = bridge_exe_up.to_str() {
-            let binding_path = find_sqlite_native_binding(&resource_path.join("_up_"));
+            let binding_path = find_sqlite_native_binding(app_handle, &resource_path.join("_up_"));
             let result = if let Some(binding) = binding_path.as_ref().and_then(|p| p.to_str()) {
                 try_spawn_with_env(exe_str, &[], &[("RELWAVE_SQLITE_NATIVE_BINDING", binding)])
             } else {
@@ -288,7 +299,7 @@ fn try_exe_dir_scripts(exe_dir: &Path) -> Option<Child> {
 
 /// Try to find and spawn bridge binary in the exe directory (for Linux deb/appimage and Windows)
 #[cfg(not(debug_assertions))]
-fn try_exe_dir_binary(exe_dir: &Path) -> Option<Child> {
+fn try_exe_dir_binary(app_handle: &AppHandle, exe_dir: &Path) -> Option<Child> {
     // Platform-specific binary names to search for
     #[cfg(target_os = "windows")]
     let binary_names = vec![
@@ -319,7 +330,7 @@ fn try_exe_dir_binary(exe_dir: &Path) -> Option<Child> {
                 } else {
                     exe_dir.to_path_buf()
                 };
-                let binding_path = find_sqlite_native_binding(&binding_base);
+                let binding_path = find_sqlite_native_binding(app_handle, &binding_base);
                 let result = if let Some(binding) = binding_path.as_ref().and_then(|p| p.to_str()) {
                     try_spawn_with_env(exe_str, &[], &[("RELWAVE_SQLITE_NATIVE_BINDING", binding)])
                 } else {
