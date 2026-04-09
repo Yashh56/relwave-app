@@ -3,6 +3,7 @@ import { check, Update } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
 
 const LAST_INSTALLED_UPDATE_KEY = "relwave:last-installed-update";
+const RELEASES_URL = "https://github.com/Relwave/relwave-app/releases/latest";
 
 export type UpdateStatus = 
   | "idle" 
@@ -33,6 +34,23 @@ export interface UseUpdaterReturn {
 
 // Check if running in development mode
 const isDev = import.meta.env.DEV;
+const isLinuxRuntime =
+  typeof navigator !== "undefined" && /linux/i.test(navigator.userAgent);
+
+function normalizeUpdaterErrorMessage(message: string): string {
+  const normalized = message.trim();
+  const isPermissionError = /permission denied|os error 13/i.test(normalized);
+
+  if (isLinuxRuntime && isPermissionError) {
+    return [
+      "Linux updater could not replace the installed app due to file permissions.",
+      "If you installed via .deb/.rpm (system path), use manual update from:",
+      RELEASES_URL,
+    ].join(" ");
+  }
+
+  return normalized;
+}
 
 export function useUpdater(): UseUpdaterReturn {
   const [status, setStatus] = useState<UpdateStatus>("idle");
@@ -77,7 +95,7 @@ export function useUpdater(): UseUpdaterReturn {
         return;
       }
       console.error("Failed to check for updates:", err);
-      setError(errorMessage);
+      setError(normalizeUpdaterErrorMessage(errorMessage));
       setStatus("error");
     }
   }, []);
@@ -135,7 +153,8 @@ export function useUpdater(): UseUpdaterReturn {
       setStatus("ready");
     } catch (err) {
       console.error("Failed to download update:", err);
-      setError(err instanceof Error ? err.message : String(err));
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setError(normalizeUpdaterErrorMessage(errorMessage));
       setStatus("error");
     }
   }, [update, updateInfo]);
@@ -145,7 +164,8 @@ export function useUpdater(): UseUpdaterReturn {
       await relaunch();
     } catch (err) {
       console.error("Failed to relaunch:", err);
-      setError(err instanceof Error ? err.message : String(err));
+      const errorMessage = err instanceof Error ? err.message : String(err);
+      setError(normalizeUpdaterErrorMessage(errorMessage));
     }
   }, []);
 
