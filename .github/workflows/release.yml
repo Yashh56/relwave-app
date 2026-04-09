@@ -15,12 +15,8 @@ jobs:
         include:
           - platform: "windows-latest"
             args: ""
-            bridge-target: "node22-win-x64"
-            bridge-output: "bridge-x86_64-pc-windows-msvc.exe"
           - platform: "ubuntu-22.04"
             args: ""
-            bridge-target: "node22-linux-x64"
-            bridge-output: "bridge-x86_64-unknown-linux-gnu"
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -54,23 +50,11 @@ jobs:
       - name: Install frontend dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Build bridge
+      - name: Install bridge dependencies
         run: |
           cd bridge
           pnpm install --frozen-lockfile
-          npm rebuild better-sqlite3
-          npx esbuild src/index.ts --bundle --platform=node --outfile=dist/index.cjs --format=cjs --packages=external
           cd ..
-          node ./bridge/scripts/copy-native.js
-          npx @yao-pkg/pkg ./bridge/dist/index.cjs --target ${{ matrix.bridge-target }} --output ./src-tauri/resources/${{ matrix.bridge-output }}
-
-      - name: Mark bridge executable (Linux)
-        if: matrix.platform == 'ubuntu-22.04'
-        run: chmod +x ./src-tauri/resources/${{ matrix.bridge-output }}
-
-      - name: Verify sidecar binary
-        shell: bash
-        run: ls -la src-tauri/resources/
 
       - name: Build and release
         uses: tauri-apps/tauri-action@v0

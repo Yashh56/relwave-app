@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "build:tauri-assets": "npm run bridge:package && npm run build",
     "preview": "vite preview",
     "tauri": "tauri",
     "bridge:copy-native": "npm --prefix bridge run copy:native",
