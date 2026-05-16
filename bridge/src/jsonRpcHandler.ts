@@ -10,7 +10,10 @@ import { MigrationHandlers } from "./handlers/migrationHandlers";
 import { ProjectHandlers } from "./handlers/projectHandlers";
 import { GitHandlers } from "./handlers/gitHandlers";
 import { GitAdvancedHandlers } from "./handlers/gitAdvancedHandlers";
+import { MonitoringHandlers } from "./handlers/monitoringHandlers";
 import { discoveryService } from "./services/discoveryService";
+import { MonitoringService } from "./services/monitoringService";
+import { MonitoringWebSocketServer } from "./services/monitoringWebSocketServer";
 import { Logger } from "pino";
 
 /**
@@ -27,6 +30,13 @@ export function registerDbHandlers(
   // Initialize services
   const dbService = new DatabaseService();
   const queryExecutor = new QueryExecutor();
+  const monitoringService = new MonitoringService();
+  const monitoringWebSocketServer = new MonitoringWebSocketServer(
+    dbService,
+    monitoringService,
+    logger
+  );
+  monitoringWebSocketServer.start();
 
   // Initialize handlers with dependencies
   const sessionHandlers = new SessionHandlers(rpc, logger, sessions);
@@ -58,6 +68,7 @@ export function registerDbHandlers(
   const projectHandlers = new ProjectHandlers(rpc, logger);
   const gitHandlers = new GitHandlers(rpc, logger);
   const gitAdvancedHandlers = new GitAdvancedHandlers(rpc, logger);
+  const monitoringHandlers = new MonitoringHandlers(rpc, logger, dbService, monitoringService);
 
   // ==========================================
   // SESSION MANAGEMENT HANDLERS
@@ -173,6 +184,20 @@ export function registerDbHandlers(
   rpcRegister(rpc, "db.getTotalStats", (p, id) =>
     statsHandlers.handleGetTotalStats(p, id)
   );
+
+  rpcRegister(rpc, "db.monitoringSnapshot", (p, id) =>
+    monitoringHandlers.handleGetSnapshot(p, id)
+  );
+  rpcRegister(rpc, "db.monitoringWsInfo", (_p, id) => {
+    try {
+      rpc.sendResponse(id, { ok: true, data: monitoringWebSocketServer.getInfo() });
+    } catch (error: any) {
+      rpc.sendError(id, {
+        code: "MONITORING_WS_ERROR",
+        message: error?.message || String(error),
+      });
+    }
+  });
 
   // ==========================================
   // PROJECT HANDLERS
