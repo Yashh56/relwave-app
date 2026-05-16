@@ -36,11 +36,15 @@ export function AddConnectionDialog({
 
   // Apply initial data when dialog opens with prefilled values
   useEffect(() => {
-    if (open && initialData) {
-      setFormData(prev => ({
-        ...prev,
-        ...initialData,
-      }));
+    if (open) {
+      if (initialData) {
+        setFormData(prev => ({ ...prev, ...initialData }));
+      } else {
+        // Reset to empty form when opening without initial data
+        setFormData(INITIAL_FORM_DATA);
+        setConnectionUrl("");
+        setUseUrl(false);
+      }
     }
   }, [open, initialData]);
 
@@ -80,6 +84,7 @@ export function AddConnectionDialog({
   };
 
   const isSQLite = formData.type === "sqlite";
+  const showSslOption = formData.type === "postgresql" || formData.type === "mariadb";
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -133,7 +138,20 @@ export function AddConnectionDialog({
             <Label className="text-xs">Type</Label>
             <Select value={formData.type} onValueChange={(val) => {
               handleInputChange("type", val);
-              if (val === "sqlite") setUseUrl(false);
+              if (val === "sqlite" || val === "mysql") {
+                // Clear network-related fields when switching to SQLite
+                setUseUrl(false);
+                setConnectionUrl("");
+                setFormData(prev => ({
+                  ...prev,
+                  host: "",
+                  port: "",
+                  user: "",
+                  password: "",
+                  ssl: false,
+                  sslmode: "",
+                }));
+              }
             }}>
               <SelectTrigger className="h-9 text-sm">
                 <SelectValue placeholder="Select type" />
@@ -229,7 +247,8 @@ export function AddConnectionDialog({
                 />
               </div>
 
-              <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
+              {showSslOption && (
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
                 <Checkbox
                   id="ssl"
                   checked={formData.ssl}
@@ -240,7 +259,8 @@ export function AddConnectionDialog({
                 <Label htmlFor="ssl" className="cursor-pointer text-xs">
                   Enable SSL
                 </Label>
-              </div>
+                </div>
+              )}
             </>
           )}
         </div>

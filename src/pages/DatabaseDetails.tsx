@@ -26,6 +26,7 @@ import { SchemaExplorerPanel } from "@/features/schema-explorer/components";
 import SQLWorkspacePanel from "@/features/workspace/components/SQLWorkspacePanel";
 import GitStatusPanel from "@/features/git/components/GitStatusPanel";
 import GitStatusBar from "@/features/git/components/GitStatusBar";
+import { MonitoringPanel } from "@/features/monitoring/components/MonitoringPanel";
 
 const DatabaseDetail = () => {
   const { id: dbId } = useParams<{ id: string }>();
@@ -48,6 +49,7 @@ const DatabaseDetail = () => {
   // Core database data
   const {
     databaseName,
+    databaseType,
     tables,
     selectedTable,
     tableData,
@@ -102,6 +104,7 @@ const DatabaseDetail = () => {
       case "query-builder": return <QueryBuilderPanel dbId={dbId || ""} />;
       case "schema-explorer": return <SchemaExplorerPanel dbId={dbId || ""} projectId={projectId} />;
       case "er-diagram": return <ERDiagramPanel projectId={projectId} />;
+      case "monitoring": return <MonitoringPanel dbId={dbId || ""} databaseName={databaseName} databaseType={databaseType} />;
       case "git-status": return <GitStatusPanel projectDir={projectDir} />;
       default:
         return (
@@ -150,20 +153,21 @@ const DatabaseDetail = () => {
   };
 
   return (
-    <div className="h-[calc(100vh-32px)] flex flex-col bg-background text-foreground overflow-hidden">
-      <div className="flex-1 flex overflow-hidden">
+    <div className="w-full h-[calc(100vh-32px)] flex flex-col app-surface text-foreground overflow-hidden">
+      <div className="flex-1 flex overflow-hidden pl-15 min-w-0">
         <VerticalIconBar
           dbId={dbId}
+          databaseType={databaseType}
           activePanel={activePanel}
           onPanelChange={setActivePanel}
         />
-        <main className="flex-1 ml-15 flex flex-col overflow-hidden">
+        <main className="flex-1 min-w-0 flex flex-col overflow-hidden">
           {renderPanel()}
         </main>
       </div>
 
       {/* Status bar */}
-      <div className="shrink-0 h-7 border-t border-border/30 bg-background/95 backdrop-blur-sm flex items-center px-2 ml-15 gap-4">
+      <div className="shrink-0 h-7 border-t border-border/30 bg-background/80 backdrop-blur-xl flex items-center px-2 pl-15 gap-4 min-w-0">
         <GitStatusBar projectDir={projectDir} />
         <div className="flex-1" />
         <span className="text-[10px] text-muted-foreground/60 font-mono">

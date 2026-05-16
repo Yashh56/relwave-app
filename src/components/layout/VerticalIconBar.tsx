@@ -1,4 +1,4 @@
-import { Home, Database, Search, GitBranch, GitCommitHorizontal, Settings, Layers, Terminal, FolderOpen } from 'lucide-react';
+import { Activity, Home, Database, Search, GitBranch, GitCommitHorizontal, Settings, Layers, Terminal, FolderOpen } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import {
@@ -7,10 +7,11 @@ import {
     TooltipTrigger,
 } from '@/components/ui/tooltip';
 
-export type PanelType = 'data' | 'sql-workspace' | 'query-builder' | 'schema-explorer' | 'er-diagram' | 'git-status';
+export type PanelType = 'data' | 'sql-workspace' | 'query-builder' | 'schema-explorer' | 'er-diagram' | 'monitoring' | 'git-status';
 
 interface VerticalIconBarProps {
     dbId?: string;
+    databaseType?: string;
     activePanel?: PanelType;
     onPanelChange?: (panel: PanelType) => void;
 }
@@ -21,7 +22,12 @@ const globalNavigationItems = [
     { icon: Settings, label: 'Settings', path: '/settings' },
 ];
 
-export default function VerticalIconBar({ dbId, activePanel, onPanelChange }: VerticalIconBarProps) {
+function supportsMonitoring(databaseType?: string) {
+    const type = databaseType?.toLowerCase();
+    return type === "postgres" || type === "postgresql" || type === "mysql" || type === "mariadb";
+}
+
+export default function VerticalIconBar({ dbId, databaseType, activePanel, onPanelChange }: VerticalIconBarProps) {
     const location = useLocation();
 
     const isGlobalActive = (path: string) => {
@@ -38,11 +44,12 @@ export default function VerticalIconBar({ dbId, activePanel, onPanelChange }: Ve
         { icon: Search, label: 'Query Builder', panel: 'query-builder' },
         { icon: GitBranch, label: 'Schema Explorer', panel: 'schema-explorer' },
         { icon: Database, label: 'ER Diagram', panel: 'er-diagram' },
+        ...(supportsMonitoring(databaseType) ? [{ icon: Activity, label: 'Monitoring', panel: 'monitoring' as PanelType }] : []),
         { icon: GitCommitHorizontal, label: 'Git Status', panel: 'git-status' },
     ] : [];
 
     return (
-        <nav className="fixed left-0 top-8 h-[calc(100vh-32px)] w-15 bg-background border-r border-border/20 z-40 flex flex-col items-center py-4 gap-2">
+        <nav className="fixed left-0 top-8 h-[calc(100vh-32px)] w-15 bg-sidebar/90 border-r border-sidebar-border z-40 flex flex-col items-center py-4 gap-2 backdrop-blur-xl shadow-[1px_0_0_rgba(255,255,255,0.03)_inset]">
 
             {/* Global Navigation Icons */}
             <div className="flex flex-col gap-2">
@@ -58,10 +65,10 @@ export default function VerticalIconBar({ dbId, activePanel, onPanelChange }: Ve
                                         variant="ghost"
                                         size="icon"
                                         className={`
-                      w-10 h-10 rounded-lg transition-all
+                      w-10 h-10 rounded-lg transition-all duration-150
                       ${active
-                                                ? 'bg-primary text-primary-foreground shadow-md'
-                                                : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+                                                ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+                                                : 'text-sidebar-foreground/62 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                                             }
                     `}
                                     >
@@ -80,7 +87,7 @@ export default function VerticalIconBar({ dbId, activePanel, onPanelChange }: Ve
             {/* Database-Specific Panel Items (state-based, no navigation) */}
             {databasePanelItems.length > 0 && (
                 <>
-                    <div className="w-8 h-px bg-border/40 my-2" />
+                    <div className="w-8 h-px bg-sidebar-border my-2" />
                     <div className="flex flex-col gap-2">
                         {databasePanelItems.map((item) => {
                             const Icon = item.icon;
@@ -94,10 +101,10 @@ export default function VerticalIconBar({ dbId, activePanel, onPanelChange }: Ve
                                             size="icon"
                                             onClick={() => onPanelChange?.(item.panel)}
                                             className={`
-                          w-10 h-10 rounded-lg transition-all
+                          w-10 h-10 rounded-lg transition-all duration-150
                           ${active
-                                                    ? 'bg-primary text-primary-foreground shadow-md'
-                                                    : 'hover:bg-muted text-muted-foreground hover:text-foreground'
+                                                    ? 'bg-primary text-primary-foreground shadow-lg shadow-primary/20'
+                                                    : 'text-sidebar-foreground/62 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground'
                                                 }
                         `}
                                         >
