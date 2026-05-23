@@ -107,6 +107,9 @@ importers:
       dagre:
         specifier: ^0.8.5
         version: 0.8.5
+      date-fns:
+        specifier: ^4.2.1
+        version: 4.2.1
       html-to-image:
         specifier: ^1.11.13
         version: 1.11.13
@@ -2147,6 +2150,9 @@ packages:
 
   dagre@0.8.5:
     resolution: {integrity: sha512-/aTqmnRta7x7MCCpExk7HQL2O4owCT2h8NT//9I1OQ9vt29Pa0BzSAkR5lwFUcQ7491yVi/3CXU9jQ5o0Mn2Sw==}
+
+  date-fns@4.2.1:
+    resolution: {integrity: sha512-37RhSdxaG1suen6VDCza6rNrQfooyQh57HFVPwQGEq2QWliVLzPQZ8Oa017weOu+HZCnzI7N3Pf/wyoBKfEqrA==}
 
   debug@4.4.3:
     resolution: {integrity: sha512-RGwwWnwQvkVfavKVt22FGLw+xYSdzARwm0ru6DhTVA3umU5hZc28V3kO4stgYryrTlLpuvgI9GiijltAjNbcqA==}
@@ -4903,6 +4909,8 @@ snapshots:
     dependencies:
       graphlib: 2.1.8
       lodash: 4.17.23
+
+  date-fns@4.2.1: {}
 
   debug@4.4.3:
     dependencies:
