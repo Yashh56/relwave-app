@@ -1,8 +1,8 @@
 // features/home/hooks/useIndexPage.ts
 
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
 import { toast } from "sonner";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useDatabases, useAddDatabase, useDeleteDatabase, usePrefetch } from "@/features/project/hooks/useDbQueries";
 import { ConnectionFormData, REQUIRED_FIELDS, SQLITE_REQUIRED_FIELDS } from "@/features/home/types";
 import { useDatabaseStats } from "../../database/hooks/useDatabaseStats";
@@ -13,6 +13,17 @@ import { useWelcomeMessage } from "@/features/database/hooks/useWelcomeMessage";
 
 export const useIndexPage = (bridgeReady: boolean) => {
     const navigate = useNavigate();
+    const location = useLocation();
+
+    // ... existing logic ...
+
+    useEffect(() => {
+        if (location.state?.openAddConnection) {
+            setIsDialogOpen(true);
+            // Clear state so it doesn't reopen on every navigation
+            navigate(location.pathname, { replace: true, state: {} });
+        }
+    }, [location.state, navigate, location.pathname]);
 
     // Database list
     const { data: databases = [], isLoading: loading, refetch: refetchDatabases } = useDatabases();
