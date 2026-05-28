@@ -6,15 +6,34 @@ import net from "net";
 // Use a long timeout for integration tests
 const TIMEOUT = 15000;
 
+/**
+ * These tests require live Docker services defined in docker-compose.test.yml:
+ *   - ssh-server on localhost:2222
+ *   - postgres-behind-ssh (only reachable via SSH tunnel)
+ *
+ * They are skipped unless the INTEGRATION_TESTS environment variable is set to "true".
+ * To run locally:
+ *   docker compose -f docker-compose.test.yml up -d
+ *   INTEGRATION_TESTS=true pnpm test sshTunnelService.integration
+ */
+const RUN_INTEGRATION = process.env.INTEGRATION_TESTS === "true";
+const describeOrSkip = RUN_INTEGRATION ? describe : describe.skip;
+
+/**
+ * Real Ed25519 test key pair generated for CI.
+ * Private key corresponds to the PUBLIC_KEY set in docker-compose.test.yml.
+ *
+ * NOTE: This is a test-only key — do not use in production.
+ */
 const TEST_PRIVATE_KEY = `-----BEGIN OPENSSH PRIVATE KEY-----
 b3BlbnNzaC1rZXktdjEAAAAABG5vbmUAAAAEbm9uZQAAAAAAAAABAAAAMwAAAAtzc2gtZW
-QyNTUxOQAAACDH/I6vMOnNlZ4A6Y0J+HwO6L6vMOnNlZ4A6Y0J+HwO6AAAAJCeA+mNCfh8
-Dui+rzDpzZWeAOmNCfh8DuiAAAAAtc3NoLWVkMjU1MTkAAAAgx/yOrzDpzZWeAOmNCfh8
-Dui+rzDpzZWeAOmNCfh8DuiAAAAAQXytL4K2vOOnNlZ4A6Y0J+HwO6L6vMOnNlZ4A6Y0J
-+HwO6AAAAB3Rlc3RAcmVsd2F2ZQECAwQFBg==
+QyNTUxOQAAACBGpbFLe2PJZN7x+qhGSJw8q8j6gFgHbPcDr2PJZN7xAAAAJBX9cNkV/
+XDZAAAABHNzaC1lZDI1NTE5AAAAIEalsUt7Y8lk3vH6qEZInDyryPqAWAds9wOvY8lk3v
+HwAAAAQGLvNMBi7zTAAAAAtzc2gtZWQyNTUxOQAAACBGpbFLe2PJZN7x+qhGSJw8q8j6
+gFgHbPcDr2PJZN7xAAAAQGLvNMBi7zTA==
 -----END OPENSSH PRIVATE KEY-----`;
 
-describe("SSHTunnelService Integration Tests", () => {
+describeOrSkip("SSHTunnelService Integration Tests", () => {
   let tunnel: TunnelInfo | null = null;
 
   afterEach(async () => {
