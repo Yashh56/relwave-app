@@ -62,6 +62,18 @@ function parseReleaseBody(body?: string): NoteSection[] {
     return FALLBACK_SECTIONS;
   }
 
+  // GitHub generates a default `notes` value when no release notes are written.
+  // Treat it (and similar content-free strings) as "no notes" so we fall back
+  // to the generic highlights instead of surfacing a useless placeholder.
+  const KNOWN_PLACEHOLDERS = [
+    "see the assets to download this version and install",
+    "no release notes provided",
+  ];
+  const normalized = body.trim().toLowerCase();
+  if (KNOWN_PLACEHOLDERS.some((p) => normalized === p || normalized.startsWith(p))) {
+    return FALLBACK_SECTIONS;
+  }
+
   const lines = body
     .split(/\r?\n/)
     .map((line) => line.trim())
