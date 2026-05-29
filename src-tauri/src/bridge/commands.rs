@@ -30,6 +30,21 @@ pub fn bridge_write(data: String, state: State<'_, BridgeProcess>) -> Result<(),
     Ok(())
 }
 
+/// Kill the bridge process and wait for it to fully exit.
+/// Called before applying an update so the bridge releases file handles on
+/// bundled resources (e.g. better_sqlite3.node) before the installer overwrites them.
+#[tauri::command]
+pub fn bridge_kill(state: State<'_, BridgeProcess>) -> Result<(), String> {
+    let mut guard = state.0.lock().unwrap();
+    if let Some(mut child) = guard.take() {
+        child.kill().map_err(|e| format!("failed to kill bridge: {}", e))?;
+        // wait() is essential — it ensures the OS fully closes all file handles
+        // before we return, giving the installer a clean shot at the files.
+        child.wait().map_err(|e| format!("failed to wait for bridge exit: {}", e))?;
+    }
+    Ok(())
+}
+
 /// Restart the bridge process
 #[tauri::command]
 pub fn bridge_restart(

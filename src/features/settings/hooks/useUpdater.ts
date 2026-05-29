@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { check, Update } from "@tauri-apps/plugin-updater";
 import { relaunch } from "@tauri-apps/plugin-process";
+import { invoke } from "@tauri-apps/api/core";
 
 const LAST_INSTALLED_UPDATE_KEY = "relwave:last-installed-update";
 const RELEASES_URL = "https://github.com/Relwave/relwave-app/releases/latest";
@@ -109,6 +110,18 @@ export function useUpdater(): UseUpdaterReturn {
     try {
       setStatus("downloading");
       setDownloadProgress(0);
+
+      // Kill the bridge process BEFORE the installer runs so that it releases
+      // its file-handle on better_sqlite3.node (and other bundled resources).
+      // Without this, the NSIS installer throws "Error opening file for writing"
+      // because the native module is still memory-mapped by the bridge process.
+      try {
+        await invoke("bridge_kill");
+        // Give the OS a moment to fully release the file handles.
+        await new Promise((r) => setTimeout(r, 800));
+      } catch {
+        // Non-fatal: if the bridge is already dead, continue with the update.
+      }
       
       let downloaded = 0;
       let contentLength = 0;
