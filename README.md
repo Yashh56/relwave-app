@@ -15,7 +15,7 @@ _A high-performance, cross-platform desktop suite for developers who demand more
 [![Platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-lightgray?style=for-the-badge&logo=windows)](https://github.com/Relwave/relwave-app/releases)
 [![Tauri](https://img.shields.io/badge/built%20with-Tauri-FFC131?style=for-the-badge&logo=tauri)](https://tauri.app/)
 
-[**🚀 Quick Start**](#quick-start) • [**📥 Download**](https://github.com/Relwave/relwave-app/releases)
+[**🚀 Quick Start**](INSTALLATION.md) • [**📥 Download**](https://github.com/Relwave/relwave-app/releases)
 
 ---
 
