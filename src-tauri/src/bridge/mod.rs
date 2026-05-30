@@ -2,7 +2,7 @@ mod process;
 mod commands;
 
 pub use process::BridgeProcess;
-pub use commands::{bridge_write, bridge_restart, bridge_status};
+pub use commands::{bridge_write, bridge_kill, bridge_restart, bridge_status};
 
 use tauri::AppHandle;
 use std::process::Child;

@@ -3,7 +3,7 @@
 mod bridge;
 mod devtools;
 
-use bridge::{bridge_restart, bridge_status, bridge_write, BridgeProcess};
+use bridge::{bridge_restart, bridge_kill, bridge_status, bridge_write, BridgeProcess};
 use devtools::{close_devtools, is_devtools_open, navigate_back, navigate_forward, open_devtools, reload_webview};
 use tauri::Manager;
 
@@ -21,6 +21,7 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             bridge_write,
+            bridge_kill,
             bridge_restart,
             bridge_status,
             open_devtools,
