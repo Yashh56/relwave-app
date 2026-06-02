@@ -1,4 +1,4 @@
-import { ChartRecommendationInput, ChartRecommendation } from "../ai.types";
+import { ChartRecommendationInput, ChartRecommendation } from "../../types/";
 import { SYSTEM_CONTEXT } from "./shared";
 import { AIError } from "../providers/types";
 

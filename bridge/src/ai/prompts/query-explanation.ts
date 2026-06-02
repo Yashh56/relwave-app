@@ -1,4 +1,4 @@
-import { QueryExplanationInput } from "../ai.types";
+import { QueryExplanationInput } from "../../types/";
 import { SYSTEM_CONTEXT, MARKDOWN_INSTRUCTION } from "./shared";
 
 export function buildQueryExplanationPrompt(input: QueryExplanationInput): {

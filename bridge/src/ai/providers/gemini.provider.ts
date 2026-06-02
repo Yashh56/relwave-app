@@ -5,7 +5,7 @@ import {
   QueryExplanationInput,
   ChartRecommendationInput,
   ChartRecommendation,
-} from "../ai.types";
+} from "../../types/";
 import { buildSchemaAnalysisPrompt } from "../prompts/schema-analysis";
 import { buildQueryExplanationPrompt } from "../prompts/query-explanation";
 import { buildChartRecommendationPrompt, parseChartRecommendation } from "../prompts/chart-recommendation";

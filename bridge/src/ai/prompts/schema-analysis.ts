@@ -1,4 +1,4 @@
-import { SchemaAnalysisInput } from "../ai.types";
+import { SchemaAnalysisInput } from "../../types/";
 import { SYSTEM_CONTEXT, MARKDOWN_INSTRUCTION } from "./shared";
 
 export function buildSchemaAnalysisPrompt(input: SchemaAnalysisInput): {
