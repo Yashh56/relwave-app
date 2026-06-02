@@ -1,4 +1,4 @@
-import { CheckForUpdates, ColorVariant, DeveloperMode, Header, Preview, ThemeMode, Version } from "@/features/settings/components";
+import { AISettings, CheckForUpdates, ColorVariant, DeveloperMode, Header, Preview, ThemeMode, Version } from "@/features/settings/components";
 
 const Settings = () => {
     return (
@@ -18,6 +18,9 @@ const Settings = () => {
 
                         {/* Developer Mode Section */}
                         <DeveloperMode />
+
+                        {/* AI Settings Section */}
+                        <AISettings />
 
                         {/* Updates Section */}
                         <CheckForUpdates />
