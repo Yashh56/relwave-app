@@ -338,6 +338,18 @@ export function registerDbHandlers(
   rpcRegister(rpc, "ai.recommendChart", (p, id) =>
     aiHandlers.handleRecommendChart(p, id)
   );
+  rpcRegister(rpc, "ai.getHistory", (p, id) =>
+    aiHandlers.handleGetHistory(p, id)
+  );
+  rpcRegister(rpc, "ai.getHistoryById", (p, id) =>
+    aiHandlers.handleGetHistoryById(p, id)
+  );
+  rpcRegister(rpc, "ai.deleteHistory", (p, id) =>
+    aiHandlers.handleDeleteHistory(p, id)
+  );
+  rpcRegister(rpc, "ai.clearHistory", (p, id) =>
+    aiHandlers.handleClearHistory(p, id)
+  );
 
   logger?.info("All RPC handlers registered successfully");
 }

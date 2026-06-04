@@ -75,6 +75,10 @@ export interface ChartRecommendation {
 
 export interface AIRequestBase {
   settings: AISettings;
+  /** Human-readable database / datasource name for history display. */
+  datasourceName?: string;
+  /** Table name context (e.g. for chart recommendation). */
+  tableName?: string;
 }
 
 export interface AIAnalyzeSchemaParams extends AIRequestBase {
