@@ -45,6 +45,7 @@ export function WorkspaceHeader({
                 <ExplainQueryButton
                     sql={activeQuery ?? ""}
                     disabled={isExecuting || !activeQuery?.trim()}
+                    databaseName={databaseName}
                 />
 
                 {/* Run/Stop buttons */}

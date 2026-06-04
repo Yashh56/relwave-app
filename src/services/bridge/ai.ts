@@ -64,6 +64,51 @@ export interface ChartRecommendation {
   reasoning: string;
 }
 
+// ── Cache-aware response types ────────────────────────────────────────────
+
+export interface AIAnalysisResult {
+  markdown: string;
+  cached: boolean;
+  createdAt?: string;
+}
+
+export interface AIChartResult extends ChartRecommendation {
+  cached: boolean;
+  createdAt?: string;
+}
+
+// ── History types ─────────────────────────────────────────────────────────
+
+export interface AIHistoryListItem {
+  id: number;
+  feature: string;
+  datasource_id: string | null;
+  table_name: string | null;
+  provider: string;
+  model: string;
+  tokens_used: number | null;
+  created_at: string;
+}
+
+export interface AIHistoryEntry {
+  id: number;
+  feature: string;
+  datasource_id: string | null;
+  table_name: string | null;
+  content_hash: string | null;
+  provider: string;
+  model: string;
+  prompt: string;
+  response: string;
+  tokens_used: number | null;
+  created_at: string;
+}
+
+export interface AIHistoryListResult {
+  items: AIHistoryListItem[];
+  total: number;
+}
+
 // ── AI Settings storage ───────────────────────────────────────────────────
 
 const AI_SETTINGS_KEY = "relwave:ai-settings";
@@ -88,7 +133,7 @@ class AIService {
    */
   async testConnection(settings: AISettings): Promise<{ connected: boolean; message?: string }> {
     try {
-      const result = await bridgeRequest("ai.testConnection", { settings });
+      await bridgeRequest("ai.testConnection", { settings });
       return { connected: true };
     } catch (err: any) {
       return { connected: false, message: err?.message ?? String(err) };
@@ -96,19 +141,45 @@ class AIService {
   }
 
   /**
-   * Analyze a database schema. Returns a markdown string.
+   * Analyze a database schema. Returns markdown + cache metadata.
    */
-  async analyzeSchema(settings: AISettings, input: SchemaAnalysisInput): Promise<string> {
-    const result = await bridgeRequest("ai.analyzeSchema", { settings, input });
-    return result?.data?.markdown ?? "";
+  async analyzeSchema(
+    settings: AISettings,
+    input: SchemaAnalysisInput,
+    opts?: { skipCache?: boolean; datasourceName?: string }
+  ): Promise<AIAnalysisResult> {
+    const result = await bridgeRequest("ai.analyzeSchema", {
+      settings,
+      input,
+      skipCache: opts?.skipCache,
+      datasourceName: opts?.datasourceName,
+    });
+    return {
+      markdown: result?.data?.markdown ?? "",
+      cached: result?.data?.cached ?? false,
+      createdAt: result?.data?.createdAt,
+    };
   }
 
   /**
-   * Explain a SQL query. Returns a markdown string.
+   * Explain a SQL query. Returns markdown + cache metadata.
    */
-  async explainQuery(settings: AISettings, input: QueryExplanationInput): Promise<string> {
-    const result = await bridgeRequest("ai.explainQuery", { settings, input });
-    return result?.data?.markdown ?? "";
+  async explainQuery(
+    settings: AISettings,
+    input: QueryExplanationInput,
+    opts?: { skipCache?: boolean; datasourceName?: string }
+  ): Promise<AIAnalysisResult> {
+    const result = await bridgeRequest("ai.explainQuery", {
+      settings,
+      input,
+      skipCache: opts?.skipCache,
+      datasourceName: opts?.datasourceName,
+    });
+    return {
+      markdown: result?.data?.markdown ?? "",
+      cached: result?.data?.cached ?? false,
+      createdAt: result?.data?.createdAt,
+    };
   }
 
   /**
@@ -116,10 +187,64 @@ class AIService {
    */
   async recommendChart(
     settings: AISettings,
-    input: ChartRecommendationInput
-  ): Promise<ChartRecommendation> {
-    const result = await bridgeRequest("ai.recommendChart", { settings, input });
-    return result?.data as ChartRecommendation;
+    input: ChartRecommendationInput,
+    opts?: { skipCache?: boolean; datasourceName?: string }
+  ): Promise<AIChartResult> {
+    const result = await bridgeRequest("ai.recommendChart", {
+      settings,
+      input,
+      skipCache: opts?.skipCache,
+      datasourceName: opts?.datasourceName,
+      tableName: input.tableName,
+    });
+    const data = result?.data;
+    return {
+      chartType: data?.chartType ?? "bar",
+      xAxis: data?.xAxis ?? "",
+      yAxis: data?.yAxis ?? "",
+      reasoning: data?.reasoning ?? "",
+      cached: data?.cached ?? false,
+      createdAt: data?.createdAt,
+    };
+  }
+
+  // ── History methods ─────────────────────────────────────────────────────
+
+  /**
+   * List AI analysis history with optional filters and pagination.
+   */
+  async getHistory(params?: {
+    feature?: string;
+    provider?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<AIHistoryListResult> {
+    const result = await bridgeRequest("ai.getHistory", params ?? {});
+    return result?.data as AIHistoryListResult;
+  }
+
+  /**
+   * Get a single history entry by ID (full record with prompt/response).
+   */
+  async getHistoryById(id: number): Promise<AIHistoryEntry> {
+    const result = await bridgeRequest("ai.getHistoryById", { id });
+    return result?.data as AIHistoryEntry;
+  }
+
+  /**
+   * Delete a single history entry by ID.
+   */
+  async deleteHistory(id: number): Promise<boolean> {
+    const result = await bridgeRequest("ai.deleteHistory", { id });
+    return result?.data?.deleted ?? false;
+  }
+
+  /**
+   * Clear all history entries.
+   */
+  async clearHistory(): Promise<number> {
+    const result = await bridgeRequest("ai.clearHistory", {});
+    return result?.data?.deletedCount ?? 0;
   }
 }
 

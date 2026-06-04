@@ -6,7 +6,9 @@ import {
   DialogTitle,
   DialogDescription,
 } from "@/components/ui/dialog";
-import { Loader2, Bot, AlertCircle, Sparkles, Copy, Check } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Loader2, Bot, AlertCircle, Sparkles, Copy, Check, RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AIResultDialogProps {
@@ -17,6 +19,29 @@ interface AIResultDialogProps {
   markdown?: string;
   loading?: boolean;
   error?: string | null;
+  /** Whether the result came from cache. */
+  cached?: boolean;
+  /** ISO timestamp when the cached result was originally generated. */
+  createdAt?: string;
+  /** Callback to force a fresh AI call (skip cache). */
+  onReanalyze?: () => void;
+}
+
+/**
+ * Format a relative time string from an ISO date.
+ */
+function timeAgo(isoDate: string): string {
+  const diff = Date.now() - new Date(isoDate).getTime();
+  const seconds = Math.floor(diff / 1000);
+  if (seconds < 60) return "just now";
+  const minutes = Math.floor(seconds / 60);
+  if (minutes < 60) return `${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days}d ago`;
+  const months = Math.floor(days / 30);
+  return `${months}mo ago`;
 }
 
 /**
@@ -31,6 +56,9 @@ export function AIResultDialog({
   markdown,
   loading,
   error,
+  cached,
+  createdAt,
+  onReanalyze,
 }: AIResultDialogProps) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -41,10 +69,43 @@ export function AIResultDialog({
               <Bot className="h-3.5 w-3.5 text-primary" />
             </div>
             {title}
+            {/* Cached / Fresh badge */}
+            {markdown && !loading && !error && cached !== undefined && (
+              <Badge
+                variant="outline"
+                className={cn(
+                  "ml-auto text-[10px] font-medium px-1.5 py-0",
+                  cached
+                    ? "border-emerald-500/30 text-emerald-600 bg-emerald-500/8"
+                    : "border-blue-500/30 text-blue-600 bg-blue-500/8"
+                )}
+              >
+                {cached ? "Cached" : "Fresh"}
+              </Badge>
+            )}
           </DialogTitle>
-          {description && (
-            <DialogDescription className="text-xs">{description}</DialogDescription>
-          )}
+          {/* Description row with optional timestamp + re-analyze */}
+          <div className="flex items-center gap-2">
+            {description && (
+              <DialogDescription className="text-xs flex-1">{description}</DialogDescription>
+            )}
+            {markdown && !loading && cached && createdAt && (
+              <span className="text-[10px] text-muted-foreground/60 whitespace-nowrap">
+                Generated {timeAgo(createdAt)}
+              </span>
+            )}
+            {markdown && !loading && cached && onReanalyze && (
+              <Button
+                variant="ghost"
+                size="sm"
+                className="h-6 px-2 text-[10px] gap-1 text-muted-foreground hover:text-foreground"
+                onClick={onReanalyze}
+              >
+                <RefreshCw className="h-3 w-3" />
+                Re-analyze
+              </Button>
+            )}
+          </div>
         </DialogHeader>
 
         <div className="flex-1 min-h-0 overflow-y-auto">
@@ -88,8 +149,10 @@ export function AIResultDialog({
 /**
  * Lightweight markdown renderer — no heavy library needed.
  * Handles headings, bold, code blocks, bullet lists, and paragraphs.
+ *
+ * Exported so the history detail dialog can reuse it.
  */
-function MarkdownRenderer({ content }: { content: string }) {
+export function MarkdownRenderer({ content }: { content: string }) {
   const lines = content.split("\n");
   const elements: React.ReactNode[] = [];
   let i = 0;

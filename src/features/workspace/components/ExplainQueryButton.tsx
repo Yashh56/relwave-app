@@ -8,16 +8,19 @@ import { aiService } from "@/services/bridge/ai";
 interface ExplainQueryButtonProps {
   sql: string;
   disabled?: boolean;
+  databaseName?: string;
 }
 
-export function ExplainQueryButton({ sql, disabled }: ExplainQueryButtonProps) {
+export function ExplainQueryButton({ sql, disabled, databaseName }: ExplainQueryButtonProps) {
   const settings = useAISettings();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [markdown, setMarkdown] = useState<string | undefined>();
   const [error, setError] = useState<string | null>(null);
+  const [cached, setCached] = useState<boolean | undefined>();
+  const [createdAt, setCreatedAt] = useState<string | undefined>();
 
-  const handleExplain = async () => {
+  const doExplain = async (skipCache = false) => {
     setOpen(true);
     setMarkdown(undefined);
     setError(null);
@@ -26,13 +29,21 @@ export function ExplainQueryButton({ sql, disabled }: ExplainQueryButtonProps) {
     try {
       const result = await aiService.explainQuery(settings, {
         sql: sql.trim(),
-      });
-      setMarkdown(result);
+      }, { skipCache, datasourceName: databaseName });
+      setMarkdown(result.markdown);
+      setCached(result.cached);
+      setCreatedAt(result.createdAt);
     } catch (err: any) {
       setError(err?.message ?? String(err));
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleReanalyze = () => {
+    setCached(undefined);
+    setCreatedAt(undefined);
+    doExplain(true);
   };
 
   const shortSQL =
@@ -46,7 +57,7 @@ export function ExplainQueryButton({ sql, disabled }: ExplainQueryButtonProps) {
         variant="outline"
         size="sm"
         className="gap-1.5 h-8 text-xs border-border/40"
-        onClick={handleExplain}
+        onClick={() => doExplain()}
         disabled={disabled || !sql.trim()}
       >
         {loading ? (
@@ -65,6 +76,9 @@ export function ExplainQueryButton({ sql, disabled }: ExplainQueryButtonProps) {
         markdown={markdown}
         loading={loading}
         error={error}
+        cached={cached}
+        createdAt={createdAt}
+        onReanalyze={handleReanalyze}
       />
     </>
   );

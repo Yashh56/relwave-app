@@ -31,39 +31,55 @@ export function AnalyzeSchemaButton({ schemaData, databaseType }: AnalyzeSchemaB
   const [loading, setLoading] = useState(false);
   const [markdown, setMarkdown] = useState<string | undefined>();
   const [error, setError] = useState<string | null>(null);
+  const [cached, setCached] = useState<boolean | undefined>();
+  const [createdAt, setCreatedAt] = useState<string | undefined>();
 
   const tableCount = schemaData.schemas?.flatMap((s) => s.tables).length ?? 0;
 
-  const handleAnalyze = async () => {
+  const buildInput = (): SchemaAnalysisInput => ({
+    databaseType,
+    tables: schemaData.schemas.flatMap((schema) =>
+      schema.tables.map((table) => ({
+        name: table.name,
+        schema: schema.name,
+        columns: table.columns.map((col) => ({
+          name: col.name,
+          type: col.type,
+          nullable: col.nullable,
+          isPrimaryKey: col.isPrimaryKey,
+          isForeignKey: col.isForeignKey,
+        })),
+      }))
+    ),
+  });
+
+  const handleAnalyze = async (skipCache = false) => {
     setOpen(true);
-    if (markdown) return; // Already analyzed — reuse result
+    if (markdown && !skipCache) return; // Already analyzed — reuse result
     setLoading(true);
     setError(null);
 
     try {
-      const input: SchemaAnalysisInput = {
-        databaseType,
-        tables: schemaData.schemas.flatMap((schema) =>
-          schema.tables.map((table) => ({
-            name: table.name,
-            schema: schema.name,
-            columns: table.columns.map((col) => ({
-              name: col.name,
-              type: col.type,
-              nullable: col.nullable,
-              isPrimaryKey: col.isPrimaryKey,
-              isForeignKey: col.isForeignKey,
-            })),
-          }))
-        ),
-      };
-      const result = await aiService.analyzeSchema(settings, input);
-      setMarkdown(result);
+      const input = buildInput();
+      const result = await aiService.analyzeSchema(settings, input, {
+        skipCache,
+        datasourceName: schemaData.name,
+      });
+      setMarkdown(result.markdown);
+      setCached(result.cached);
+      setCreatedAt(result.createdAt);
     } catch (err: any) {
       setError(err?.message ?? String(err));
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleReanalyze = () => {
+    setMarkdown(undefined);
+    setCached(undefined);
+    setCreatedAt(undefined);
+    handleAnalyze(true);
   };
 
   // Reset cached result when dialog closes so next open re-fetches
@@ -72,6 +88,8 @@ export function AnalyzeSchemaButton({ schemaData, databaseType }: AnalyzeSchemaB
     if (!next) {
       setMarkdown(undefined);
       setError(null);
+      setCached(undefined);
+      setCreatedAt(undefined);
     }
   };
 
@@ -81,7 +99,7 @@ export function AnalyzeSchemaButton({ schemaData, databaseType }: AnalyzeSchemaB
         variant="outline"
         size="sm"
         className="gap-1.5 h-8 text-xs border-border/40"
-        onClick={handleAnalyze}
+        onClick={() => handleAnalyze()}
         disabled={tableCount === 0}
       >
         {loading ? (
@@ -100,6 +118,9 @@ export function AnalyzeSchemaButton({ schemaData, databaseType }: AnalyzeSchemaB
         markdown={markdown}
         loading={loading}
         error={error}
+        cached={cached}
+        createdAt={createdAt}
+        onReanalyze={handleReanalyze}
       />
     </>
   );
