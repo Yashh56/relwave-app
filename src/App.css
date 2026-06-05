@@ -498,16 +498,7 @@ body {
   user-select: none;
 }
 
-input,
-textarea,
-[contenteditable="true"],
-pre,
-code,
-.selectable,
-.font-mono {
-  -webkit-user-select: text;
-  user-select: text;
-}
+
 
 @layer utilities {
   /* Webkit browsers (Chrome, Safari, Edge) - Applied globally */
