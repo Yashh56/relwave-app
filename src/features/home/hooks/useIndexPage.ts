@@ -3,7 +3,9 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { toast } from "sonner";
 import { useNavigate, useLocation } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { useDatabases, useAddDatabase, useDeleteDatabase, usePrefetch } from "@/features/project/hooks/useDbQueries";
+import { projectKeys } from "@/features/project/hooks/useProjectQueries";
 import { ConnectionFormData, REQUIRED_FIELDS, SQLITE_REQUIRED_FIELDS } from "@/features/home/types";
 import { useDatabaseStats } from "../../database/hooks/useDatabaseStats";
 import { useSelectedDbStats } from "../../database/hooks/useSelectedDbStats";
@@ -15,6 +17,7 @@ import { useWelcomeMessage } from "@/features/database/hooks/useWelcomeMessage";
 export const useIndexPage = (bridgeReady: boolean) => {
     const navigate = useNavigate();
     const location = useLocation();
+    const queryClient = useQueryClient();
 
     // ... existing logic ...
 
@@ -248,6 +251,12 @@ export const useIndexPage = (bridgeReady: boolean) => {
         if (!open) setPrefilledConnectionData(undefined);
     };
 
+    const handleImportComplete = async (_projectId: string, _projectName: string) => {
+        setIsImportOpen(false);
+        queryClient.invalidateQueries({ queryKey: projectKeys.all });
+        await Promise.all([refetchDatabases(), refetchStatus()]);
+    };
+
     return {
         // Data
         databases,
@@ -294,5 +303,6 @@ export const useIndexPage = (bridgeReady: boolean) => {
         // Import
         isImportOpen,
         setIsImportOpen,
+        handleImportComplete,
     };
 };

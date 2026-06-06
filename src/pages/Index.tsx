@@ -79,6 +79,7 @@ const IndexContent = ({ bridgeReady, onShortcutsClick }: { bridgeReady: boolean,
         // Import
         isImportOpen,
         setIsImportOpen,
+        handleImportComplete,
     } = useIndexPage(bridgeReady);
 
     return (
@@ -166,9 +167,7 @@ const IndexContent = ({ bridgeReady, onShortcutsClick }: { bridgeReady: boolean,
             <ImportProjectDialog
                 open={isImportOpen}
                 onOpenChange={setIsImportOpen}
-                onComplete={(_projectId: string, _projectName: string) => {
-                    setIsImportOpen(false);
-                }}
+                onComplete={handleImportComplete}
             />
         </div>
     );
