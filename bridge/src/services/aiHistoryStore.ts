@@ -7,6 +7,7 @@
 
 import Database from "better-sqlite3";
 import path from "path";
+import { resolvePkgNativeBindingPath } from "../connectors/sqlite";
 import fs from "fs";
 import { CONFIG_FOLDER } from "../utils/config";
 
@@ -108,12 +109,9 @@ export class AIHistoryStore {
     // Resolve native binding for pkg builds (reuse existing pattern)
     let nativeBinding: string | undefined;
     try {
-      const { resolvePkgNativeBindingPath } = require("../connectors/sqlite");
-      if (typeof resolvePkgNativeBindingPath === "function") {
-        nativeBinding = resolvePkgNativeBindingPath() ?? undefined;
-      }
+      nativeBinding = resolvePkgNativeBindingPath() ?? undefined;
     } catch {
-      // Not in a pkg environment or function not exported; ignore.
+      // Ignore if it fails for any reason
     }
 
     const opts: Database.Options = {};

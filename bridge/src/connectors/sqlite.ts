@@ -322,7 +322,7 @@ function getInstalledBindingCandidates(execDir: string): string[] {
   return Array.from(searchRoots, (root) => path.join(root, "better_sqlite3.node"));
 }
 
-function resolvePkgNativeBindingPath(): string | undefined {
+export function resolvePkgNativeBindingPath(): string | undefined {
   if (cachedNativeBindingPath !== undefined) {
     return cachedNativeBindingPath ?? undefined;
   }
@@ -376,7 +376,9 @@ function resolvePkgNativeBindingPath(): string | undefined {
   const snapshotRoot = path.join(path.sep, "snapshot", "bridge", "node_modules");
   snapshotCandidates.push(
     path.join(snapshotRoot, "better-sqlite3", "build", "Release", "better_sqlite3.node"),
-    path.join(snapshotRoot, ".pnpm", "better-sqlite3@12.6.2", "node_modules", "better-sqlite3", "build", "Release", "better_sqlite3.node")
+    path.join(snapshotRoot, ".pnpm", "better-sqlite3@12.6.2", "node_modules", "better-sqlite3", "build", "Release", "better_sqlite3.node"),
+    path.join(snapshotRoot, ".pnpm", "better-sqlite3@11.10.0", "node_modules", "better-sqlite3", "build", "Release", "better_sqlite3.node"),
+    path.join(snapshotRoot, ".pnpm", "better-sqlite3@11.9.0", "node_modules", "better-sqlite3", "build", "Release", "better_sqlite3.node")
   );
 
   const targetNodeFile = path.join(os.tmpdir(), `relwave-better_sqlite3-${process.pid}.node`);
