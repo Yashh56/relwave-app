@@ -5,4 +5,3 @@ export { AddConnectionDialog } from "./AddConnectionDialog";
 export { DeleteDialog } from "./DeleteDialog";
 export { DiscoveredDatabasesCard } from "./DiscoveredDatabasesCard";
 export * from "../types";
-export * from "../utils";

@@ -6,6 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { MigrationsData } from "@/features/database/types";
 import { useMigrationsPanel } from "../hooks/useMigrationsPanel";
 import { cn } from "@/lib/utils";
+import { formatTimestamp } from "@/lib/utils";
 
 interface MigrationsPanelProps {
     migrations: MigrationsData;
@@ -72,7 +73,7 @@ export default function MigrationsPanel({ migrations, baselined, dbId }: Migrati
                                 <div className="bg-muted/30 rounded-lg p-3 border border-border/30">
                                     <div className="text-xs text-muted-foreground mb-1">Pending</div>
                                     <div className="text-2xl font-bold text-foreground">
-                                        {local.length - applied.length}
+                                        {allMigrations.filter(m => m.status === "pending").length}
                                     </div>
                                 </div>
                             </div>
@@ -183,16 +184,9 @@ function MigrationItem({ migration, onApply, onRollback, onDelete, onViewSQL }: 
                             {migration.name}
                         </p>
                         {migration.appliedAt && (
+                            console.log(formatTimestamp(migration.appliedAt)),
                             <p className="text-xs text-muted-foreground/70 mt-1">
-                                Applied: {new Date(migration.appliedAt).toLocaleString('en-IN', {
-                                    year: 'numeric',
-                                    month: 'short',
-                                    day: 'numeric',
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                    hour12: true,
-                                    timeZone: 'Asia/Kolkata'
-                                })}
+                                Applied: {formatTimestamp(migration.appliedAt)}
                             </p>
                         )}
                     </div>

@@ -1,6 +1,6 @@
 import { Card, CardAction, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock, Database, HardDrive, Table2, Layers, GitBranch, FileCode2 } from "lucide-react";
-import { formatRelativeTime } from "../utils";
+import { formatRelativeTime } from "@/lib/utils";
 import { DatabaseConnection } from "@/features/database/types";
 import { ConnectionDetails } from "./ConnectionDetails";
 import { MigrationStatusCard } from "./MigrationStatusCard";

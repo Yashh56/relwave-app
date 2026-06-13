@@ -9,9 +9,8 @@ import {
   Layers,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
+import { cn, formatRelativeTime } from "@/lib/utils";
 import { WelcomeViewProps } from "../types";
-import { formatRelativeTime } from "../utils";
 import { DiscoveredDatabasesCard } from "./DiscoveredDatabasesCard";
 import { Spinner } from "@/components/ui/spinner";
 import { Card, CardAction, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
