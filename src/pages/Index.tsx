@@ -42,7 +42,6 @@ const IndexContent = ({ bridgeReady, onShortcutsClick }: { bridgeReady: boolean,
         selectedDatabase,
         selectedDbStats,
         loading,
-        welcomeMessage,
 
         // Status + stats
         status,
@@ -58,6 +57,8 @@ const IndexContent = ({ bridgeReady, onShortcutsClick }: { bridgeReady: boolean,
         // UI state
         searchQuery,
         setSearchQuery,
+        onlineFilter,
+        setOnlineFilter,
         selectedDb,
         setSelectedDb,
         isDialogOpen,
@@ -93,6 +94,8 @@ const IndexContent = ({ bridgeReady, onShortcutsClick }: { bridgeReady: boolean,
                         loading={loading}
                         searchQuery={searchQuery}
                         setSearchQuery={setSearchQuery}
+                        onlineFilter={onlineFilter}
+                        setOnlineFilter={setOnlineFilter}
                         selectedDb={selectedDb}
                         setSelectedDb={setSelectedDb}
                         status={status}
@@ -127,12 +130,12 @@ const IndexContent = ({ bridgeReady, onShortcutsClick }: { bridgeReady: boolean,
                                 connectedCount={connectedCount}
                                 totalTables={totalTables}
                                 totalSize={totalSize}
-                                welcomeMessage={welcomeMessage}
                                 statsLoading={showStatsLoading}
                                 onAddClick={() => handleDialogClose(true)}
                                 onSelectDb={setSelectedDb}
                                 onDatabaseHover={handleDatabaseHover}
                                 onDiscoveredDatabaseAdd={handleDiscoveredDatabaseAdd}
+                                onOnlineFilterClick={() => setOnlineFilter(true)}
                             />
                         )}
                     </div>

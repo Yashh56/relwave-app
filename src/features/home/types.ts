@@ -6,6 +6,8 @@ export interface ConnectionListProps {
     loading: boolean;
     searchQuery: string;
     setSearchQuery: (query: string) => void;
+    onlineFilter: boolean;
+    setOnlineFilter: (filter: boolean) => void;
     selectedDb: string | null;
     setSelectedDb: (id: string | null) => void;
     status: Map<string, string>;
@@ -38,11 +40,11 @@ export interface WelcomeViewProps {
     totalTables: number | string;
     totalSize: string;
     statsLoading: boolean;
-    welcomeMessage: string;
     onAddClick: () => void;
     onSelectDb: (id: string) => void;
     onDatabaseHover: (dbId: string) => void;
     onDiscoveredDatabaseAdd?: (db: DiscoveredDatabase) => void;
+    onOnlineFilterClick: () => void;
 }
 
 export interface AddConnectionDialogProps {

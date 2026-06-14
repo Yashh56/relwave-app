@@ -42,7 +42,6 @@ export const useIndexPage = (bridgeReady: boolean) => {
         refetchStatus,
     } = useDatabaseStats(bridgeReady, databases.length > 0);
 
-    const welcomeMessage = useWelcomeMessage();
 
     // Mutations
     const addDatabaseMutation = useAddDatabase();
@@ -51,6 +50,7 @@ export const useIndexPage = (bridgeReady: boolean) => {
 
     // UI state
     const [searchQuery, setSearchQuery] = useState("");
+    const [onlineFilter, setOnlineFilter] = useState(false);
     const [selectedDb, setSelectedDb] = useState<string | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -72,19 +72,21 @@ export const useIndexPage = (bridgeReady: boolean) => {
     const filteredDatabases = useMemo(
         () =>
             databases.filter(
-                (db: DatabaseConnection) =>
-                    db.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                    db.host.toLowerCase().includes(searchQuery.toLowerCase())
+                (db: DatabaseConnection) => {
+                    const matchesSearch = db.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                                          db.host.toLowerCase().includes(searchQuery.toLowerCase());
+                    const matchesOnline = onlineFilter ? status.get(db.id) === "connected" : true;
+                    return matchesSearch && matchesOnline;
+                }
             ),
-        [databases, searchQuery]
+        [databases, searchQuery, onlineFilter, status]
     );
 
     const recentDatabases = useMemo(
         () =>
             [...databases]
                 .filter((db) => db.lastAccessedAt)
-                .sort((a, b) => new Date(b.lastAccessedAt!).getTime() - new Date(a.lastAccessedAt!).getTime())
-                .slice(0, 5),
+                .sort((a, b) => new Date(b.lastAccessedAt!).getTime() - new Date(a.lastAccessedAt!).getTime()),
         [databases]
     );
 
@@ -265,7 +267,6 @@ export const useIndexPage = (bridgeReady: boolean) => {
         selectedDatabase,
         selectedDbStats,
         loading,
-        welcomeMessage,
 
         // Status + stats
         status,
@@ -281,6 +282,8 @@ export const useIndexPage = (bridgeReady: boolean) => {
         // UI state
         searchQuery,
         setSearchQuery,
+        onlineFilter,
+        setOnlineFilter,
         selectedDb,
         setSelectedDb,
         isDialogOpen,
