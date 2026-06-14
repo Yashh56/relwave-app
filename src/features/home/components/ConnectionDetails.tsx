@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { DatabaseConnection } from "@/features/database/types"
+import { formatTimestamp } from "@/lib/utils"
 
 export function ConnectionDetails({ database }: { database: DatabaseConnection }) {
     return (
@@ -41,7 +42,7 @@ export function ConnectionDetails({ database }: { database: DatabaseConnection }
                 <div className="flex items-center justify-between py-2">
                     <span className="text-sm text-muted-foreground">Created</span>
                     <span className="text-sm">
-                        {new Date(database.createdAt).toLocaleDateString()}
+                        {formatTimestamp(database.createdAt)}
                     </span>
                 </div>
             </CardContent>

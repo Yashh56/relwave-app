@@ -5,7 +5,8 @@ import { Readable } from "stream";
 import { loadLocalMigrations, writeBaselineMigration } from "../utils/baselineMigration";
 import crypto from "crypto";
 import fs from "fs";
-import { ensureDir, getMigrationsDir } from "../utils/config";
+import { ensureDir } from "../utils/config";
+import { projectStoreInstance } from "../services/projectStore";
 import {
   CacheEntry,
   CACHE_TTL,
@@ -32,6 +33,7 @@ import {
   PGAlterTableOperation,
   PGDropMode,
 } from "../types/postgres";
+import { SchemaFile } from "../services/projectStore";
 
 export type {
   PGConfig,
@@ -801,7 +803,12 @@ export async function getSchemaMetadataBatch(
         not_nullable: row.not_nullable,
         default_value: row.default_value,
         is_primary_key: row.is_primary_key,
-        is_foreign_key: row.is_foreign_key
+        is_foreign_key: row.is_foreign_key,
+        is_unique: row.is_unique,
+        is_serial: row.is_serial,
+        check_constraint: row.check_constraint,
+        comment: row.comment,
+        ordinal_position: row.ordinal_position
       });
     }
 
@@ -1169,7 +1176,7 @@ function groupIndexes(indexes: IndexInfo[]) {
   }
 
   return [...map.values()].map(group =>
-    group.sort((a, b) => a.ordinal_position - b.ordinal_position)
+    group.sort((a, b) => (a.ordinal_position ?? 0) - (b.ordinal_position ?? 0))
   );
 }
 
@@ -1409,10 +1416,10 @@ export async function insertBaseline(
   }
 }
 
-
 export async function baselineIfNeeded(
   conn: PGConfig,
-  migrationsDir: string
+  migrationsDir: string,
+  snapshot?: SchemaFile
 ) {
   const client = createClient(conn);
 
@@ -1426,10 +1433,22 @@ export async function baselineIfNeeded(
     const version = Date.now().toString();
     const name = "baseline_existing_schema";
 
+    const fakeSnapshot = snapshot || {
+      version: 2,
+      projectId: "",
+      databaseId: "",
+      dialect: "postgresql",
+      schemas: [],
+      cachedAt: "",
+      relwaveVersion: "",
+      schemaHash: ""
+    };
+
     const filePath = writeBaselineMigration(
       migrationsDir,
       version,
-      name
+      name,
+      fakeSnapshot
     );
 
     const checksum = crypto
@@ -1485,11 +1504,19 @@ export async function connectToDatabase(
 ) {
   // 1️⃣ Baseline (only if allowed)
   let baselineResult = { baselined: false };
-  const migrationsDir = getMigrationsDir(connectionId);
+  const migrationsDir = await projectStoreInstance.resolveMigrationsDir(connectionId);
   ensureDir(migrationsDir);
 
   if (!options?.readOnly) {
-    baselineResult = await baselineIfNeeded(cfg, migrationsDir);
+    // Pass real schema snapshot so baseline contains actual DDL
+    let snapshot: any = undefined;
+    try {
+      const project = await projectStoreInstance.getProjectByDatabaseId(connectionId);
+      if (project) {
+        snapshot = await projectStoreInstance.getSchema(project.id) || undefined;
+      }
+    } catch { }
+    baselineResult = await baselineIfNeeded(cfg, migrationsDir, snapshot);
   }
 
   // 2️⃣ Load schema (read-only)
