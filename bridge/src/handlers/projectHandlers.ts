@@ -221,7 +221,10 @@ export class ProjectHandlers {
 
                 // Commit to Git if tracking
                 try {
-                    await gitServiceInstance.syncSchemaFile(projectId);
+                    const projectDir = await projectStoreInstance.resolveProjectDir(projectId);
+                    if (projectDir) {
+                        await gitServiceInstance.syncSchemaFile(projectDir);
+                    }
                 } catch (gitErr) {
                     this.logger?.warn({ err: gitErr }, "Failed to auto-commit schema.json to Git");
                 }
