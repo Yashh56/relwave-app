@@ -1116,7 +1116,7 @@ export class GitService {
     async stageMigrationFiles(projectPath: string): Promise<string[]> {
         // Run git add on migrations/ and migration-lock.json
         // But first check if they exist or have changes
-        const filesToStage = ["migrations", "migration-lock.json"];
+        const filesToStage = ["migrations"];
         const stagedPaths: string[] = [];
         
         for (const file of filesToStage) {

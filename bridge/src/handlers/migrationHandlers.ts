@@ -315,15 +315,15 @@ export class MigrationHandlers {
 
             const migrationsDir = await projectStoreInstance.resolveMigrationsDir(dbId);
             const versionStr = Date.now().toString();
-            const tmpPath = path.join(migrationsDir, `${versionStr}_tmp_snapshot_apply.sql`);
-            fs.writeFileSync(tmpPath, baselineSQL, "utf8");
+            const baselinePath = path.join(migrationsDir, `${versionStr}_apply_snapshot.sql`);
+            fs.writeFileSync(baselinePath, baselineSQL, "utf8");
 
-            if (dbType === "mysql") await this.queryExecutor.mysql.applyMigration(conn, tmpPath);
-            else if (dbType === "postgres") await this.queryExecutor.postgres.applyMigration(conn, tmpPath);
-            else if (dbType === "mariadb") await this.queryExecutor.mariadb.applyMigration(conn, tmpPath);
-            else if (dbType === "sqlite") await this.queryExecutor.sqlite.applyMigration(conn, tmpPath);
+            if (dbType === "mysql") await this.queryExecutor.mysql.applyMigration(conn, baselinePath);
+            else if (dbType === "postgres") await this.queryExecutor.postgres.applyMigration(conn, baselinePath);
+            else if (dbType === "mariadb") await this.queryExecutor.mariadb.applyMigration(conn, baselinePath);
+            else if (dbType === "sqlite") await this.queryExecutor.sqlite.applyMigration(conn, baselinePath);
 
-            if (fs.existsSync(tmpPath)) fs.unlinkSync(tmpPath);
+            if (fs.existsSync(baselinePath)) fs.unlinkSync(baselinePath);
 
             try {
                 const { writeMigrationLock } = await import("../services/migrationLock");

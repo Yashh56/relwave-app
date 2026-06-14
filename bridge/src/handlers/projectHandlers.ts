@@ -533,9 +533,7 @@ export class ProjectHandlers {
             if (!projectDir) return this.rpc.sendError(id, { code: "NOT_FOUND", message: "Project directory not found" });
 
             const { gitServiceInstance } = await import("../services/gitService");
-            await gitServiceInstance.stageAll(projectDir);
-            await gitServiceInstance.commit(projectDir, "Push migrations");
-            // Here you'd call git push if configured, for now just returning ok
+            await gitServiceInstance.pushMigrations(projectDir);
             this.rpc.sendResponse(id, { ok: true });
         } catch (e: any) {
             this.logger?.error({ e }, "project.pushMigrations failed");
