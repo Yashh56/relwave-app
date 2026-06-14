@@ -178,15 +178,7 @@ export class MigrationHandlers {
 
                 const project = await projectStoreInstance.getProjectByDatabaseId(dbId);
                 if (project) {
-                    const projectDir = await projectStoreInstance.resolveProjectDir(project.id);
-                    if (projectDir) {
-                        const syncResult = await gitServiceInstance.syncMigrationFiles(projectDir);
-                        if (syncResult.error) {
-                            this.logger?.warn({ error: syncResult.error }, "Git sync failed after migration apply");
-                        }
-                    }
-
-                    // Update Migration Lock
+                    // Update Migration Lock first so it gets included in the git sync commit
                     let appliedMigrations: any[] = [];
                     if (dbType === "mysql") {
                         appliedMigrations = await require("../connectors/mysql").listAppliedMigrations(conn);
@@ -203,6 +195,14 @@ export class MigrationHandlers {
 
                     const appliedVersions = appliedMigrations.map(m => m.version);
                     await writeMigrationLock(dbId, schemaHash, appliedVersions);
+
+                    const projectDir = await projectStoreInstance.resolveProjectDir(project.id);
+                    if (projectDir) {
+                        const syncResult = await gitServiceInstance.syncMigrationFiles(projectDir);
+                        if (syncResult.error) {
+                            this.logger?.warn({ error: syncResult.error }, "Git sync failed after migration apply");
+                        }
+                    }
                 }
             } catch (syncErr) {
                 this.logger?.error({ err: syncErr }, "syncMigrationFiles/lock hook failed");
@@ -388,15 +388,7 @@ export class MigrationHandlers {
 
                 const project = await projectStoreInstance.getProjectByDatabaseId(dbId);
                 if (project) {
-                    const projectDir = await projectStoreInstance.resolveProjectDir(project.id);
-                    if (projectDir) {
-                        const syncResult = await gitServiceInstance.syncMigrationFiles(projectDir);
-                        if (syncResult.error) {
-                            this.logger?.warn({ error: syncResult.error }, "Git sync failed after migration rollback");
-                        }
-                    }
-
-                    // Update Migration Lock
+                    // Update Migration Lock first so it gets included in the git sync commit
                     let appliedMigrations: any[] = [];
                     if (dbType === "mysql") {
                         appliedMigrations = await require("../connectors/mysql").listAppliedMigrations(conn);
@@ -413,6 +405,14 @@ export class MigrationHandlers {
 
                     const appliedVersions = appliedMigrations.map(m => m.version);
                     await writeMigrationLock(dbId, schemaHash, appliedVersions);
+
+                    const projectDir = await projectStoreInstance.resolveProjectDir(project.id);
+                    if (projectDir) {
+                        const syncResult = await gitServiceInstance.syncMigrationFiles(projectDir);
+                        if (syncResult.error) {
+                            this.logger?.warn({ error: syncResult.error }, "Git sync failed after migration rollback");
+                        }
+                    }
                 }
             } catch (syncErr) {
                 this.logger?.error({ err: syncErr }, "syncMigrationFiles/lock hook failed");
