@@ -260,6 +260,9 @@ export function registerDbHandlers(
   rpcRegister(rpc, "project.syncMigrations", (p, id) =>
     projectHandlers.handleSyncMigrations(p, id)
   );
+  rpcRegister(rpc, "project.generateSQL", (p, id) =>
+    projectHandlers.handleGenerateSQL(p, id)
+  );
   rpcRegister(rpc, "project.getDrift", (p, id) =>
     projectHandlers.handleGetDrift(p, id)
   );

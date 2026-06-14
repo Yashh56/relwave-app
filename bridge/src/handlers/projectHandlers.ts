@@ -827,4 +827,32 @@ export class ProjectHandlers {
             this.rpc.sendError(id, { code: "IO_ERROR", message: String(e) });
         }
     }
+    async handleGenerateSQL(params: any, id: number | string) {
+        try {
+            const { projectId } = params || {};
+            if (!projectId) {
+                return this.rpc.sendError(id, {
+                    code: "BAD_REQUEST",
+                    message: "Missing projectId",
+                });
+            }
+
+            const { projectStoreInstance } = await import("../services/projectStore");
+            const schemaFile = await projectStoreInstance.getSchema(projectId);
+            if (!schemaFile) {
+                return this.rpc.sendError(id, {
+                    code: "NOT_FOUND",
+                    message: "No schema snapshot found",
+                });
+            }
+
+            const { generateBaselineSQL } = await import("../utils/baselineMigration");
+            const sql = generateBaselineSQL(schemaFile as any, "preview", "preview");
+
+            this.rpc.sendResponse(id, { ok: true, data: { sql } });
+        } catch (e: any) {
+            this.logger?.error({ e }, "project.generateSQL failed");
+            this.rpc.sendError(id, { code: "IO_ERROR", message: String(e) });
+        }
+    }
 }
