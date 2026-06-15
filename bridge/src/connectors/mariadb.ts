@@ -7,7 +7,8 @@ import mysql, {
 import { loadLocalMigrations, writeBaselineMigration } from "../utils/baselineMigration";
 import crypto from "crypto";
 import fs from "fs";
-import { ensureDir, getMigrationsDir } from "../utils/config";
+import { ensureDir } from "../utils/config";
+import { projectStoreInstance } from "../services/projectStore";
 import {
     CacheEntry,
     CACHE_TTL,
@@ -34,6 +35,7 @@ import {
     MySQLAlterTableOperation as MariaDBAlterTableOperation,
     MySQLDropMode as MariaDBDropMode,
 } from "../types/mysql";
+import { SchemaFile } from "../services/projectStore";
 
 export type {
     ColumnDetail,
@@ -548,7 +550,7 @@ export function streamQueryCancelable(
             conn = await pool.getConnection();
 
             const [pidRows] = await conn.execute(GET_CONNECTION_ID);
-            backendPid = pidRows[0].pid;
+            backendPid = (pidRows as any[])[0].pid;
 
             const raw = (conn as any).connection;
             query = raw.query(sql);
@@ -916,7 +918,12 @@ export async function getSchemaMetadataBatch(
                 not_nullable: Boolean(row.not_nullable),
                 default_value: row.default_value,
                 is_primary_key: Boolean(row.is_primary_key),
-                is_foreign_key: Boolean(row.is_foreign_key)
+                is_foreign_key: Boolean(row.is_foreign_key),
+                is_unique: Boolean(row.is_unique),
+                is_serial: Boolean(row.is_serial),
+                comment: row.comment,
+                check_constraint: row.check_constraint,
+                ordinal_position: row.ordinal_position
             });
         }
 
@@ -1349,10 +1356,10 @@ export async function insertBaseline(
     await connection.query(INSERT_MIGRATION, [version, name, checksum]);
 }
 
-
 export async function baselineIfNeeded(
     conn: MariaDBConfig,
-    migrationsDir: string
+    migrationsDir: string,
+    snapshot?: SchemaFile
 ) {
     try {
         await ensureMigrationTable(conn);
@@ -1363,10 +1370,22 @@ export async function baselineIfNeeded(
         const version = Date.now().toString();
         const name = "baseline_existing_schema";
 
+        const fakeSnapshot = snapshot || {
+            version: 2,
+            projectId: "",
+            databaseId: "",
+            dialect: "mysql",
+            schemas: [],
+            cachedAt: "",
+            relwaveVersion: "",
+            schemaHash: ""
+        };
+
         const filePath = writeBaselineMigration(
             migrationsDir,
             version,
-            name
+            name,
+            fakeSnapshot
         );
 
         const checksum = crypto
@@ -1420,11 +1439,19 @@ export async function connectToDatabase(
     options?: { readOnly?: boolean }
 ) {
     let baselineResult = { baselined: false };
-    const migrationsDir = getMigrationsDir(connectionId);
+    const migrationsDir = await projectStoreInstance.resolveMigrationsDir(connectionId);
     ensureDir(migrationsDir);
     // 1️⃣ Baseline (ONLY if not read-only)
     if (!options?.readOnly) {
-        baselineResult = await baselineIfNeeded(cfg, migrationsDir);
+        // Pass real schema snapshot so baseline contains actual DDL
+        let snapshot: any = undefined;
+        try {
+            const project = await projectStoreInstance.getProjectByDatabaseId(connectionId);
+            if (project) {
+                snapshot = await projectStoreInstance.getSchema(project.id) || undefined;
+            }
+        } catch { }
+        baselineResult = await baselineIfNeeded(cfg, migrationsDir, snapshot);
     }
 
     // 2️⃣ Load schema (read-only introspection)

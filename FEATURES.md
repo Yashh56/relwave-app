@@ -50,9 +50,12 @@ The main landing page for managing database connections. Features a clean, IDE-i
 **Connection Management**
 
 - Add new database connections with detailed configuration (name, type, host, port, user, password, SSL options)
+- **SSH Tunneling** — connect securely to remote databases via SSH tunnels using private keys and passphrases
 - **SQLite support** — connect to local `.db`, `.sqlite`, `.sqlite3`, `.s3db` files via native file picker
 - Connect via URL — paste connection strings like `postgres://user:pass@host:port/db`
 - Auto-parse URLs to populate connection form fields (including `sqlite://` protocol)
+- **Safe connection deletion** — intercepts deletion to prevent accidental loss of associated project data (schemas, queries, diagrams)
+- **Unlinked project management** — view, delete, or relink orphaned projects to new connections directly from the sidebar
 - Delete existing database connections
 - Test connections with real-time feedback
 - Connection status indicators for all databases
@@ -376,6 +379,30 @@ RelWave includes native Git integration powered by `simple-git`, providing a ful
 
 ---
 
+## AI Features and Providers
+
+RelWave integrates deeply with multiple Large Language Models (LLMs) to provide intelligent database assistance, schema analysis, and query explanations.
+
+### Supported Providers
+The application supports a flexible, multi-provider AI architecture:
+- **OpenAI** (GPT-4o, GPT-4 Turbo, etc.)
+- **Anthropic** (Claude 3.5 Sonnet, Opus, etc.)
+- **Mistral** (Mistral Large, Mistral Small, etc.)
+- **Groq** (Llama 3, Mixtral, etc. for ultra-fast inference)
+- **Ollama** (Local models like Llama 3, Phi-3, Mistral)
+- **Google Gemini** (Gemini 1.5 Pro, Flash)
+
+### AI Capabilities
+| Feature | Description |
+| ------- | ----------- |
+| **Schema Analysis** | Analyzes the structure of your database, identifying relationships, potential optimizations, and providing a human-readable summary of complex schemas. Uses a highly optimized, token-efficient dense schema representation. |
+| **Query Explanation** | Breaks down complex SQL queries into plain English, explaining joins, filters, performance implications, and the overall intent of the query. |
+| **Local AI Support** | Full privacy and zero-cost inference available through local Ollama integration, ensuring sensitive database schemas never leave your machine. |
+| **Context Aware** | The AI system automatically receives the dialect (PostgreSQL, MySQL, SQLite) and the relevant database schema context to provide accurate, dialect-specific responses. |
+| **High Token Capacity** | Configured with large output windows (up to 4096 tokens) to handle extensive schema analyses and complex query breakdowns without truncation. |
+
+---
+
 ## Visual Tools
 
 ### Chart Visualization
@@ -642,6 +669,6 @@ All database and Git operations use a JSON-RPC protocol over stdin/stdout. The b
 
 ---
 
-**Last Updated:** May 2026
+**Last Updated:** June 2026
 
 This document is maintained alongside the application and updated with each release.

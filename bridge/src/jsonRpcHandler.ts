@@ -65,10 +65,11 @@ export function registerDbHandlers(
     dbService,
     queryExecutor
   );
-  const projectHandlers = new ProjectHandlers(rpc, logger);
+  const projectHandlers = new ProjectHandlers(rpc, logger, dbService, queryExecutor);
   const gitHandlers = new GitHandlers(rpc, logger);
   const gitAdvancedHandlers = new GitAdvancedHandlers(rpc, logger);
   const monitoringHandlers = new MonitoringHandlers(rpc, logger, dbService, monitoringService);
+  const aiHandlers = new (require("./handlers/aiHandlers")).AIHandlers(rpc, logger);
 
   // ==========================================
   // SESSION MANAGEMENT HANDLERS
@@ -167,6 +168,12 @@ export function registerDbHandlers(
   rpcRegister(rpc, "migration.apply", (p, id) =>
     migrationHandlers.handleApplyMigration(p, id)
   );
+  rpcRegister(rpc, "migration.applyMigrations", (p, id) =>
+    migrationHandlers.handleApplyMigrations(p, id)
+  );
+  rpcRegister(rpc, "migration.applySnapshot", (p, id) =>
+    migrationHandlers.handleApplySnapshot(p, id)
+  );
   rpcRegister(rpc, "migration.rollback", (p, id) =>
     migrationHandlers.handleRollbackMigration(p, id)
   );
@@ -226,6 +233,9 @@ export function registerDbHandlers(
   rpcRegister(rpc, "project.saveSchema", (p, id) =>
     projectHandlers.handleSaveSchema(p, id)
   );
+  rpcRegister(rpc, "project.refreshSchemaCache", (p, id) =>
+    projectHandlers.handleRefreshSchemaCache(p, id)
+  );
   rpcRegister(rpc, "project.getERDiagram", (p, id) =>
     projectHandlers.handleGetERDiagram(p, id)
   );
@@ -237,6 +247,24 @@ export function registerDbHandlers(
   );
   rpcRegister(rpc, "project.saveAnnotations", (p, id) =>
     projectHandlers.handleSaveAnnotations(p, id)
+  );
+  rpcRegister(rpc, "project.analyzeImport", (p, id) =>
+    projectHandlers.handleAnalyzeImport(p, id)
+  );
+  rpcRegister(rpc, "project.verifyLock", (p, id) =>
+    projectHandlers.handleVerifyLock(p, id)
+  );
+  rpcRegister(rpc, "project.pushMigrations", (p, id) =>
+    projectHandlers.handlePushMigrations(p, id)
+  );
+  rpcRegister(rpc, "project.syncMigrations", (p, id) =>
+    projectHandlers.handleSyncMigrations(p, id)
+  );
+  rpcRegister(rpc, "project.generateSQL", (p, id) =>
+    projectHandlers.handleGenerateSQL(p, id)
+  );
+  rpcRegister(rpc, "project.getDrift", (p, id) =>
+    projectHandlers.handleGetDrift(p, id)
   );
   rpcRegister(rpc, "project.getQueries", (p, id) =>
     projectHandlers.handleGetQueries(p, id)
@@ -273,6 +301,18 @@ export function registerDbHandlers(
   );
   rpcRegister(rpc, "project.linkDatabase", (p, id) =>
     projectHandlers.handleLinkDatabase(p, id)
+  );
+  rpcRegister(rpc, "project.unlinkFromConnection", (p, id) =>
+    projectHandlers.handleUnlinkFromConnection(p, id)
+  );
+  rpcRegister(rpc, "project.deleteWithConnection", (p, id) =>
+    projectHandlers.handleDeleteWithConnection(p, id)
+  );
+  rpcRegister(rpc, "project.getGitRemote", (p, id) =>
+    projectHandlers.handleGetGitRemote(p, id)
+  );
+  rpcRegister(rpc, "project.relinkToConnection", (p, id) =>
+    projectHandlers.handleRelinkToConnection(p, id)
   );
 
   // ==========================================
@@ -321,6 +361,34 @@ export function registerDbHandlers(
       rpc.sendError(id, { code: "DISCOVERY_ERROR", message: error.message });
     }
   });
+
+  // ==========================================
+  // AI HANDLERS
+  // ==========================================
+  rpcRegister(rpc, "ai.testConnection", (p, id) =>
+    aiHandlers.handleTestConnection(p, id)
+  );
+  rpcRegister(rpc, "ai.analyzeSchema", (p, id) =>
+    aiHandlers.handleAnalyzeSchema(p, id)
+  );
+  rpcRegister(rpc, "ai.explainQuery", (p, id) =>
+    aiHandlers.handleExplainQuery(p, id)
+  );
+  rpcRegister(rpc, "ai.recommendChart", (p, id) =>
+    aiHandlers.handleRecommendChart(p, id)
+  );
+  rpcRegister(rpc, "ai.getHistory", (p, id) =>
+    aiHandlers.handleGetHistory(p, id)
+  );
+  rpcRegister(rpc, "ai.getHistoryById", (p, id) =>
+    aiHandlers.handleGetHistoryById(p, id)
+  );
+  rpcRegister(rpc, "ai.deleteHistory", (p, id) =>
+    aiHandlers.handleDeleteHistory(p, id)
+  );
+  rpcRegister(rpc, "ai.clearHistory", (p, id) =>
+    aiHandlers.handleClearHistory(p, id)
+  );
 
   logger?.info("All RPC handlers registered successfully");
 }

@@ -21,7 +21,8 @@ import { dbStoreInstance, DBMeta } from "./dbStore";
 export type ProjectMetadata = {
     version: number;
     id: string;
-    databaseId: string;
+    databaseId: string | null;
+    status?: "active" | "unlinked";
     name: string;
     description?: string;
     engine?: string;
@@ -74,22 +75,31 @@ export type AnnotationsFile = {
 };
 
 export type SchemaFile = {
-    version: number;
+    version: number; // bumped to 2
     projectId: string;
     databaseId: string;
+    dialect: "postgresql" | "mysql" | "sqlite" | "unknown";
     schemas: SchemaSnapshot[];
     cachedAt: string;
+    relwaveVersion: string;
+    schemaHash: string; // SHA-256 of entire schema content
 };
 
 export type SchemaSnapshot = {
     name: string;
     tables: TableSnapshot[];
+    enums?: EnumSnapshot[];
+    views?: ViewSnapshot[];
 };
 
 export type TableSnapshot = {
     name: string;
     type: string;
     columns: ColumnSnapshot[];
+    indexes: IndexSnapshot[];
+    foreignKeys: ForeignKeySnapshot[];
+    checks: CheckConstraint[];
+    comment?: string | null;
 };
 
 export type ColumnSnapshot = {
@@ -100,11 +110,54 @@ export type ColumnSnapshot = {
     isForeignKey: boolean;
     defaultValue: string | null;
     isUnique: boolean;
+    isSerial: boolean;
+    ordinalPosition: number;
+    foreignKey?: {
+        schema: string;
+        table: string;
+        column: string;
+        onDelete?: "CASCADE" | "SET NULL" | "RESTRICT" | "NO ACTION";
+        onUpdate?: "CASCADE" | "SET NULL" | "RESTRICT" | "NO ACTION";
+    };
+    checkConstraint?: string;
+    comment?: string | null;
+};
+
+export type IndexSnapshot = {
+    name: string;
+    columns: string[];
+    unique: boolean;
+    partial?: string | null;
+};
+
+export type ForeignKeySnapshot = {
+    name: string;
+    columns: string[];
+    referencedSchema: string;
+    referencedTable: string;
+    referencedColumns: string[];
+    onDelete: "CASCADE" | "SET NULL" | "RESTRICT" | "NO ACTION" | "SET DEFAULT";
+    onUpdate: "CASCADE" | "SET NULL" | "RESTRICT" | "NO ACTION" | "SET DEFAULT";
+};
+
+export type CheckConstraint = {
+    name: string;
+    expression: string;
+};
+
+export type EnumSnapshot = {
+    name: string;
+    values: string[];
+};
+
+export type ViewSnapshot = {
+    name: string;
+    definition: string;
 };
 
 export type ProjectSummary = Pick<
     ProjectMetadata,
-    "id" | "name" | "description" | "engine" | "databaseId" | "sourcePath" | "createdAt" | "updatedAt"
+    "id" | "name" | "description" | "engine" | "databaseId" | "sourcePath" | "createdAt" | "updatedAt" | "status"
 >;
 
 /**
@@ -339,7 +392,7 @@ export class ProjectStore {
         // Resolve engine from the linked database
         let engine: string | undefined;
         try {
-            const db: DBMeta | null = await dbStoreInstance.getDB(params.databaseId);
+            const db: DBMeta | undefined = await dbStoreInstance.getDB(params.databaseId);
             engine = db?.type;
         } catch {
             // db may not exist yet — that's OK
@@ -356,6 +409,7 @@ export class ProjectStore {
             description: params.description,
             engine,
             defaultSchema: params.defaultSchema,
+            status: "active",
             createdAt: now,
             updatedAt: now,
         };
@@ -371,11 +425,14 @@ export class ProjectStore {
 
         // Initialise empty sub-files
         const emptySchema: SchemaFile = {
-            version: 1,
+            version: 2,
             projectId: id,
             databaseId: params.databaseId,
+            dialect: engine === "postgresql" ? "postgresql" : engine === "mysql" ? "mysql" : "sqlite", // Provide fallback or infer
             schemas: [],
             cachedAt: now,
+            relwaveVersion: "1.0.0", // Hardcoded for now
+            schemaHash: "",
         };
         const emptyER: ERDiagramFile = {
             version: 1,
@@ -416,6 +473,7 @@ export class ProjectStore {
             description: meta.description,
             engine,
             databaseId: meta.databaseId,
+            status: "active",
             createdAt: now,
             updatedAt: now,
         });
@@ -509,7 +567,7 @@ export class ProjectStore {
         // Resolve engine from the linked database
         let engine: string | undefined;
         try {
-            const db: DBMeta | null = await dbStoreInstance.getDB(databaseId);
+            const db: DBMeta | undefined = await dbStoreInstance.getDB(databaseId);
             engine = db?.type;
         } catch {
             // db may not exist yet
@@ -567,11 +625,160 @@ export class ProjectStore {
     }
 
     /**
+     * Unlink a database connection from a project (leaving the project orphaned but intact)
+     */
+    async unlinkDatabase(databaseId: string): Promise<void> {
+        const meta = await this.getProjectByDatabaseId(databaseId);
+        if (!meta) return;
+
+        const now = new Date().toISOString();
+
+        await this.ensureSourcePathCache();
+        const isImported = this.sourcePathCache.has(meta.id);
+
+        if (isImported) {
+            // ---- Imported project: write to local config only ----
+            const local = (await this.getLocalConfig(meta.id)) ?? {};
+            local.databaseId = undefined;
+            await this.saveLocalConfig(meta.id, local);
+        } else {
+            // ---- Regular project: update relwave.json ----
+            const updated: ProjectMetadata = {
+                ...meta,
+                databaseId: null,
+                status: "unlinked",
+                updatedAt: now,
+            };
+            await this.writeJSON(
+                this.projectFile(meta.id, PROJECT_FILES.metadata),
+                updated
+            );
+        }
+
+        // Sync the index entry
+        const index = await this.loadIndex();
+        const entry = index.projects.find((p) => p.id === meta.id);
+        if (entry) {
+            entry.databaseId = null;
+            entry.status = "unlinked";
+            entry.updatedAt = now;
+            await this.saveIndex(index);
+        }
+    }
+
+    /**
+     * Relink an unlinked project to a new connection.
+     * Throws an error if the new connection is already linked to another project.
+     */
+    async relinkDatabase(projectId: string, databaseId: string): Promise<ProjectMetadata> {
+        // 1. Verify connection is not already linked to another project
+        const existingLinkedProject = await this.getProjectByDatabaseId(databaseId);
+        if (existingLinkedProject && existingLinkedProject.id !== projectId) {
+            throw new Error(`DATABASE_ALREADY_HAS_PROJECT: This connection is already linked to project "${existingLinkedProject.name}"`);
+        }
+
+        // 2. Link database
+        const updated = await this.linkDatabase(projectId, databaseId);
+        if (!updated) {
+            throw new Error(`Project ${projectId} not found`);
+        }
+
+        const now = new Date().toISOString();
+
+        // 3. Mark project as active again
+        await this.ensureSourcePathCache();
+        const isImported = this.sourcePathCache.has(projectId);
+
+        if (!isImported) {
+            const finalUpdated: ProjectMetadata = {
+                ...updated,
+                status: "active",
+                updatedAt: now,
+            };
+            await this.writeJSON(
+                this.projectFile(projectId, PROJECT_FILES.metadata),
+                finalUpdated
+            );
+        }
+
+        // Sync the index entry
+        const index = await this.loadIndex();
+        const entry = index.projects.find((p) => p.id === projectId);
+        if (entry) {
+            entry.status = "active";
+            entry.updatedAt = now;
+            await this.saveIndex(index);
+        }
+
+        return { ...updated, status: "active", updatedAt: now };
+    }
+
+    /**
      * Delete a project.
      * For regular projects the internal directory is removed.
      * For imported projects the source directory is NOT deleted
      * (the user owns it) — only the index entry is removed.
      */
+    /**
+     * Resolve the migrations directory for a database.
+     * Moves legacy migrations from AppData to the project directory if they exist.
+     */
+    async resolveMigrationsDir(dbId: string): Promise<string> {
+        const { CONFIG_FOLDER } = await import("../utils/config");
+        const fallbackDir = path.join(CONFIG_FOLDER, "migrations", dbId);
+        let targetDir = fallbackDir;
+
+        const project = await this.getProjectByDatabaseId(dbId);
+        if (project) {
+            targetDir = path.join(this.projectDir(project.id), "migrations");
+        }
+
+        // Migrate existing directory
+        if (targetDir !== fallbackDir && fsSync.existsSync(fallbackDir)) {
+            if (!fsSync.existsSync(targetDir)) {
+                await fs.mkdir(path.dirname(targetDir), { recursive: true }).catch(() => {});
+                try {
+                    await fs.rename(fallbackDir, targetDir);
+                } catch (e) {
+                    console.error("Failed to migrate existing migrations dir:", e);
+                }
+            }
+        }
+
+        if (!fsSync.existsSync(targetDir)) {
+            await fs.mkdir(targetDir, { recursive: true }).catch(() => {});
+        }
+
+        return targetDir;
+    }
+
+    async analyzeImportedProject(projectId: string): Promise<{ hasLock: boolean; hashMatch: boolean; migrationsCount: number }> {
+        const schemaFile = await this.getSchema(projectId);
+        const schemaHash = (schemaFile as any)?.schemaHash || "";
+
+        // Read lock file
+        let hasLock = false;
+        let hashMatch = false;
+        let migrationsCount = 0;
+
+        try {
+            const project = await this.getProject(projectId);
+            if (project?.databaseId) {
+                const { readMigrationLock } = await import("./migrationLock");
+                const lock = await readMigrationLock(project.databaseId);
+                if (lock) {
+                    hasLock = true;
+                    hashMatch = lock.schemaHash === schemaHash;
+                    migrationsCount = lock.appliedMigrations.length;
+                }
+            }
+        } catch (e) {
+            // Ignore if lock file logic fails
+        }
+
+        return { hasLock, hashMatch, migrationsCount };
+    }
+
     async deleteProject(projectId: string): Promise<void> {
         await this.ensureSourcePathCache();
         const isImported = this.sourcePathCache.has(projectId);
@@ -591,34 +798,107 @@ export class ProjectStore {
         await this.saveIndex(index);
     }
 
-    async getSchema(projectId: string): Promise<SchemaFile | null> {
-        return this.readJSON<SchemaFile>(
-            this.projectFile(projectId, PROJECT_FILES.schema)
-        );
+    /**
+     * Used by the connection deletion flow when user opts to "Delete project as well".
+     * Finds the project linked to the databaseId, deletes its folder, and removes from the store.
+     */
+    async deleteProjectByDatabaseId(databaseId: string): Promise<void> {
+        const project = await this.getProjectByDatabaseId(databaseId);
+        if (!project) throw new Error("No linked project found");
+
+        await this.ensureSourcePathCache();
+        const isImported = this.sourcePathCache.has(project.id);
+
+        if (!isImported) {
+            // Transaction-like filesystem deletion first
+            const dir = this.projectDir(project.id);
+            if (fsSync.existsSync(dir)) {
+                await fs.rm(dir, { recursive: true, force: true });
+            }
+        }
+
+        // Remove from index + cache
+        this.sourcePathCache.delete(project.id);
+        const index = await this.loadIndex();
+        index.projects = index.projects.filter((p) => p.id !== project.id);
+        await this.saveIndex(index);
     }
 
-    async saveSchema(projectId: string, schemas: SchemaSnapshot[]): Promise<SchemaFile> {
+    async getSchema(projectId: string): Promise<SchemaFile | null> {
+        const file = await this.readJSON<any>(
+            this.projectFile(projectId, PROJECT_FILES.schema)
+        );
+        if (!file) return null;
+        return this.migrateSchemaFile(file);
+    }
+
+    private migrateSchemaFile(raw: any): SchemaFile {
+        if (raw.version >= 2) return raw as SchemaFile;
+
+        // Upgrade v1 to v2
+        return {
+            version: 2,
+            projectId: raw.projectId,
+            databaseId: raw.databaseId,
+            dialect: "postgresql", // assume postgresql for legacy files
+            cachedAt: raw.cachedAt || new Date().toISOString(),
+            relwaveVersion: "1.0.0",
+            schemaHash: "", // will be recomputed on next refresh
+            schemas: (raw.schemas || []).map((s: any) => ({
+                name: s.name,
+                tables: (s.tables || []).map((t: any) => ({
+                    name: t.name,
+                    type: t.type || "BASE TABLE",
+                    comment: null,
+                    columns: (t.columns || []).map((c: any, index: number) => {
+                        const isSerial = c.defaultValue ? c.defaultValue.includes("nextval") : false;
+                        return {
+                            ...c,
+                            isSerial,
+                            ordinalPosition: index + 1,
+                        };
+                    }),
+                    indexes: [],
+                    foreignKeys: [],
+                    checks: [],
+                })),
+                enums: [],
+                views: [],
+            })),
+        };
+    }
+
+    async saveSchema(
+        projectId: string,
+        schemas: SchemaSnapshot[],
+        schemaHash?: string,
+        dialect?: string
+    ): Promise<SchemaFile> {
         const meta = await this.getProject(projectId);
         if (!meta) throw new Error(`Project ${projectId} not found`);
 
         // Read existing file and skip write if schema data is identical
         // (avoids cachedAt churn that creates phantom git changes)
         const existing = await this.getSchema(projectId);
-        if (existing) {
+        if (existing && existing.version === 2) {
             const oldData = JSON.stringify(existing.schemas);
             const newData = JSON.stringify(schemas);
-            if (oldData === newData) {
+            // If schemaHash is provided, also check if it matches
+            if (oldData === newData && (!schemaHash || existing.schemaHash === schemaHash)) {
                 return existing; // nothing changed — keep old cachedAt
             }
         }
 
         const now = new Date().toISOString();
         const file: SchemaFile = {
-            version: 1,
+            version: 2,
             projectId,
             databaseId: meta.databaseId,
+            dialect: (dialect || (meta.engine === "postgresql" ? "postgresql" : (meta.engine === "mysql" || meta.engine === "mariadb") ? "mysql" : "sqlite")) as any,
             schemas,
             cachedAt: now,
+            relwaveVersion: "1.0.0",
+            schemaHash: schemaHash || "", 
         };
 
         await this.writeJSON(
@@ -1222,7 +1502,7 @@ export class ProjectStore {
         // ---- 3. Resolve engine from the linked database ----
         let engine: string | undefined;
         try {
-            const db: DBMeta | null = await dbStoreInstance.getDB(databaseId);
+            const db: DBMeta | undefined = await dbStoreInstance.getDB(databaseId);
             engine = db?.type;
         } catch {
             // db may not exist yet

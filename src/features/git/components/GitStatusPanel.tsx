@@ -14,6 +14,8 @@ import {
     Eye,
     RotateCcw,
     User,
+    RefreshCw,
+    UploadCloud,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,6 +43,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
 import type { GitFileChange, GitLogEntry } from "@/features/git/types";
 import { gitService } from "@/services/bridge/git";
+import { projectService } from "@/services/bridge/project";
 import { GitHistoryGraph } from "./GitHistoryGraph";
 
 // ─── Helpers ──────────────────────────────────────────
@@ -100,11 +103,12 @@ function timeAgo(dateStr: string): string {
 
 interface GitStatusPanelProps {
     projectDir: string | null | undefined;
+    projectId?: string;
 }
 
-export default function GitStatusPanel({ projectDir }: GitStatusPanelProps) {
-    const { data: status, isLoading: statusLoading } = useGitStatus(projectDir);
-    const { data: changes } = useGitChanges(
+export default function GitStatusPanel({ projectDir, projectId }: GitStatusPanelProps) {
+    const { data: status, isLoading: statusLoading, refetch: refetchStatus } = useGitStatus(projectDir);
+    const { data: changes, refetch: refetchChanges } = useGitChanges(
         status?.isGitRepo ? projectDir : undefined
     );
     const { data: logGraph } = useGitLogGraph(
@@ -120,6 +124,9 @@ export default function GitStatusPanel({ projectDir }: GitStatusPanelProps) {
     const [diffContent, setDiffContent] = useState("");
     const [diffFile, setDiffFile] = useState("");
     const [diffLoading, setDiffLoading] = useState(false);
+
+    const [syncing, setSyncing] = useState(false);
+    const [pushing, setPushing] = useState(false);
 
     if (!projectDir) {
         return (
@@ -176,11 +183,41 @@ export default function GitStatusPanel({ projectDir }: GitStatusPanelProps) {
         );
     };
 
+    const handleSync = async () => {
+        if (!projectId) return;
+        setSyncing(true);
+        try {
+            await projectService.syncMigrations(projectId);
+            toast.success("Migrations synced to git");
+            refetchStatus();
+            refetchChanges();
+        } catch (err: any) {
+            toast.error(`Failed to sync migrations: ${err.message}`);
+        } finally {
+            setSyncing(false);
+        }
+    };
+
+    const handlePush = async () => {
+        if (!projectId) return;
+        setPushing(true);
+        try {
+            await projectService.pushMigrations(projectId);
+            toast.success("Migrations pushed to remote");
+            refetchStatus();
+            refetchChanges();
+        } catch (err: any) {
+            toast.error(`Failed to push migrations: ${err.message}`);
+        } finally {
+            setPushing(false);
+        }
+    };
+
     return (
         <div className="flex flex-col h-full">
             {/* Header */}
             <header className="shrink-0 border-b border-border/20 bg-background/95 backdrop-blur-sm">
-                <div className="px-6 py-3 flex items-center justify-between">
+                <div className="px-6 py-3 flex items-center justify-between border-b border-border/20">
                     <div className="flex items-center gap-3">
                         <GitBranch className="h-5 w-5 text-primary" />
                         <h2 className="text-sm font-semibold">Git Status</h2>
@@ -211,6 +248,23 @@ export default function GitStatusPanel({ projectDir }: GitStatusPanelProps) {
                         )}
                     </div>
                 </div>
+                {projectId && (
+                    <div className="px-6 py-2 bg-muted/20 flex items-center justify-between">
+                        <span className="text-xs text-muted-foreground flex items-center gap-2">
+                            <ArrowUp className="h-3.5 w-3.5" /> Migration Sync
+                        </span>
+                        <div className="flex gap-2">
+                            <Button size="sm" variant="outline" onClick={handleSync} disabled={syncing} className="h-7 text-xs">
+                                {syncing ? <Spinner className="h-3 w-3 mr-1" /> : <RefreshCw className="h-3 w-3 mr-1" />}
+                                Sync to Git
+                            </Button>
+                            <Button size="sm" onClick={handlePush} disabled={pushing} className="h-7 text-xs">
+                                {pushing ? <Spinner className="h-3 w-3 mr-1" /> : <UploadCloud className="h-3 w-3 mr-1" />}
+                                Push
+                            </Button>
+                        </div>
+                    </div>
+                )}
             </header>
 
             {/* Tabs */}
@@ -354,37 +408,41 @@ export default function GitStatusPanel({ projectDir }: GitStatusPanelProps) {
 
             {/* Diff Dialog */}
             <Dialog open={diffDialogOpen} onOpenChange={setDiffDialogOpen}>
-                <DialogContent className="max-w-3xl max-h-[80vh] flex flex-col">
+                <DialogContent className="max-w-4xl h-[80vh] flex flex-col overflow-hidden">
                     <DialogHeader>
                         <DialogTitle className="font-mono text-sm flex items-center gap-2">
                             <FileDiff className="h-4 w-4" />
                             {diffFile}
                         </DialogTitle>
                     </DialogHeader>
-                    <ScrollArea className="flex-1 min-h-0">
+                    <div className="flex-1 min-h-0">
                         {diffLoading ? (
-                            <div className="flex items-center justify-center py-8">
+                            <div className="flex items-center justify-center h-full">
                                 <Spinner className="h-5 w-5" />
                             </div>
                         ) : (
-                            <pre className="text-xs font-mono whitespace-pre-wrap p-4 bg-muted/30 rounded-md leading-relaxed">
-                                {diffContent.split("\n").map((line, i) => {
-                                    let color = "text-foreground/80";
-                                    if (line.startsWith("+") && !line.startsWith("+++"))
-                                        color = "text-green-500";
-                                    else if (line.startsWith("-") && !line.startsWith("---"))
-                                        color = "text-red-500";
-                                    else if (line.startsWith("@@"))
-                                        color = "text-blue-400";
-                                    return (
-                                        <div key={i} className={color}>
-                                            {line}
-                                        </div>
-                                    );
-                                })}
-                            </pre>
+                            <ScrollArea className="h-full w-full rounded-md border">
+                                <pre className="text-xs font-mono p-4 leading-relaxed whitespace-pre">
+                                    {diffContent.split("\n").map((line, i) => {
+                                        let color = "text-foreground/80";
+
+                                        if (line.startsWith("+") && !line.startsWith("+++"))
+                                            color = "text-green-500";
+                                        else if (line.startsWith("-") && !line.startsWith("---"))
+                                            color = "text-red-500";
+                                        else if (line.startsWith("@@"))
+                                            color = "text-blue-400";
+
+                                        return (
+                                            <div key={i} className={color}>
+                                                {line}
+                                            </div>
+                                        );
+                                    })}
+                                </pre>
+                            </ScrollArea>
                         )}
-                    </ScrollArea>
+                    </div>
                 </DialogContent>
             </Dialog>
         </div>
