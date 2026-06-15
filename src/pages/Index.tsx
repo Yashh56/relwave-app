@@ -6,7 +6,7 @@ import {
     DatabaseDetail,
     WelcomeView,
     AddConnectionDialog,
-    DeleteDialog,
+    DeleteConnectionDialog,
 } from "@/features/home/components";
 import { ImportProjectDialog } from "@/features/project/components";
 import BridgeLoader from "@/components/feedback/BridgeLoader";
@@ -35,10 +35,10 @@ const Index = () => {
 // Separated so hooks only run after bridge is ready
 const IndexContent = ({ bridgeReady, onShortcutsClick }: { bridgeReady: boolean, onShortcutsClick: () => void }) => {
     const {
-        // Data
         databases,
         filteredDatabases,
         recentDatabases,
+        unlinkedProjects,
         selectedDatabase,
         selectedDbStats,
         loading,
@@ -64,12 +64,11 @@ const IndexContent = ({ bridgeReady, onShortcutsClick }: { bridgeReady: boolean,
         isDialogOpen,
         deleteDialogOpen,
         setDeleteDialogOpen,
-        dbToDelete,
+        deleteConnectionDialogProps,
         prefilledConnectionData,
 
         // Handlers
         handleAddDatabase,
-        handleDeleteDatabase,
         handleTestConnection,
         handleDatabaseClick,
         handleDatabaseHover,
@@ -91,6 +90,7 @@ const IndexContent = ({ bridgeReady, onShortcutsClick }: { bridgeReady: boolean,
                     <ConnectionList
                         databases={databases}
                         filteredDatabases={filteredDatabases}
+                        unlinkedProjects={unlinkedProjects}
                         loading={loading}
                         searchQuery={searchQuery}
                         setSearchQuery={setSearchQuery}
@@ -160,12 +160,13 @@ const IndexContent = ({ bridgeReady, onShortcutsClick }: { bridgeReady: boolean,
                 initialData={prefilledConnectionData}
             />
 
-            <DeleteDialog
-                open={deleteDialogOpen}
-                onOpenChange={setDeleteDialogOpen}
-                databaseName={dbToDelete?.name}
-                onConfirm={handleDeleteDatabase}
-            />
+            {deleteConnectionDialogProps && (
+                <DeleteConnectionDialog
+                    open={deleteDialogOpen}
+                    onOpenChange={setDeleteDialogOpen}
+                    {...deleteConnectionDialogProps}
+                />
+            )}
 
             <ImportProjectDialog
                 open={isImportOpen}

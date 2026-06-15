@@ -3,6 +3,7 @@ import { DatabaseConnection, DiscoveredDatabase } from "@/features/database/type
 export interface ConnectionListProps {
     databases: DatabaseConnection[];
     filteredDatabases: DatabaseConnection[];
+    unlinkedProjects?: any[];
     loading: boolean;
     searchQuery: string;
     setSearchQuery: (query: string) => void;
@@ -19,6 +20,8 @@ export interface ConnectionListProps {
     onDelete: (dbId: string, dbName: string) => void;
     onTest: (dbId: string, dbName: string) => void;
     onImportClick?: () => void;
+    onRelinkProject?: (projectId: string, newDatabaseId: string) => void;
+    onDeleteProject?: (projectId: string) => void;
 }
 
 export interface DatabaseDetailProps {

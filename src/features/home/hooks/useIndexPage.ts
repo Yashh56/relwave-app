@@ -5,12 +5,13 @@ import { toast } from "sonner";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { useDatabases, useAddDatabase, useDeleteDatabase, usePrefetch } from "@/features/project/hooks/useDbQueries";
-import { projectKeys } from "@/features/project/hooks/useProjectQueries";
+import { projectKeys, useProjects } from "@/features/project/hooks/useProjectQueries";
 import { ConnectionFormData, REQUIRED_FIELDS, SQLITE_REQUIRED_FIELDS } from "@/features/home/types";
 import { useDatabaseStats } from "../../database/hooks/useDatabaseStats";
 import { useSelectedDbStats } from "../../database/hooks/useSelectedDbStats";
 import { databaseService } from "@/services/bridge/database";
 import { projectService } from "@/services/bridge/project";
+import { useDeleteConnection } from "./useDeleteConnection";
 import { DatabaseConnection } from "@/features/database/types";
 import { useWelcomeMessage } from "@/features/database/hooks/useWelcomeMessage";
 
@@ -45,7 +46,6 @@ export const useIndexPage = (bridgeReady: boolean) => {
 
     // Mutations
     const addDatabaseMutation = useAddDatabase();
-    const deleteDatabaseMutation = useDeleteDatabase();
     const { prefetchTables, prefetchStats } = usePrefetch();
 
     // UI state
@@ -53,8 +53,6 @@ export const useIndexPage = (bridgeReady: boolean) => {
     const [onlineFilter, setOnlineFilter] = useState(false);
     const [selectedDb, setSelectedDb] = useState<string | null>(null);
     const [isDialogOpen, setIsDialogOpen] = useState(false);
-    const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [dbToDelete, setDbToDelete] = useState<{ id: string; name: string } | null>(null);
     const [prefilledConnectionData, setPrefilledConnectionData] = useState<Partial<ConnectionFormData> | undefined>(undefined);
     const [isImportOpen, setIsImportOpen] = useState(false);
 
@@ -88,6 +86,15 @@ export const useIndexPage = (bridgeReady: boolean) => {
                 .filter((db) => db.lastAccessedAt)
                 .sort((a, b) => new Date(b.lastAccessedAt!).getTime() - new Date(a.lastAccessedAt!).getTime()),
         [databases]
+    );
+
+    // Projects list
+    const { data: projects = [] } = useProjects();
+    
+    // Unlinked projects
+    const unlinkedProjects = useMemo(
+        () => projects.filter((p: any) => p.status === "unlinked" || !p.databaseId),
+        [projects]
     );
 
     // ---- Bridge Handlers ----
@@ -175,20 +182,6 @@ export const useIndexPage = (bridgeReady: boolean) => {
         }
     };
 
-    const handleDeleteDatabase = async () => {
-        if (!dbToDelete) return;
-        try {
-            await deleteDatabaseMutation.mutateAsync(dbToDelete.id);
-            toast.success("Database removed");
-            setDeleteDialogOpen(false);
-            setDbToDelete(null);
-            if (selectedDb === dbToDelete.id) setSelectedDb(null);
-            refetchDatabases();
-        } catch (err: any) {
-            toast.error("Failed to delete", { description: err.message });
-        }
-    };
-
     const handleTestConnection = async (id: string, name: string) => {
         try {
             const result = await databaseService.testConnection(id);
@@ -216,11 +209,6 @@ export const useIndexPage = (bridgeReady: boolean) => {
     };
 
     // ---- Dialog Helpers ----
-
-    const openDeleteDialog = (id: string, name: string) => {
-        setDbToDelete({ id, name });
-        setDeleteDialogOpen(true);
-    };
 
     const handleDiscoveredDatabaseAdd = useCallback(
         (db: {
@@ -253,6 +241,22 @@ export const useIndexPage = (bridgeReady: boolean) => {
         if (!open) setPrefilledConnectionData(undefined);
     };
 
+    // ---- Delete Hook ----
+    const { 
+        initiateDelete, 
+        dialogOpen: deleteDialogOpen, 
+        setDialogOpen: setDeleteDialogOpen, 
+        dialogProps: deleteConnectionDialogProps,
+        isDeleting
+    } = useDeleteConnection(() => {
+        if (selectedDb) setSelectedDb(null);
+        refetchDatabases();
+    });
+
+    const openDeleteDialog = (id: string, name: string) => {
+        initiateDelete(id, name);
+    };
+
     const handleImportComplete = async (_projectId: string, _projectName: string) => {
         setIsImportOpen(false);
         queryClient.invalidateQueries({ queryKey: projectKeys.all });
@@ -264,6 +268,7 @@ export const useIndexPage = (bridgeReady: boolean) => {
         databases,
         filteredDatabases,
         recentDatabases,
+        unlinkedProjects,
         selectedDatabase,
         selectedDbStats,
         loading,
@@ -290,12 +295,12 @@ export const useIndexPage = (bridgeReady: boolean) => {
         setIsDialogOpen,
         deleteDialogOpen,
         setDeleteDialogOpen,
-        dbToDelete,
+        deleteConnectionDialogProps,
+        isDeleting,
         prefilledConnectionData,
 
         // Handlers
         handleAddDatabase,
-        handleDeleteDatabase,
         handleTestConnection,
         handleDatabaseClick,
         handleDatabaseHover,

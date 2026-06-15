@@ -49,6 +49,7 @@ import { CSS } from "@dnd-kit/utilities";
 import { DatabaseConnection } from "@/features/database/types";
 import { InputDialog } from "@/components/shared/InputDialog";
 import { SettingsDialog } from "@/features/settings/components";
+import { UnlinkedProjectItem } from "@/features/project/components/UnlinkedProjectItem";
 
 // --- Components ---
 
@@ -287,25 +288,26 @@ function DroppableGroup({
 
 // --- Main Component ---
 
-export function ConnectionList({
-  databases,
-  filteredDatabases,
-  loading,
-  searchQuery,
-  setSearchQuery,
-  onlineFilter,
-  setOnlineFilter,
-  selectedDb,
-  setSelectedDb,
-  status,
-  connectedCount,
-  totalTables,
+export function ConnectionList({ 
+  databases, 
+  filteredDatabases, 
+  unlinkedProjects = [],
+  loading, 
+  searchQuery, 
+  setSearchQuery, 
+  onlineFilter, 
+  setOnlineFilter, 
+  selectedDb, 
+  setSelectedDb, 
+  status, 
+  connectedCount, 
+  totalTables, 
   statsLoading,
   onAddClick,
   onDatabaseHover,
   onDelete,
   onTest,
-  onImportClick,
+  onImportClick
 }: ConnectionListProps) {
   const { 
     groups, 
@@ -504,6 +506,25 @@ export function ConnectionList({
                         </SortableContext>
                     </div>
                 </div>
+
+                {/* Unlinked Projects Section */}
+                {unlinkedProjects && unlinkedProjects.length > 0 && (
+                    <div className="mt-4 pt-2 border-t border-border/20 rounded-lg">
+                        <div className="px-2 mb-2">
+                            <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground/50">
+                                unlinked projects
+                            </span>
+                        </div>
+                        <div className="space-y-0.5">
+                            {unlinkedProjects.map((project) => (
+                                <UnlinkedProjectItem 
+                                    key={project.id} 
+                                    project={project}
+                                />
+                            ))}
+                        </div>
+                    </div>
+                )}
 
                 <DragOverlay dropAnimation={{
                     sideEffects: defaultDropAnimationSideEffects({
