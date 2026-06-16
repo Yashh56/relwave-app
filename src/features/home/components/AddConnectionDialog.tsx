@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { Database, Link as LinkIcon, FolderOpen, Shield, Server, User, Lock, Key, FileKey } from "lucide-react";
+import { Database, Link as LinkIcon, FolderOpen, Shield, Server, User, Lock, Key, FileKey, Settings } from "lucide-react";
 import { open as openDialog } from "@tauri-apps/plugin-dialog";
 import { Button } from "@/components/ui/button";
 import {
@@ -31,7 +31,7 @@ export function AddConnectionDialog({
   isLoading,
   initialData,
 }: AddConnectionDialogProps) {
-  const [useUrl, setUseUrl] = useState(false);
+  const [useUrl, setUseUrl] = useState(true);
   const [connectionUrl, setConnectionUrl] = useState("");
   const [formData, setFormData] = useState<ConnectionFormData>(INITIAL_FORM_DATA);
 
@@ -44,7 +44,7 @@ export function AddConnectionDialog({
         // Reset to empty form when opening without initial data
         setFormData(INITIAL_FORM_DATA);
         setConnectionUrl("");
-        setUseUrl(false);
+        setUseUrl(true);
       }
     }
   }, [open, initialData]);
@@ -79,7 +79,7 @@ export function AddConnectionDialog({
     if (!newOpen) {
       setFormData(INITIAL_FORM_DATA);
       setConnectionUrl("");
-      setUseUrl(false);
+      setUseUrl(true);
     }
     onOpenChange(newOpen);
   };
@@ -104,10 +104,13 @@ export function AddConnectionDialog({
           {!isSQLite && (
             <Tabs value={useUrl ? "url" : "params"} onValueChange={(v) => setUseUrl(v === "url")}>
               <TabsList className="grid w-full grid-cols-2 h-9">
-                <TabsTrigger value="params" className="text-xs">Parameters</TabsTrigger>
                 <TabsTrigger value="url" className="text-xs">
                   <LinkIcon className="h-3 w-3 mr-1" />
                   URL
+                </TabsTrigger>
+                <TabsTrigger value="params" className="text-xs">
+                  <Settings className="h-3 w-3 mr-1" />
+                  Parameters
                 </TabsTrigger>
               </TabsList>
             </Tabs>

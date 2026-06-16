@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
-import { FolderOpen, Database, Check, AlertCircle, Loader2, FileSearch } from "lucide-react";
+import { FolderOpen, Database, Check, AlertCircle, Loader2, FileSearch, LinkIcon, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,9 +19,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { ScanImportResult } from "@/features/project/types";
 import { projectService } from "@/services/bridge/project";
 import { databaseService } from "@/services/bridge/database";
+import { parseConnectionUrl } from "@/lib/parseConnectionUrl";
 
 // ==========================================
 // Types
@@ -73,6 +75,8 @@ export function ImportProjectDialog({
   const [dbForm, setDbForm] = useState<DbFormData>(INITIAL_DB_FORM);
   const [error, setError] = useState<string | null>(null);
   const [importedName, setImportedName] = useState("");
+  const [useUrl, setUseUrl] = useState(true);
+  const [connectionUrl, setConnectionUrl] = useState("");
 
   const reset = () => {
     setStep("pick-folder");
@@ -81,6 +85,8 @@ export function ImportProjectDialog({
     setDbForm(INITIAL_DB_FORM);
     setError(null);
     setImportedName("");
+    setUseUrl(true);
+    setConnectionUrl("");
   };
 
   const handleOpenChange = (newOpen: boolean) => {
@@ -128,6 +134,28 @@ export function ImportProjectDialog({
         database: env?.database || "",
         ssl: env?.ssl ?? false,
       });
+
+      if (env?.url) {
+        setConnectionUrl(env.url);
+        setUseUrl(true);
+        const parsed = parseConnectionUrl(env.url);
+        if (parsed) {
+          setDbForm(prev => ({
+            ...prev,
+            type: parsed.type,
+            host: parsed.host,
+            port: parsed.port,
+            user: parsed.user,
+            password: parsed.password,
+            database: parsed.database,
+            ssl: parsed.ssl,
+          }));
+        }
+      } else if (!env?.host && !env?.database) {
+        setUseUrl(true);
+      } else {
+        setUseUrl(false);
+      }
 
       setStep("preview");
     } catch (err: any) {
@@ -311,6 +339,49 @@ export function ImportProjectDialog({
 
             {/* Connection Form */}
             <div className="space-y-3">
+              {dbForm.type !== "sqlite" && (
+                <Tabs value={useUrl ? "url" : "params"} onValueChange={(v) => setUseUrl(v === "url")}>
+                  <TabsList className="grid w-full grid-cols-2 h-9">
+                    <TabsTrigger value="url" className="text-xs">
+                      <LinkIcon className="h-3 w-3 mr-1" />
+                      URL
+                    </TabsTrigger>
+                    <TabsTrigger value="params" className="text-xs">
+                      <Settings className="h-3 w-3 mr-1" />
+                      Parameters
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              )}
+
+              {useUrl && dbForm.type !== "sqlite" && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Connection URL</Label>
+                  <Input
+                    placeholder="postgres://user:pass@localhost:5432/db"
+                    value={connectionUrl}
+                    onChange={(e) => {
+                      const url = e.target.value;
+                      setConnectionUrl(url);
+                      const parsed = parseConnectionUrl(url);
+                      if (parsed) {
+                        setDbForm(prev => ({
+                          ...prev,
+                          type: parsed.type,
+                          host: parsed.host,
+                          port: parsed.port,
+                          user: parsed.user,
+                          password: parsed.password,
+                          database: parsed.database,
+                          ssl: parsed.ssl,
+                        }));
+                      }
+                    }}
+                    className="font-mono text-xs h-9"
+                  />
+                </div>
+              )}
+
               <div className="space-y-1.5">
                 <Label className="text-xs">Connection Name</Label>
                 <Input
