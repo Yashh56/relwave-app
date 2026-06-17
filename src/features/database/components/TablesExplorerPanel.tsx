@@ -6,6 +6,14 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { SelectedTable, TableInfo } from "@/features/database/types";
 import { CreateTableDialog } from '@/features/schema-explorer/components';
 import { useTableExplorerPanel } from '../hooks/useTableExplorerPanel';
+import {
+    ContextMenu,
+    ContextMenuContent,
+    ContextMenuItem,
+    ContextMenuTrigger,
+} from "@/components/ui/context-menu";
+import InsertDataDialog from '@/features/database/components/InsertDataDialog';
+import DropTableDialog from '@/features/schema-explorer/components/DropTableDialog';
 
 
 interface TablesExplorerPanelProps {
@@ -36,7 +44,11 @@ export default function TablesExplorerPanel({
         setFilter,
         toggleFavorite,
         filteredTables,
-        isSelected
+        isSelected,
+        insertTableData,
+        setInsertTableData,
+        dropTableData,
+        setDropTableData
     } = useTableExplorerPanel({
         dbId,
         tables,
@@ -108,36 +120,47 @@ export default function TablesExplorerPanel({
                         </div>
                     ) : (
                         filteredTables.map((table) => (
-                            <button
-                                key={`${table.schema}.${table.name}`}
-                                onClick={() => onSelectTable(table.name, table.schema)}
-                                className={`
-                  w-full flex items-center justify-between px-3 py-2 rounded-md
-                  transition-all duration-150 text-left group border border-transparent
-                  ${isSelected(table)
-                                        ? 'bg-primary/10 text-primary border-primary/20 shadow-sm'
-                                        : 'hover:bg-muted/55 hover:border-border/50 text-foreground'
-                                    }
-                `}
-                            >
-                                <div className="flex items-center gap-2 flex-1 min-w-0">
+                            <ContextMenu key={`${table.schema}.${table.name}`}>
+                                <ContextMenuTrigger asChild>
                                     <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            toggleFavorite(table.name);
-                                        }}
-                                        className="shrink-0"
+                                        onClick={() => onSelectTable(table.name, table.schema)}
+                                        className={`
+                                            w-full flex items-center justify-between px-3 py-2 rounded-md
+                                            transition-all duration-150 text-left group border border-transparent
+                                            ${isSelected(table)
+                                                ? 'bg-primary/10 text-primary border-primary/20 shadow-sm'
+                                                : 'hover:bg-muted/55 hover:border-border/50 text-foreground'
+                                            }
+                                        `}
                                     >
-                                        <Star
-                                            className={`h-3.5 w-3.5 ${favorites.has(table.name)
-                                                ? 'fill-yellow-500 text-yellow-500'
-                                                : 'text-muted-foreground opacity-0 group-hover:opacity-100'
-                                                }`}
-                                        />
+                                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                                            <button
+                                                onClick={(e) => {
+                                                    e.stopPropagation();
+                                                    toggleFavorite(table.name);
+                                                }}
+                                                className="shrink-0"
+                                            >
+                                                <Star
+                                                    className={`h-3.5 w-3.5 ${favorites.has(table.name)
+                                                        ? 'fill-yellow-500 text-yellow-500'
+                                                        : 'text-muted-foreground opacity-0 group-hover:opacity-100'
+                                                        }`}
+                                                />
+                                            </button>
+                                            <span className="text-sm font-medium truncate font-mono">{table.name}</span>
+                                        </div>
                                     </button>
-                                    <span className="text-sm font-medium truncate font-mono">{table.name}</span>
-                                </div>
-                            </button>
+                                </ContextMenuTrigger>
+                                <ContextMenuContent>
+                                    <ContextMenuItem onClick={() => setInsertTableData(table)}>
+                                        Insert Data
+                                    </ContextMenuItem>
+                                    <ContextMenuItem onClick={() => setDropTableData(table)} className="text-destructive">
+                                        Delete Table
+                                    </ContextMenuItem>
+                                </ContextMenuContent>
+                            </ContextMenu>
                         ))
                     )}
                 </div>
@@ -155,6 +178,26 @@ export default function TablesExplorerPanel({
                     onOpenChange={setCreateTableOpen}
                     schemaName={selectedSchema}
                 />
+                
+                {insertTableData && (
+                    <InsertDataDialog
+                        open={!!insertTableData}
+                        onOpenChange={(open) => !open && setInsertTableData(null)}
+                        dbId={dbId}
+                        schemaName={insertTableData.schema || "public"}
+                        tableName={insertTableData.name}
+                    />
+                )}
+
+                {dropTableData && (
+                    <DropTableDialog
+                        open={!!dropTableData}
+                        onOpenChange={(open) => !open && setDropTableData(null)}
+                        dbId={dbId}
+                        schemaName={dropTableData.schema || "public"}
+                        tableName={dropTableData.name}
+                    />
+                )}
             </div>
         </div>
     );

@@ -17,6 +17,8 @@ export function useTableExplorerPanel({
 }: TablesExplorerPanelProps) {
     const [searchQuery, setSearchQuery] = useState('');
     const [createTableOpen, setCreateTableOpen] = useState(false);
+    const [insertTableData, setInsertTableData] = useState<TableInfo | null>(null);
+    const [dropTableData, setDropTableData] = useState<TableInfo | null>(null);
 
     const [favorites, setFavorites] = useState<Set<string>>(
         new Set(JSON.parse(localStorage.getItem('favoriteTables') || '[]'))
@@ -58,6 +60,10 @@ export function useTableExplorerPanel({
         setFilter,
         toggleFavorite,
         filteredTables,
-        isSelected
+        isSelected,
+        insertTableData,
+        setInsertTableData,
+        dropTableData,
+        setDropTableData
     };
 }

@@ -29,6 +29,8 @@ export function useDeleteConnection(onSuccess?: () => void) {
         mutationFn: databaseService.deleteDatabase,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["databases"] });
+            queryClient.invalidateQueries({ queryKey: ["totalStats"] });
+            queryClient.invalidateQueries({ queryKey: ["connectionStatus"] });
             onSuccess?.();
         },
     });

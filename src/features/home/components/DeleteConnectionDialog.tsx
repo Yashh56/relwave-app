@@ -62,7 +62,21 @@ export function DeleteConnectionDialog({
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-[425px]">
+            <DialogContent 
+                className="sm:max-w-[425px]"
+                onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                        const target = e.target as HTMLElement;
+                        if (target.tagName !== "BUTTON" && target.tagName !== "A") {
+                            e.preventDefault();
+                            if (!isDeleting) {
+                                if (step === 1) handleNext();
+                                else handleConfirmDelete();
+                            }
+                        }
+                    }
+                }}
+            >
                 <DialogHeader>
                     {step === 1 ? (
                         <>

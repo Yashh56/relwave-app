@@ -228,6 +228,8 @@ export function useAddDatabase() {
     onSuccess: () => {
       // Invalidate and refetch database list
       queryClient.invalidateQueries({ queryKey: queryKeys.databases });
+      queryClient.invalidateQueries({ queryKey: ["totalStats"] });
+      queryClient.invalidateQueries({ queryKey: ["connectionStatus"] });
     },
   });
 }
@@ -259,6 +261,8 @@ export function useDeleteDatabase() {
     mutationFn: (id: string) => databaseService.deleteDatabase(id),
     onSuccess: (_, id) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.databases });
+      queryClient.invalidateQueries({ queryKey: ["totalStats"] });
+      queryClient.invalidateQueries({ queryKey: ["connectionStatus"] });
       // Remove all cached data for this database
       queryClient.removeQueries({ queryKey: queryKeys.tables(id) });
       queryClient.removeQueries({ queryKey: queryKeys.stats(id) });

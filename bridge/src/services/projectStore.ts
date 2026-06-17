@@ -1343,6 +1343,7 @@ export class ProjectStore {
         type?: string;
         ssl?: boolean;
         name?: string;
+        url?: string;
     } | null {
         const get = (...keys: string[]): string | undefined => {
             for (const k of keys) {
@@ -1359,9 +1360,10 @@ export class ProjectStore {
         const type = get("DB_TYPE", "DATABASE_TYPE", "DB_ENGINE", "DATABASE_ENGINE");
         const sslStr = get("DB_SSL", "DATABASE_SSL");
         const name = get("DB_CONNECTION_NAME", "DATABASE_CONNECTION_NAME");
+        const url = get("DATABASE_URL", "DB_URL");
 
-        // Must have at least host or database to be useful
-        if (!host && !database) return null;
+        // Must have at least host, database, or url to be useful
+        if (!host && !database && !url) return null;
 
         const port = portStr ? parseInt(portStr, 10) : undefined;
         const ssl = sslStr ? !["false", "0", "no"].includes(sslStr.toLowerCase()) : undefined;
@@ -1375,6 +1377,7 @@ export class ProjectStore {
             type: type?.toLowerCase(),
             ssl,
             name,
+            url,
         };
     }
 
@@ -1400,6 +1403,7 @@ export class ProjectStore {
             type?: string;
             ssl?: boolean;
             name?: string;
+            url?: string;
         } | null;
     }> {
         const sourceMetaPath = path.join(sourcePath, PROJECT_FILES.metadata);

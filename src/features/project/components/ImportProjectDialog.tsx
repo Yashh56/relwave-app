@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
-import { FolderOpen, Database, Check, AlertCircle, Loader2, FileSearch } from "lucide-react";
+import { FolderOpen, Database, Check, AlertCircle, Loader2, FileSearch, LinkIcon, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -19,9 +19,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { ScanImportResult } from "@/features/project/types";
 import { projectService } from "@/services/bridge/project";
 import { databaseService } from "@/services/bridge/database";
+import { parseConnectionUrl } from "@/lib/parseConnectionUrl";
 
 // ==========================================
 // Types
@@ -73,15 +75,25 @@ export function ImportProjectDialog({
   const [dbForm, setDbForm] = useState<DbFormData>(INITIAL_DB_FORM);
   const [error, setError] = useState<string | null>(null);
   const [importedName, setImportedName] = useState("");
+  const [useUrl, setUseUrl] = useState(true);
+  const [connectionUrl, setConnectionUrl] = useState("");
 
-  const reset = () => {
+  const reset = useCallback(() => {
     setStep("pick-folder");
     setSelectedPath("");
     setScanResult(null);
     setDbForm(INITIAL_DB_FORM);
     setError(null);
     setImportedName("");
-  };
+    setUseUrl(true);
+    setConnectionUrl("");
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      reset();
+    }
+  }, [isOpen, reset]);
 
   const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen) reset();
@@ -128,6 +140,28 @@ export function ImportProjectDialog({
         database: env?.database || "",
         ssl: env?.ssl ?? false,
       });
+
+      if (env?.url) {
+        setConnectionUrl(env.url);
+        setUseUrl(true);
+        const parsed = parseConnectionUrl(env.url);
+        if (parsed) {
+          setDbForm(prev => ({
+            ...prev,
+            type: parsed.type,
+            host: parsed.host,
+            port: parsed.port,
+            user: parsed.user,
+            password: parsed.password,
+            database: parsed.database,
+            ssl: parsed.ssl,
+          }));
+        }
+      } else if (!env?.host && !env?.database) {
+        setUseUrl(true);
+      } else {
+        setUseUrl(false);
+      }
 
       setStep("preview");
     } catch (err: any) {
@@ -311,6 +345,49 @@ export function ImportProjectDialog({
 
             {/* Connection Form */}
             <div className="space-y-3">
+              {dbForm.type !== "sqlite" && (
+                <Tabs value={useUrl ? "url" : "params"} onValueChange={(v) => setUseUrl(v === "url")}>
+                  <TabsList className="grid w-full grid-cols-2 h-9">
+                    <TabsTrigger value="url" className="text-xs">
+                      <LinkIcon className="h-3 w-3 mr-1" />
+                      URL
+                    </TabsTrigger>
+                    <TabsTrigger value="params" className="text-xs">
+                      <Settings className="h-3 w-3 mr-1" />
+                      Parameters
+                    </TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              )}
+
+              {useUrl && dbForm.type !== "sqlite" && (
+                <div className="space-y-1.5">
+                  <Label className="text-xs">Connection URL</Label>
+                  <Input
+                    placeholder="postgres://user:pass@localhost:5432/db"
+                    value={connectionUrl}
+                    onChange={(e) => {
+                      const url = e.target.value;
+                      setConnectionUrl(url);
+                      const parsed = parseConnectionUrl(url);
+                      if (parsed) {
+                        setDbForm(prev => ({
+                          ...prev,
+                          type: parsed.type,
+                          host: parsed.host,
+                          port: parsed.port,
+                          user: parsed.user,
+                          password: parsed.password,
+                          database: parsed.database,
+                          ssl: parsed.ssl,
+                        }));
+                      }
+                    }}
+                    className="font-mono text-xs h-9"
+                  />
+                </div>
+              )}
+
               <div className="space-y-1.5">
                 <Label className="text-xs">Connection Name</Label>
                 <Input
@@ -321,117 +398,121 @@ export function ImportProjectDialog({
                 />
               </div>
 
-              <div className="space-y-1.5">
-                <Label className="text-xs">Type</Label>
-                <Select
-                  value={dbForm.type}
-                  onValueChange={(val) => handleDbInputChange("type", val)}
-                >
-                  <SelectTrigger className="h-9 text-sm">
-                    <SelectValue placeholder="Select type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="postgresql">PostgreSQL</SelectItem>
-                    <SelectItem value="mysql">MySQL</SelectItem>
-                    <SelectItem value="mariadb">MariaDB</SelectItem>
-                    <SelectItem value="sqlite">SQLite</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {dbForm.type === "sqlite" ? (
+              {!useUrl && (
                 <div className="space-y-1.5">
-                  <Label className="text-xs">Database File</Label>
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="/path/to/database.db"
-                      value={dbForm.database}
-                      onChange={(e) => handleDbInputChange("database", e.target.value)}
-                      className="h-9 text-sm font-mono flex-1"
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="h-9 px-3"
-                      onClick={async () => {
-                        const selected = await open({
-                          title: "Select SQLite Database",
-                          filters: [{ name: "SQLite", extensions: ["db", "sqlite", "sqlite3", "s3db"] }],
-                        });
-                        if (selected) handleDbInputChange("database", selected as string);
-                      }}
-                    >
-                      <FolderOpen className="h-4 w-4" />
-                    </Button>
-                  </div>
+                  <Label className="text-xs">Type</Label>
+                  <Select
+                    value={dbForm.type}
+                    onValueChange={(val) => handleDbInputChange("type", val)}
+                  >
+                    <SelectTrigger className="h-9 text-sm">
+                      <SelectValue placeholder="Select type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="postgresql">PostgreSQL</SelectItem>
+                      <SelectItem value="mysql">MySQL</SelectItem>
+                      <SelectItem value="mariadb">MariaDB</SelectItem>
+                      <SelectItem value="sqlite">SQLite</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              ) : (
-                <>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="col-span-2 space-y-1.5">
-                      <Label className="text-xs">Host</Label>
-                      <Input
-                        placeholder="localhost"
-                        value={dbForm.host}
-                        onChange={(e) => handleDbInputChange("host", e.target.value)}
-                        className="h-9 text-sm font-mono"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Port</Label>
-                      <Input
-                        placeholder="5432"
-                        value={dbForm.port}
-                        onChange={(e) => handleDbInputChange("port", e.target.value)}
-                        className="h-9 text-sm font-mono"
-                      />
-                    </div>
-                  </div>
+              )}
 
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Username</Label>
-                      <Input
-                        placeholder="postgres"
-                        value={dbForm.user}
-                        onChange={(e) => handleDbInputChange("user", e.target.value)}
-                        className="h-9 text-sm font-mono"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs">Password</Label>
-                      <Input
-                        type="password"
-                        placeholder="••••••••"
-                        value={dbForm.password}
-                        onChange={(e) => handleDbInputChange("password", e.target.value)}
-                        className="h-9 text-sm"
-                      />
-                    </div>
-                  </div>
-
+              {!useUrl && (
+                dbForm.type === "sqlite" ? (
                   <div className="space-y-1.5">
-                    <Label className="text-xs">Database</Label>
-                    <Input
-                      placeholder="myapp"
-                      value={dbForm.database}
-                      onChange={(e) => handleDbInputChange("database", e.target.value)}
-                      className="h-9 text-sm font-mono"
-                    />
+                    <Label className="text-xs">Database File</Label>
+                    <div className="flex gap-2">
+                      <Input
+                        placeholder="/path/to/database.db"
+                        value={dbForm.database}
+                        onChange={(e) => handleDbInputChange("database", e.target.value)}
+                        className="h-9 text-sm font-mono flex-1"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="h-9 px-3"
+                        onClick={async () => {
+                          const selected = await open({
+                            title: "Select SQLite Database",
+                            filters: [{ name: "SQLite", extensions: ["db", "sqlite", "sqlite3", "s3db"] }],
+                          });
+                          if (selected) handleDbInputChange("database", selected as string);
+                        }}
+                      >
+                        <FolderOpen className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
+                ) : (
+                  <>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="col-span-2 space-y-1.5">
+                        <Label className="text-xs">Host</Label>
+                        <Input
+                          placeholder="localhost"
+                          value={dbForm.host}
+                          onChange={(e) => handleDbInputChange("host", e.target.value)}
+                          className="h-9 text-sm font-mono"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Port</Label>
+                        <Input
+                          placeholder="5432"
+                          value={dbForm.port}
+                          onChange={(e) => handleDbInputChange("port", e.target.value)}
+                          className="h-9 text-sm font-mono"
+                        />
+                      </div>
+                    </div>
 
-                  <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
-                    <Checkbox
-                      id="import-ssl"
-                      checked={dbForm.ssl}
-                      onCheckedChange={(checked) => handleDbInputChange("ssl", checked as boolean)}
-                    />
-                    <Label htmlFor="import-ssl" className="cursor-pointer text-xs">
-                      Enable SSL
-                    </Label>
-                  </div>
-                </>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Username</Label>
+                        <Input
+                          placeholder="postgres"
+                          value={dbForm.user}
+                          onChange={(e) => handleDbInputChange("user", e.target.value)}
+                          className="h-9 text-sm font-mono"
+                        />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Label className="text-xs">Password</Label>
+                        <Input
+                          type="password"
+                          placeholder="••••••••"
+                          value={dbForm.password}
+                          onChange={(e) => handleDbInputChange("password", e.target.value)}
+                          className="h-9 text-sm"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-xs">Database</Label>
+                      <Input
+                        placeholder="myapp"
+                        value={dbForm.database}
+                        onChange={(e) => handleDbInputChange("database", e.target.value)}
+                        className="h-9 text-sm font-mono"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2 p-3 rounded-lg bg-muted/50">
+                      <Checkbox
+                        id="import-ssl"
+                        checked={dbForm.ssl}
+                        onCheckedChange={(checked) => handleDbInputChange("ssl", checked as boolean)}
+                      />
+                      <Label htmlFor="import-ssl" className="cursor-pointer text-xs">
+                        Enable SSL
+                      </Label>
+                    </div>
+                  </>
+                )
               )}
             </div>
 
