@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { open } from "@tauri-apps/plugin-dialog";
 import { FolderOpen, Database, Check, AlertCircle, Loader2, FileSearch, LinkIcon, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -78,7 +78,7 @@ export function ImportProjectDialog({
   const [useUrl, setUseUrl] = useState(true);
   const [connectionUrl, setConnectionUrl] = useState("");
 
-  const reset = () => {
+  const reset = useCallback(() => {
     setStep("pick-folder");
     setSelectedPath("");
     setScanResult(null);
@@ -87,7 +87,13 @@ export function ImportProjectDialog({
     setImportedName("");
     setUseUrl(true);
     setConnectionUrl("");
-  };
+  }, []);
+
+  useEffect(() => {
+    if (isOpen) {
+      reset();
+    }
+  }, [isOpen, reset]);
 
   const handleOpenChange = (newOpen: boolean) => {
     if (!newOpen) reset();
