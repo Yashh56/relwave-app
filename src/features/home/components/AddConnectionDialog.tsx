@@ -89,7 +89,18 @@ export function AddConnectionDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="sm:max-w-110 max-h-[90vh] overflow-y-auto">
+      <DialogContent 
+        className="sm:max-w-110 max-h-[90vh] overflow-y-auto"
+        onKeyDown={(e) => {
+          if (e.key === "Enter") {
+            const target = e.target as HTMLElement;
+            if (target.tagName !== "BUTTON" && target.tagName !== "A") {
+              e.preventDefault();
+              if (!isLoading) handleSubmit();
+            }
+          }
+        }}
+      >
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Database className="h-4 w-4 text-muted-foreground" />
