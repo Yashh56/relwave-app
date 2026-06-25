@@ -2,6 +2,7 @@ import { CreateIndexDefinition } from "@/features/database/types";
 import { databaseService } from "@/services/bridge/database";
 import { useState, useEffect } from "react";
 import { toast } from "sonner";
+import { useInvalidateCache } from "@/features/project/hooks/useDbQueries";
 
 
 interface AddIndexesDialogProps {
@@ -17,6 +18,7 @@ interface AddIndexesDialogProps {
 export function useAddIndexDialog({ open, onOpenChange, dbId, schemaName, tableName, onSuccess }: AddIndexesDialogProps) {
     const [indexes, setIndexes] = useState<CreateIndexDefinition[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const { invalidateDatabase } = useInvalidateCache();
 
     const resetForm = () => {
         setIndexes([]);
@@ -102,6 +104,8 @@ export function useAddIndexDialog({ open, onOpenChange, dbId, schemaName, tableN
                 schemaName,
                 indexes: preparedIndexes,
             });
+
+            invalidateDatabase(dbId);
 
             toast.success("Indexes created successfully", {
                 description: `${indexes.length} index(es) created for table "${tableName}".`,
