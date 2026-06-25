@@ -1383,7 +1383,6 @@ export async function ensureMigrationTable(client: PGConfig) {
   const pool = getPool(client);
   const connection = await pool.connect();
   try {
-    await connection.connect()
     await connection.query(PG_CREATE_MIGRATION_TABLE);
   } catch (error) {
     throw error;
