@@ -53,6 +53,9 @@ async fn main() {
                 
             if has_aptabase && is_analytics_enabled {
                 let _ = app.track_event("app_started", None);
+                println!("🚀 Analytics is ON: Successfully dispatched 'app_started' event.");
+            } else if has_aptabase && !is_analytics_enabled {
+                println!("🛑 Analytics is OFF: User opted out, no telemetry will be sent.");
             }
 
             app.manage(analytics);

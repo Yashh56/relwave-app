@@ -45,9 +45,9 @@ impl AnalyticsService {
         }
 
         if enabled {
-            println!("Analytics have been enabled by the user.");
+            println!("🚀 Analytics have been enabled by the user. Events will now be sent.");
         } else {
-            println!("Analytics have been disabled by the user.");
+            println!("🛑 Analytics have been disabled by the user. Tracking stopped.");
         }
     }
 }
