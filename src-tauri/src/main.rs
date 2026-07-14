@@ -43,16 +43,18 @@ async fn main() {
 
     builder
         .setup(|app| {
+            let analytics = AnalyticsService::new(app.handle());
+            let is_analytics_enabled = tauri::async_runtime::block_on(analytics.is_enabled());
+
             let has_aptabase = option_env!("APTABASE_APP_KEY")
                 .map(String::from)
                 .or_else(|| std::env::var("APTABASE_APP_KEY").ok())
                 .is_some();
                 
-            if has_aptabase {
+            if has_aptabase && is_analytics_enabled {
                 let _ = app.track_event("app_started", None);
             }
 
-            let analytics = AnalyticsService::new(app.handle());
             app.manage(analytics);
 
             let handle = app.handle().clone();
