@@ -43,16 +43,25 @@ async fn main() {
 
     builder
         .setup(|app| {
-            let has_aptabase = option_env!("APTABASE_APP_KEY")
-                .map(String::from)
-                .or_else(|| std::env::var("APTABASE_APP_KEY").ok())
-                .is_some();
-                
-            if has_aptabase {
-                let _ = app.track_event("app_started", None);
-            }
-
             let analytics = AnalyticsService::new(app.handle());
+            let analytics_clone = analytics.clone();
+            let app_handle = app.handle().clone();
+            tauri::async_runtime::spawn(async move {
+                let is_analytics_enabled = analytics_clone.is_enabled().await;
+                
+                let has_aptabase = option_env!("APTABASE_APP_KEY")
+                    .map(String::from)
+                    .or_else(|| std::env::var("APTABASE_APP_KEY").ok())
+                    .is_some();
+                    
+                if has_aptabase && is_analytics_enabled {
+                    let _ = app_handle.track_event("app_started", None);
+                    println!("🚀 Analytics is ON: Successfully dispatched 'app_started' event.");
+                } else if has_aptabase && !is_analytics_enabled {
+                    println!("🛑 Analytics is OFF: User opted out, no telemetry will be sent.");
+                }
+            });
+
             app.manage(analytics);
 
             let handle = app.handle().clone();
