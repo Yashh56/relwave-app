@@ -60,4 +60,8 @@ export class GeminiProvider implements AIProvider {
       throw classifyError(err, "gemini");
     }
   }
+
+  async generateText(system: string, user: string): Promise<string> {
+    return this.complete(system, user);
+  }
 }

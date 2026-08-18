@@ -19,7 +19,7 @@ import {
 
 // ── Types ─────────────────────────────────────────────────────────────────
 
-export type AIFeature = "schema-analysis" | "query-explanation" | "chart-recommendation";
+export type AIFeature = "schema-analysis" | "query-explanation" | "chart-recommendation" | "nl_to_sql";
 
 export interface CachedResult {
   response: string;

@@ -69,7 +69,7 @@ export function registerDbHandlers(
   const gitHandlers = new GitHandlers(rpc, logger);
   const gitAdvancedHandlers = new GitAdvancedHandlers(rpc, logger);
   const monitoringHandlers = new MonitoringHandlers(rpc, logger, dbService, monitoringService);
-  const aiHandlers = new (require("./handlers/aiHandlers")).AIHandlers(rpc, logger);
+  const aiHandlers = new (require("./handlers/aiHandlers")).AIHandlers(rpc, logger, dbService);
 
   // ==========================================
   // SESSION MANAGEMENT HANDLERS
@@ -368,18 +368,11 @@ export function registerDbHandlers(
   rpcRegister(rpc, "ai.testConnection", (p, id) =>
     aiHandlers.handleTestConnection(p, id)
   );
-  rpcRegister(rpc, "ai.analyzeSchema", (p, id) =>
-    aiHandlers.handleAnalyzeSchema(p, id)
-  );
-  rpcRegister(rpc, "ai.explainQuery", (p, id) =>
-    aiHandlers.handleExplainQuery(p, id)
-  );
-  rpcRegister(rpc, "ai.recommendChart", (p, id) =>
-    aiHandlers.handleRecommendChart(p, id)
-  );
-  rpcRegister(rpc, "ai.getHistory", (p, id) =>
-    aiHandlers.handleGetHistory(p, id)
-  );
+  rpcRegister(rpc, "ai.analyzeSchema", (p, id) => aiHandlers.handleAnalyzeSchema(p, id));
+  rpcRegister(rpc, "ai.explainQuery", (p, id) => aiHandlers.handleExplainQuery(p, id));
+  rpcRegister(rpc, "ai.recommendChart", (p, id) => aiHandlers.handleRecommendChart(p, id));
+  rpcRegister(rpc, "ai.naturalLanguageQuery", (p, id) => aiHandlers.handleNaturalLanguageQuery(p, id));
+  rpcRegister(rpc, "ai.getHistory", (p, id) => aiHandlers.handleGetHistory(p, id));
   rpcRegister(rpc, "ai.getHistoryById", (p, id) =>
     aiHandlers.handleGetHistoryById(p, id)
   );

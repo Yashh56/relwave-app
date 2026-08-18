@@ -56,12 +56,16 @@ export class AnthropicProvider implements AIProvider {
     try {
       await this.client.messages.create({
         model: this.model,
-        max_tokens: 10,
         messages: [{ role: "user", content: "ping" }],
+        max_tokens: 5,
       });
       return "";
     } catch (err) {
       throw classifyError(err, "anthropic");
     }
+  }
+
+  async generateText(system: string, user: string): Promise<string> {
+    return this.complete(system, user);
   }
 }
