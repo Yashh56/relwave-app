@@ -24,10 +24,12 @@ import fs from "fs/promises";
 import fsSync from "fs";
 import { AI_SETTINGS_FILE, CONFIG_FOLDER, ensureDir } from "../utils/config";
 
+import { DatabaseService } from "../services/databaseService";
+
 export class AIHandlers {
   private aiService: AIService;
 
-  constructor(private rpc: Rpc, private logger: Logger) {
+  constructor(private rpc: Rpc, private logger: Logger, private dbService: DatabaseService) {
     this.aiService = new AIService();
   }
 
@@ -201,6 +203,33 @@ export class AIHandlers {
     } catch (err: any) {
       this.logger?.error({ err }, "ai.getHistoryById failed");
       this.rpc.sendError(id, { code: "HISTORY_ERROR", message: err?.message ?? String(err) });
+    }
+  }
+
+  async handleNaturalLanguageQuery(params: any, id: number | string) {
+    try {
+      const { question, databaseId, settings, history, options } = params;
+      if (!question || !databaseId || !settings) {
+        return this.rpc.sendError(id, { code: "BAD_REQUEST", message: "Missing question, databaseId, or settings" });
+      }
+
+      const { conn, dbType } = await this.dbService.getDatabaseConnection(databaseId);
+      
+      const { nlSqlService } = require("../services/nlSqlService");
+      const response = await nlSqlService.naturalLanguageToSQL({
+        question,
+        databaseId,
+        settings,
+        history,
+        options,
+        dbType,
+        conn
+      });
+
+      this.rpc.sendResponse(id, response);
+    } catch (err: any) {
+      this.logger.error({ err }, "ai.naturalLanguageQuery failed");
+      this.rpc.sendError(id, { code: "AI_ERROR", message: err.message });
     }
   }
 

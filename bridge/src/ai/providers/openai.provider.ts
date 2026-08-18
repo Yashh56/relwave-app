@@ -65,4 +65,8 @@ export class OpenAIProvider implements AIProvider {
       throw classifyError(err, "openai");
     }
   }
+
+  async generateText(system: string, user: string): Promise<string> {
+    return this.complete(system, user);
+  }
 }

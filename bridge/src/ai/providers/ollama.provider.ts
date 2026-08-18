@@ -55,15 +55,17 @@ export class OllamaProvider implements AIProvider {
 
   async testConnection(): Promise<string> {
     try {
-      // List models to verify Ollama is reachable and the model exists
-      const list = await this.client.list();
-      const available = list.models.map((m: any) => m.name);
-      if (!available.some((n: string) => n.startsWith(this.model.split(":")[0]))) {
-        throw new Error(`Model "${this.model}" not found. Available: ${available.join(", ") || "none"}`);
-      }
+      await this.client.generate({
+        model: this.model,
+        prompt: "ping",
+      });
       return "";
     } catch (err) {
       throw classifyError(err, "ollama");
     }
+  }
+
+  async generateText(system: string, user: string): Promise<string> {
+    return this.complete(system, user);
   }
 }
