@@ -180,6 +180,7 @@ const SQLWorkspacePanel = ({ dbId }: SQLWorkspacePanelProps) => {
     return (
         <div className="h-full flex flex-col bg-transparent">
             <WorkspaceHeader
+                dbId={dbId}
                 databaseName={databaseName || 'Database'}
                 isExecuting={isExecuting}
                 queryProgress={queryProgress}
