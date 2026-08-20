@@ -27,6 +27,7 @@ import SQLWorkspacePanel from "@/features/workspace/components/SQLWorkspacePanel
 import GitStatusPanel from "@/features/git/components/GitStatusPanel";
 import GitStatusBar from "@/features/git/components/GitStatusBar";
 import { MonitoringPanel } from "@/features/monitoring/components/MonitoringPanel";
+import AIWorkspacePanel from "@/features/database/components/AIWorkspacePanel";
 import { ShortcutsHelp } from "@/components/shared/ShortcutsHelp";
 import { ShortcutsTrigger } from "@/components/shared/ShortcutsTrigger";
 import { MigrationSyncDialog } from "@/features/project/components/MigrationSyncDialog";
@@ -113,6 +114,7 @@ const DatabaseDetail = () => {
       case "er-diagram": return <ERDiagramPanel key={`er-${dbId}`} projectId={projectId} />;
       case "monitoring": return <MonitoringPanel key={`mon-${dbId}`} dbId={dbId || ""} databaseName={databaseName} databaseType={databaseType} />;
       case "git-status": return <GitStatusPanel key={`git-${dbId}`} projectDir={projectDir} projectId={projectId ?? ''} />;
+      case "ai-workspace": return <AIWorkspacePanel key={`ai-${dbId}`} dbId={dbId || ""} onNavigate={setActivePanel} />;
       case "migrations": return <div className="p-6 h-full" key={`mig-${dbId}`}><MigrationsPanel dbId={dbId || ""} migrations={migrationsData} baselined={baselined} /></div>;
       default:
         return (

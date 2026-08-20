@@ -178,11 +178,12 @@ export class AIHandlers {
 
   // ── History CRUD handlers ─────────────────────────────────────────────
 
-  async handleGetHistory(params: { feature?: string; provider?: string; limit?: number; offset?: number }, id: number | string) {
+  async handleGetHistory(params: { feature?: string; provider?: string; datasource_id?: string; limit?: number; offset?: number }, id: number | string) {
     try {
       const result = aiHistoryStore.list({
         feature: params?.feature,
         provider: params?.provider,
+        datasource_id: params?.datasource_id,
         limit: params?.limit,
         offset: params?.offset,
       });

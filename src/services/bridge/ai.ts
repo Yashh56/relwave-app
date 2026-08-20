@@ -275,6 +275,7 @@ class AIService {
   async getHistory(params?: {
     feature?: string;
     provider?: string;
+    datasource_id?: string;
     limit?: number;
     offset?: number;
   }): Promise<AIHistoryListResult> {

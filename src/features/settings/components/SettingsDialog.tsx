@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AISettings, AIHistoryPanel, CheckForUpdates, ColorVariant, DeveloperMode, ThemeMode, Version, AnalyticsSettings } from "@/features/settings/components";
+import { AISettings, CheckForUpdates, ColorVariant, DeveloperMode, ThemeMode, Version, AnalyticsSettings } from "@/features/settings/components";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -69,7 +69,6 @@ export function SettingsDialog({ open, onOpenChange }: SettingsDialogProps) {
               {activeTab === "ai" && (
                 <div className="space-y-8">
                   <AISettings />
-                  <AIHistoryPanel />
                 </div>
               )}
 

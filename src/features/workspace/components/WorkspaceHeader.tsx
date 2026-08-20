@@ -3,6 +3,7 @@ import { Button } from "@/components/ui/button";
 import { ExplainQueryButton } from "./ExplainQueryButton";
 
 interface WorkspaceHeaderProps {
+    dbId: string;
     databaseName: string;
     isExecuting: boolean;
     queryProgress: { rows: number; elapsed: number } | null;
@@ -14,6 +15,7 @@ interface WorkspaceHeaderProps {
 }
 
 export function WorkspaceHeader({
+    dbId,
     databaseName,
     isExecuting,
     queryProgress,
@@ -47,7 +49,7 @@ export function WorkspaceHeader({
                 <ExplainQueryButton
                     sql={activeQuery ?? ""}
                     disabled={isExecuting || !activeQuery?.trim()}
-                    databaseName={databaseName}
+                    dbId={dbId}
                 />
 
                 {/* NL to SQL Query */}

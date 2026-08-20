@@ -69,6 +69,9 @@ export const NLQueryDialog: React.FC<NLQueryDialogProps> = ({
             <Sparkles className="w-5 h-5 text-primary" />
             Natural Language to SQL
           </DialogTitle>
+          <p className="text-xs text-muted-foreground mt-1">
+            AI can make mistakes. Please verify the generated SQL before applying it to your workspace.
+          </p>
         </DialogHeader>
 
         <div className="flex flex-col gap-4 flex-1 min-h-0">

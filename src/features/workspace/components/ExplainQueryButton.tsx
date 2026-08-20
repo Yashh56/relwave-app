@@ -8,10 +8,10 @@ import { aiService } from "@/services/bridge/ai";
 interface ExplainQueryButtonProps {
   sql: string;
   disabled?: boolean;
-  databaseName?: string;
+  dbId?: string;
 }
 
-export function ExplainQueryButton({ sql, disabled, databaseName }: ExplainQueryButtonProps) {
+export function ExplainQueryButton({ sql, disabled, dbId }: ExplainQueryButtonProps) {
   const { settings } = useAISettings();
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -29,7 +29,7 @@ export function ExplainQueryButton({ sql, disabled, databaseName }: ExplainQuery
     try {
       const result = await aiService.explainQuery(settings, {
         sql: sql.trim(),
-      }, { skipCache, datasourceName: databaseName });
+      }, { skipCache, datasourceName: dbId });
       setMarkdown(result.markdown);
       setCached(result.cached);
       setCreatedAt(result.createdAt);

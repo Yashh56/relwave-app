@@ -92,7 +92,7 @@ function timeAgo(isoDate: string): string {
   return `${months}mo ago`;
 }
 
-export default function AIHistoryPanel() {
+export default function AIHistoryPanel({ dbId }: { dbId?: string }) {
   const { data: databases } = useDatabases();
   const [items, setItems] = useState<AIHistoryListItem[]>([]);
   const [total, setTotal] = useState(0);
@@ -114,6 +114,7 @@ export default function AIHistoryPanel() {
       const result = await aiService.getHistory({
         feature: featureFilter !== "all" ? featureFilter : undefined,
         provider: providerFilter !== "all" ? providerFilter : undefined,
+        datasource_id: dbId,
         limit: PAGE_SIZE,
         offset: page * PAGE_SIZE,
       });
@@ -268,7 +269,7 @@ export default function AIHistoryPanel() {
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
                       <TableHead className="text-[10px] uppercase tracking-wider h-8">Feature</TableHead>
-                      <TableHead className="text-[10px] uppercase tracking-wider h-8">Database</TableHead>
+                      {!dbId && <TableHead className="text-[10px] uppercase tracking-wider h-8">Database</TableHead>}
                       <TableHead className="text-[10px] uppercase tracking-wider h-8">Provider</TableHead>
                       <TableHead className="text-[10px] uppercase tracking-wider h-8 text-right">Tokens</TableHead>
                       <TableHead className="text-[10px] uppercase tracking-wider h-8 text-right">Created</TableHead>
@@ -292,15 +293,17 @@ export default function AIHistoryPanel() {
                             {FEATURE_LABELS[item.feature] ?? item.feature}
                           </Badge>
                         </TableCell>
-                        <TableCell className="py-2 text-xs text-foreground/70 max-w-[140px] truncate">
-                          {item.datasource_id ? (
-                            <span title={item.datasource_id}>
-                              {databases?.find(d => d.id === item.datasource_id)?.name || `${item.datasource_id.slice(0, 8)}...`}
-                            </span>
-                          ) : (
-                            <span className="text-muted-foreground/40 italic">—</span>
-                          )}
-                        </TableCell>
+                        {!dbId && (
+                          <TableCell className="py-2 text-xs text-foreground/70 max-w-[140px] truncate">
+                            {item.datasource_id ? (
+                              <span title={item.datasource_id}>
+                                {databases?.find(d => d.id === item.datasource_id)?.name || `${item.datasource_id.slice(0, 8)}...`}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground/40 italic">Global</span>
+                            )}
+                          </TableCell>
+                        )}
                         <TableCell className="py-2 text-xs text-foreground/70">
                           {PROVIDER_LABELS[item.provider] ?? item.provider}
                         </TableCell>
