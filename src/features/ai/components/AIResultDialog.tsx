@@ -85,26 +85,31 @@ export function AIResultDialog({
             )}
           </DialogTitle>
           {/* Description row with optional timestamp + re-analyze */}
-          <div className="flex items-center gap-2">
-            {description && (
-              <DialogDescription className="text-xs flex-1">{description}</DialogDescription>
-            )}
-            {markdown && !loading && cached && createdAt && (
-              <span className="text-[10px] text-muted-foreground/60 whitespace-nowrap">
-                Generated {timeAgo(createdAt)}
-              </span>
-            )}
-            {markdown && !loading && cached && onReanalyze && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 px-2 text-[10px] gap-1 text-muted-foreground hover:text-foreground"
-                onClick={onReanalyze}
-              >
-                <RefreshCw className="h-3 w-3" />
-                Re-analyze
-              </Button>
-            )}
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              {description && (
+                <DialogDescription className="text-xs flex-1">{description}</DialogDescription>
+              )}
+              {markdown && !loading && cached && createdAt && (
+                <span className="text-[10px] text-muted-foreground/60 whitespace-nowrap">
+                  Generated {timeAgo(createdAt)}
+                </span>
+              )}
+              {markdown && !loading && cached && onReanalyze && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 px-2 text-[10px] gap-1 text-muted-foreground hover:text-foreground"
+                  onClick={onReanalyze}
+                >
+                  <RefreshCw className="h-3 w-3" />
+                  Re-analyze
+                </Button>
+              )}
+            </div>
+            <p className="text-[10px] text-muted-foreground/60">
+              Note: AI can make mistakes. Please verify responses and generated queries.
+            </p>
           </div>
         </DialogHeader>
 
@@ -210,6 +215,53 @@ export function MarkdownRenderer({ content }: { content: string }) {
             </li>
           ))}
         </ul>
+      );
+      continue;
+    }
+
+    // Table
+    if (line.trim().startsWith("|") && line.includes("|", 1)) {
+      const tableLines: string[] = [];
+      while (i < lines.length && lines[i].trim().startsWith("|")) {
+        tableLines.push(lines[i].trim());
+        i++;
+      }
+      
+      const parseRow = (rowStr: string) => {
+        const parts = rowStr.split("|");
+        if (parts.length > 0 && parts[0].trim() === "") parts.shift();
+        if (parts.length > 0 && parts[parts.length - 1].trim() === "") parts.pop();
+        return parts;
+      };
+
+      const headerCells = parseRow(tableLines[0]);
+      const bodyLines = tableLines.length > 2 ? tableLines.slice(2) : [];
+
+      elements.push(
+        <div key={i} className="overflow-x-auto my-3 border border-border/30 rounded-md">
+          <table className="w-full text-xs text-left border-collapse">
+            <thead>
+              <tr className="border-b border-border/50 bg-muted/30">
+                {headerCells.map((cell, idx) => (
+                  <th key={idx} className="px-3 py-2 font-semibold text-foreground/80 whitespace-nowrap">
+                    {renderInline(cell.trim())}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {bodyLines.map((rowLine, rowIdx) => (
+                <tr key={rowIdx} className="border-b border-border/20 last:border-0 hover:bg-muted/10">
+                  {parseRow(rowLine).map((cell, idx) => (
+                    <td key={idx} className="px-3 py-2 text-foreground/70">
+                      {renderInline(cell.trim())}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       );
       continue;
     }
