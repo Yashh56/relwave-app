@@ -6,5 +6,5 @@ export { default as AnalyticsSettings } from './AnalyticsSettings'
 export { default as CheckForUpdates } from './CheckForUpdates'
 export { default as Version } from './Version'
 export { default as AISettings } from './AISettings'
-export { default as AIHistoryPanel } from '../../ai/components/AIHistoryPanel'
+
 export { SettingsDialog } from './SettingsDialog'

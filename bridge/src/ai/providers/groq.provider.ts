@@ -65,4 +65,8 @@ export class GroqProvider implements AIProvider {
       throw classifyError(err, "groq");
     }
   }
+
+  async generateText(system: string, user: string): Promise<string> {
+    return this.complete(system, user);
+  }
 }

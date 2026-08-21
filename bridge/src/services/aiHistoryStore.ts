@@ -54,6 +54,7 @@ export interface AIHistoryInsert {
 export interface AIHistoryListParams {
   feature?: string;
   provider?: string;
+  datasource_id?: string;
   limit?: number;
   offset?: number;
 }
@@ -195,6 +196,10 @@ export class AIHistoryStore {
     if (params.provider) {
       conditions.push("provider = ?");
       values.push(params.provider);
+    }
+    if (params.datasource_id) {
+      conditions.push("datasource_id = ?");
+      values.push(params.datasource_id);
     }
 
     const where = conditions.length

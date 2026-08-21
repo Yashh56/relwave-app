@@ -64,7 +64,7 @@ export const ChartVisualization = ({
           type: c.type,
           isPrimaryKey: c.isPrimaryKey,
         })),
-      });
+      }, { datasourceName: dbId });
       setChartType(rec.chartType);
       setXAxis(rec.xAxis);
       setYAxis(rec.yAxis);

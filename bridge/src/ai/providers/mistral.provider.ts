@@ -71,4 +71,8 @@ export class MistralProvider implements AIProvider {
       throw classifyError(err, "mistral");
     }
   }
+
+  async generateText(system: string, user: string): Promise<string> {
+    return this.complete(system, user);
+  }
 }

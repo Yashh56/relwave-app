@@ -1,8 +1,9 @@
-import { Play, Square, Database, Loader2 } from "lucide-react";
+import { Play, Square, Database, Loader2, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ExplainQueryButton } from "./ExplainQueryButton";
 
 interface WorkspaceHeaderProps {
+    dbId: string;
     databaseName: string;
     isExecuting: boolean;
     queryProgress: { rows: number; elapsed: number } | null;
@@ -10,9 +11,11 @@ interface WorkspaceHeaderProps {
     activeQuery?: string;
     onExecute: () => void;
     onCancel: () => void;
+    onNLQueryClick: () => void;
 }
 
 export function WorkspaceHeader({
+    dbId,
     databaseName,
     isExecuting,
     queryProgress,
@@ -20,6 +23,7 @@ export function WorkspaceHeader({
     activeQuery,
     onExecute,
     onCancel,
+    onNLQueryClick,
 }: WorkspaceHeaderProps) {
     return (
         <header className="h-12 border-b border-border/40 bg-background/80 backdrop-blur-xl flex items-center justify-between px-4 shrink-0">
@@ -45,8 +49,20 @@ export function WorkspaceHeader({
                 <ExplainQueryButton
                     sql={activeQuery ?? ""}
                     disabled={isExecuting || !activeQuery?.trim()}
-                    databaseName={databaseName}
+                    dbId={dbId}
                 />
+
+                {/* NL to SQL Query */}
+                <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={onNLQueryClick}
+                    disabled={isExecuting}
+                    className="h-8 gap-1.5 border-primary/20 hover:border-primary/50 text-primary hover:text-primary"
+                >
+                    <Sparkles className="h-3.5 w-3.5" />
+                    AI Query
+                </Button>
 
                 {/* Run/Stop buttons */}
                 {isExecuting ? (

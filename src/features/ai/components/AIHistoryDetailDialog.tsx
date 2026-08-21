@@ -205,7 +205,7 @@ export function AIHistoryDetailDialog({
               </Button>
             </div>
             <div className="rounded-md border border-border/20 p-3 bg-background/50">
-              <MarkdownRenderer content={entry.response} />
+              <FormattedResponseRenderer feature={entry.feature} content={entry.response} />
             </div>
           </div>
 
@@ -251,6 +251,76 @@ export function AIHistoryDetailDialog({
       </DialogContent>
     </Dialog>
   );
+}
+
+function FormattedResponseRenderer({ feature, content }: { feature: string; content: string }) {
+  try {
+    const data = JSON.parse(content);
+    
+    if (feature === "nl_to_sql") {
+      return (
+        <div className="space-y-4">
+          <div className="p-3 bg-muted/30 border border-border/30 rounded-md">
+            <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-2 block">Generated SQL</span>
+            <pre className="text-[11px] font-mono text-primary/90 whitespace-pre-wrap">{data.sql}</pre>
+          </div>
+          {data.explanation && (
+            <div>
+              <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1.5 block">Explanation</span>
+              <p className="text-xs text-foreground/80 leading-relaxed">{data.explanation}</p>
+            </div>
+          )}
+          {data.assumptions && data.assumptions.length > 0 && (
+            <div>
+              <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1.5 block">Assumptions</span>
+              <ul className="list-disc pl-4 space-y-1">
+                {data.assumptions.map((a: string, i: number) => (
+                  <li key={i} className="text-xs text-foreground/70">{a}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
+      );
+    }
+    
+    if (feature === "chart-recommendation") {
+      return (
+        <div className="space-y-4">
+          <div className="grid grid-cols-3 gap-3">
+            <div className="p-2.5 bg-muted/20 border border-border/20 rounded-md">
+              <span className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider block mb-1">Chart Type</span>
+              <span className="text-xs text-foreground/80 font-medium capitalize">{data.chartType}</span>
+            </div>
+            <div className="p-2.5 bg-muted/20 border border-border/20 rounded-md">
+              <span className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider block mb-1">X-Axis</span>
+              <span className="text-xs text-foreground/80 font-mono">{data.xAxis}</span>
+            </div>
+            <div className="p-2.5 bg-muted/20 border border-border/20 rounded-md">
+              <span className="text-[9px] font-semibold text-muted-foreground/60 uppercase tracking-wider block mb-1">Y-Axis</span>
+              <span className="text-xs text-foreground/80 font-mono">{data.yAxis}</span>
+            </div>
+          </div>
+          {data.reasoning && (
+            <div>
+              <span className="text-[10px] font-semibold text-muted-foreground/60 uppercase tracking-wider mb-1.5 block">Reasoning</span>
+              <p className="text-xs text-foreground/80 leading-relaxed">{data.reasoning}</p>
+            </div>
+          )}
+        </div>
+      );
+    }
+    
+    // Fallback for other JSON types
+    return (
+      <pre className="text-[11px] font-mono text-foreground/80 whitespace-pre-wrap">
+        {JSON.stringify(data, null, 2)}
+      </pre>
+    );
+  } catch (e) {
+    // Not valid JSON, fallback to markdown renderer (used by schema-analysis, query-explanation)
+    return <MarkdownRenderer content={content} />;
+  }
 }
 
 function MetaItem({

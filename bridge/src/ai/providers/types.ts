@@ -26,6 +26,9 @@ export interface AIProvider {
    * Resolves with an empty string on success, a user-facing message on failure.
    */
   testConnection(): Promise<string>;
+
+  /** Generate raw text from a system and user prompt. Used for NL-to-SQL. */
+  generateText(system: string, user: string): Promise<string>;
 }
 
 // ── Standardized error type ───────────────────────────────────────────────

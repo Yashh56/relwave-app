@@ -275,6 +275,7 @@ class AIService {
   async getHistory(params?: {
     feature?: string;
     provider?: string;
+    datasource_id?: string;
     limit?: number;
     offset?: number;
   }): Promise<AIHistoryListResult> {
@@ -305,6 +306,48 @@ class AIService {
     const result = await bridgeRequest("ai.clearHistory", {});
     return result?.data?.deletedCount ?? 0;
   }
+
+  /**
+   * Translate natural language to SQL and optionally execute it.
+   */
+  async naturalLanguageQuery(params: {
+    question: string;
+    databaseId: string;
+    settings: AISettings;
+    history?: Array<{ question: string; sql: string; result?: string }>;
+    options?: NLSQLOptions;
+  }): Promise<NLSQLResponse> {
+    const result = await bridgeRequest("ai.naturalLanguageQuery", params);
+    // Since bridgeRequest returns the entire response in some handlers or wraps it in `data`,
+    // our aiHandlers.ts `this.rpc.sendResponse(id, response)` means it might not have `.data`.
+    // Wait, typically `sendResponse` wraps the whole thing in the RPC response `result`. 
+    // `bridgeRequest` returns `result`. If the handler sends `response`, it is `result`.
+    return result as NLSQLResponse;
+  }
+}
+
+export interface NLSQLOptions {
+  maskSensitive?: boolean;
+  maxRows?: number;
+  autoExecute?: boolean;
+}
+
+export interface NLSQLResponse {
+  sql: string | null;
+  intent: "read" | "write" | "destructive" | "schema" | "unclear";
+  explanation: string;
+  confidence: number;
+  assumptions: string[];
+  results?: unknown[];
+  rowCount?: number;
+  interpretation?: string;
+  executionMs?: number;
+  cached: boolean;
+  error?: string;
+  debug?: {
+    prompt?: string;
+    rawResponse?: string;
+  };
 }
 
 export const aiService = new AIService();

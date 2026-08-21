@@ -10,6 +10,7 @@ import { StatusBar } from "./StatusBar";
 import { QueryTab, QueryHistoryItem } from "../types";
 import { SqlEditor } from "./SqlEditor";
 import { SQLWorkspacePanelLoadingState } from "@/features/workspace/components/SQLWorkspacePanelLoadingState";
+import { NLQueryDialog } from "./NLQueryDialog";
 
 interface SQLWorkspacePanelProps {
     dbId: string;
@@ -39,6 +40,8 @@ const SQLWorkspacePanel = ({ dbId }: SQLWorkspacePanelProps) => {
 
     // Query history
     const [queryHistory, setQueryHistory] = useState<QueryHistoryItem[]>([]);
+
+    const [isNLDialogOpen, setIsNLDialogOpen] = useState(false);
 
     const {
         databaseName,
@@ -160,6 +163,14 @@ const SQLWorkspacePanel = ({ dbId }: SQLWorkspacePanelProps) => {
         ));
     }, [activeTabId]);
 
+    const handleApplyNLQuerySQL = useCallback((sql: string) => {
+        const currentQuery = activeTab?.query || "";
+        const cleanQuery = currentQuery.trim() === "-- Write your SQL query here\nSELECT * FROM" || currentQuery.trim() === "-- New query\nSELECT" ? "" : currentQuery;
+        
+        const newQuery = cleanQuery ? `${cleanQuery}\n\n${sql}` : sql;
+        updateActiveTabQuery(newQuery);
+    }, [activeTab?.query, updateActiveTabQuery]);
+
     if (!bridgeReady) {
         return (
             <SQLWorkspacePanelLoadingState />
@@ -169,6 +180,7 @@ const SQLWorkspacePanel = ({ dbId }: SQLWorkspacePanelProps) => {
     return (
         <div className="h-full flex flex-col bg-transparent">
             <WorkspaceHeader
+                dbId={dbId}
                 databaseName={databaseName || 'Database'}
                 isExecuting={isExecuting}
                 queryProgress={queryProgress}
@@ -176,6 +188,7 @@ const SQLWorkspacePanel = ({ dbId }: SQLWorkspacePanelProps) => {
                 activeQuery={activeTab?.query}
                 onExecute={handleExecuteQuery}
                 onCancel={handleCancelQuery}
+                onNLQueryClick={() => setIsNLDialogOpen(true)}
             />
 
             {/* Main Content */}
@@ -227,6 +240,13 @@ const SQLWorkspacePanel = ({ dbId }: SQLWorkspacePanelProps) => {
                 databaseName={databaseName || 'Database'}
                 tableCount={tables.length}
                 lineCount={activeTab?.query.split('\n').length || 1}
+            />
+
+            <NLQueryDialog 
+                isOpen={isNLDialogOpen}
+                onOpenChange={setIsNLDialogOpen}
+                dbId={dbId}
+                onApplySQL={handleApplyNLQuerySQL}
             />
         </div>
     );

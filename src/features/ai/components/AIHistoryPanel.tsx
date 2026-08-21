@@ -33,6 +33,7 @@ import { History, Trash2, ChevronLeft, ChevronRight, Loader2 } from "lucide-reac
 import { aiService, type AIHistoryListItem, type AIHistoryEntry } from "@/services/bridge/ai";
 import { AIHistoryDetailDialog } from "./AIHistoryDetailDialog";
 import { cn } from "@/lib/utils";
+import { useDatabases } from "@/features/project/hooks/useDbQueries";
 
 const PAGE_SIZE = 10;
 
@@ -41,6 +42,7 @@ const FEATURE_OPTIONS = [
   { value: "schema-analysis", label: "Schema Analysis" },
   { value: "query-explanation", label: "Query Explanation" },
   { value: "chart-recommendation", label: "Chart Recommendation" },
+  { value: "nl_to_sql", label: "Natural Language to SQL" },
 ];
 
 const PROVIDER_OPTIONS = [
@@ -57,12 +59,14 @@ const FEATURE_LABELS: Record<string, string> = {
   "schema-analysis": "Schema Analysis",
   "query-explanation": "Query Explanation",
   "chart-recommendation": "Chart Recommendation",
+  "nl_to_sql": "NL to SQL",
 };
 
 const FEATURE_COLORS: Record<string, string> = {
   "schema-analysis": "border-violet-500/30 text-violet-600 bg-violet-500/8",
   "query-explanation": "border-blue-500/30 text-blue-600 bg-blue-500/8",
   "chart-recommendation": "border-amber-500/30 text-amber-600 bg-amber-500/8",
+  "nl_to_sql": "border-emerald-500/30 text-emerald-600 bg-emerald-500/8",
 };
 
 const PROVIDER_LABELS: Record<string, string> = {
@@ -88,7 +92,8 @@ function timeAgo(isoDate: string): string {
   return `${months}mo ago`;
 }
 
-export default function AIHistoryPanel() {
+export default function AIHistoryPanel({ dbId }: { dbId?: string }) {
+  const { data: databases } = useDatabases();
   const [items, setItems] = useState<AIHistoryListItem[]>([]);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(0);
@@ -109,6 +114,7 @@ export default function AIHistoryPanel() {
       const result = await aiService.getHistory({
         feature: featureFilter !== "all" ? featureFilter : undefined,
         provider: providerFilter !== "all" ? providerFilter : undefined,
+        datasource_id: dbId,
         limit: PAGE_SIZE,
         offset: page * PAGE_SIZE,
       });
@@ -263,7 +269,7 @@ export default function AIHistoryPanel() {
                   <TableHeader>
                     <TableRow className="hover:bg-transparent">
                       <TableHead className="text-[10px] uppercase tracking-wider h-8">Feature</TableHead>
-                      <TableHead className="text-[10px] uppercase tracking-wider h-8">Database</TableHead>
+                      {!dbId && <TableHead className="text-[10px] uppercase tracking-wider h-8">Database</TableHead>}
                       <TableHead className="text-[10px] uppercase tracking-wider h-8">Provider</TableHead>
                       <TableHead className="text-[10px] uppercase tracking-wider h-8 text-right">Tokens</TableHead>
                       <TableHead className="text-[10px] uppercase tracking-wider h-8 text-right">Created</TableHead>
@@ -287,11 +293,17 @@ export default function AIHistoryPanel() {
                             {FEATURE_LABELS[item.feature] ?? item.feature}
                           </Badge>
                         </TableCell>
-                        <TableCell className="py-2 text-xs text-foreground/70 max-w-[140px] truncate">
-                          {item.datasource_id || (
-                            <span className="text-muted-foreground/40 italic">—</span>
-                          )}
-                        </TableCell>
+                        {!dbId && (
+                          <TableCell className="py-2 text-xs text-foreground/70 max-w-[140px] truncate">
+                            {item.datasource_id ? (
+                              <span title={item.datasource_id}>
+                                {databases?.find(d => d.id === item.datasource_id)?.name || `${item.datasource_id.slice(0, 8)}...`}
+                              </span>
+                            ) : (
+                              <span className="text-muted-foreground/40 italic">Global</span>
+                            )}
+                          </TableCell>
+                        )}
                         <TableCell className="py-2 text-xs text-foreground/70">
                           {PROVIDER_LABELS[item.provider] ?? item.provider}
                         </TableCell>
