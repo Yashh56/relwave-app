@@ -129,19 +129,11 @@ pnpm tauri dev
 
 ## 🏗️ Architecture
 
-RelWave leverages a **Hybrid Bridge Architecture**. This unique setup ensures that while the React UI remains fluid and highly responsive, the heavy-duty database connections and Git operations run securely inside a dedicated, isolated Node.js process.
+RelWave uses a **three-layer bridge architecture**. React owns the user experience, Tauri/Rust provides the native desktop shell and process boundary, and the dedicated Node.js bridge performs database, Git, filesystem, monitoring, and AI work. Requests and responses travel between the frontend and bridge as newline-delimited JSON-RPC messages over Tauri-managed stdio pipes.
 
-```mermaid
-graph TD
-    A[Tauri / React Frontend] <-->|JSON-RPC via stdio| B[Node.js Bridge]
-    B <--> C[(Native Databases)]
-    B <--> D[Git Repositories]
+<img width="1565" height="518" alt="image" src="https://github.com/user-attachments/assets/defdc3b7-7555-40ac-bf97-b1cb9420b325" />
 
-    style A fill:#0ea5e9,color:#fff,stroke:#0284c7,stroke-width:2px,rx:10px
-    style B fill:#10b981,color:#fff,stroke:#059669,stroke-width:2px,rx:10px
-    style C fill:#f59e0b,color:#fff,stroke:#d97706,stroke-width:2px,rx:10px
-    style D fill:#ef4444,color:#fff,stroke:#dc2626,stroke-width:2px,rx:10px
-```
+The request path is **React UI -> Tauri command -> Node.js JSON-RPC handler -> service -> database, Git, local storage, monitoring, or LLM provider**. Responses return through the same boundary in reverse. Long-running SQL queries additionally stream `query.result`, `query.progress`, and `query.done` notifications back to the React client. The Node.js bridge contains the database connectors, Git service, AI services, monitoring services, project stores, credential access, and SSH tunnel handling.
 
 <br />
 
