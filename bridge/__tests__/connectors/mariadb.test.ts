@@ -1,4 +1,4 @@
-import { describe, it, expect, test } from "@jest/globals";
+import { describe, expect, test } from "@jest/globals";
 import * as mariadbConnector from "../../src/connectors/mariadb";
 
 const invalidConfig: mariadbConnector.MariaDBConfig = {

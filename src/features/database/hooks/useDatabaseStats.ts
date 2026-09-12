@@ -1,7 +1,7 @@
 // features/database/hooks/useDatabaseStats.ts
 
 import { useQuery } from "@tanstack/react-query";
-import { useCachedConnectionStatus, useCachedTotalStats, useCachedDbStats } from "./useCachedData";
+import { useCachedConnectionStatus, useCachedTotalStats } from "./useCachedData";
 import { bytesToMBString } from "@/lib/bytesToMB";
 import { databaseService } from "@/services/bridge/database";
 

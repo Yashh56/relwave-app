@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback } from "react";
+import { useState, useCallback } from "react";
 
 const CACHE_PREFIX = "relwave-cache-";
 const CACHE_EXPIRY = 24 * 60 * 60 * 1000; // 24 hours

@@ -8,7 +8,6 @@ import { CacheEntry, CACHE_TTL, STATS_CACHE_TTL, SCHEMA_CACHE_TTL } from "../typ
 import {
   TableInfo,
   DBStats,
-  SchemaInfo,
   ColumnDetail,
   PrimaryKeyInfo,
   ForeignKeyInfo,
@@ -75,7 +74,6 @@ import {
   LIST_APPLIED_MIGRATIONS,
   DELETE_MIGRATION,
 } from "../queries/mysql/migrations";
-import { quoteIdentifier } from "../queries/mysql/crud";
 
 // ============================================
 // CACHING SYSTEM FOR MYSQL CONNECTOR
@@ -308,12 +306,6 @@ class MySQLCacheManager {
 export const mysqlCache = new MySQLCacheManager();
 
 // Legacy cache support (for backward compatibility)
-const tableListCache = new Map<string, { data: TableInfo[]; timestamp: number }>();
-
-function getCacheKey(cfg: MySQLConfig): string {
-  return `${cfg.host}:${cfg.port}:${cfg.database}`;
-}
-
 export function createPoolConfig(cfg: MySQLConfig): MySQLConfig & PoolOptions {
   return {
     host: cfg.host,
@@ -337,7 +329,7 @@ export async function testConnection(
     if (connection) {
       try {
         await connection.end();
-      } catch (e) {
+      } catch {
         // Ignore
       }
     }
@@ -451,12 +443,12 @@ export async function mysqlKillQuery(cfg: MySQLConfig, targetPid: number) {
   try {
     await conn.execute(KILL_QUERY, [targetPid]);
     return true;
-  } catch (error) {
+  } catch {
     return false;
   } finally {
     try {
       await conn.end();
-    } catch (e) {
+    } catch {
       // Ignore
     }
   }
@@ -521,7 +513,7 @@ export function streamQueryCancelable(
       query = raw.query(sql);
 
       let columns: FieldPacket[] | null = null;
-      let buffer: RowDataPacket[] = [];
+      const buffer: RowDataPacket[] = [];
 
       const flush = async () => {
         if (buffer.length === 0) return;
@@ -615,13 +607,13 @@ export async function getDBStats(cfg: MySQLConfig): Promise<{
     if (connection) {
       try {
         connection.release();
-      } catch (e) {
+      } catch {
         // Ignore
       }
     }
     try {
       await pool.end();
-    } catch (e) {
+    } catch {
       // Ignore
     }
   }
@@ -653,13 +645,13 @@ export async function listSchemas(cfg: MySQLConfig): Promise<{ name: string }[]>
     if (connection) {
       try {
         connection.release();
-      } catch (e) {
+      } catch {
         // Ignore
       }
     }
     try {
       await pool.end();
-    } catch (e) {
+    } catch {
       // Ignore
     }
   }
@@ -707,13 +699,13 @@ export async function listTables(cfg: MySQLConfig, schemaName?: string): Promise
     if (connection) {
       try {
         connection.release();
-      } catch (e) {
+      } catch {
         // Ignore
       }
     }
     try {
       await pool.end();
-    } catch (e) {
+    } catch {
       // Ignore
     }
   }
@@ -758,13 +750,13 @@ export async function getTableDetails(
     if (connection) {
       try {
         connection.release();
-      } catch (e) {
+      } catch {
         // Ignore
       }
     }
     try {
       await pool.end();
-    } catch (e) {
+    } catch {
       // Ignore
     }
   }
@@ -989,13 +981,13 @@ export async function getSchemaMetadataBatch(
     if (connection) {
       try {
         connection.release();
-      } catch (e) {
+      } catch {
         // Ignore
       }
     }
     try {
       await pool.end();
-    } catch (e) {
+    } catch {
       // Ignore
     }
   }
@@ -1349,6 +1341,7 @@ export async function baselineIfNeeded(
 
     return { baselined: true, version };
   } catch (err) {
+    console.log("[MySQL] Baseline failed:", err);
     throw err;
   }
 }

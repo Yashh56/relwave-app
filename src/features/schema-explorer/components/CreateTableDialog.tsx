@@ -41,7 +41,6 @@ export default function CreateTableDialog({
     isSubmitting,
     showIndexesDialog,
     setShowIndexesDialog,
-    setCreatedTableName,
     createdTableName,
   } = useCreateTableDialog({
     onOpenChange,

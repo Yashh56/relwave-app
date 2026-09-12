@@ -1,4 +1,3 @@
-import { toast } from "sonner";
 import { useSchemaExplorerData } from "./useSchemaExplorerData";
 import { useEffect, useState } from "react";
 import { useInvalidateCache } from "@/features/project/hooks/useDbQueries";
@@ -90,21 +89,6 @@ export function useSchemaExplorerPanel({
     newExpanded.has(tableName) ? newExpanded.delete(tableName) : newExpanded.add(tableName);
     setExpandedTables(newExpanded);
   };
-
-  // --- Action handlers ---
-  const handlePreviewRows = (tableName: string) =>
-    toast.success(`Showing preview for ${tableName}`);
-  const handleShowDDL = (tableName: string) => toast.success(`Generated DDL for ${tableName}`);
-  const handleCopy = (text: string, type: string) => {
-    const el = document.createElement("textarea");
-    el.value = text;
-    document.body.appendChild(el);
-    el.select();
-    document.execCommand("copy");
-    document.body.removeChild(el);
-    toast.success(`${type} copied to clipboard`);
-  };
-  const handleExport = (tableName: string) => toast.success(`Exported ${tableName} successfully`);
 
   return {
     isLoading,

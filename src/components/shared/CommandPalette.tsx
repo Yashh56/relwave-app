@@ -1,5 +1,5 @@
-import { useEffect, useState, useCallback } from "react";
-import { Command, Search, Database as DatabaseIcon, Table, GitBranch } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Command, Search, Database as DatabaseIcon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";

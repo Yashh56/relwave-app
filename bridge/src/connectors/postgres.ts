@@ -25,7 +25,6 @@ import {
   PGConfig,
   EnumInfo,
   SequenceInfo,
-  PGSchemaMetadataBatch,
   PGAlterTableOperation,
   PGDropMode,
 } from "../types/postgres";
@@ -76,7 +75,6 @@ import {
   PG_LIST_APPLIED_MIGRATIONS,
   PG_DELETE_MIGRATION,
 } from "../queries/postgres/migrations";
-import { pgQuoteIdentifier } from "../queries/postgres/crud";
 
 // ============================================
 // CACHING SYSTEM FOR POSTGRES CONNECTOR
@@ -458,7 +456,7 @@ export async function pgCancel(cfg: PGConfig, targetPid: number) {
   } catch (err) {
     try {
       await c.release();
-    } catch (e) {}
+    } catch {}
     throw err;
   }
 }
@@ -529,7 +527,7 @@ export async function fetchTableData(
   } finally {
     try {
       await client.release();
-    } catch (_) {}
+    } catch {}
   }
 }
 
@@ -548,7 +546,7 @@ export async function listTables(connection: PGConfig, schemaName?: string) {
   const client = await pool.connect();
 
   let query = PG_LIST_TABLES;
-  let queryParams: string[] = [];
+  const queryParams: string[] = [];
 
   // Add schema filter if provided
   if (schemaName) {
@@ -571,7 +569,7 @@ export async function listTables(connection: PGConfig, schemaName?: string) {
   } catch (err) {
     try {
       await client.release();
-    } catch (e) {}
+    } catch {}
     throw err;
   }
 }
@@ -602,7 +600,7 @@ export async function listPrimaryKeys(
   } catch (err) {
     try {
       await client.release();
-    } catch (e) {}
+    } catch {}
     throw err;
   }
 }
@@ -627,6 +625,7 @@ export async function listForeignKeys(
 
     return result;
   } catch (err) {
+    console.log("[Postgres] Error fetching foreign keys:", err);
     throw err;
   } finally {
     try {
@@ -920,7 +919,7 @@ export function streamQueryCancelable(
     stream = (client.query as any)(qs) as Readable;
 
     let columns: { name: string }[] | null = null;
-    let buffer: any[] = [];
+    const buffer: any[] = [];
 
     // helper to flush buffer
     const flush = async () => {
@@ -971,7 +970,9 @@ export function streamQueryCancelable(
       } finally {
         try {
           await client.release();
-        } catch (e) {}
+        } catch {
+          // Ignore
+        }
       }
     }
   })();
@@ -986,7 +987,7 @@ export function streamQueryCancelable(
       try {
         await pgCancel(cfg, backendPid);
         // After asking the server to cancel, still destroy local stream for immediate stop
-      } catch (e) {
+      } catch {
         // best-effort, ignore errors from pgCancel
       }
     }
@@ -996,14 +997,14 @@ export function streamQueryCancelable(
       if (stream && typeof (stream as any).destroy === "function") {
         (stream as any).destroy(new Error("cancelled"));
       }
-    } catch (e) {
+    } catch {
       /* ignore */
     }
 
     // 3) Close client connection
     try {
-      await client.release();
-    } catch (e) {
+      await client?.release();
+    } catch {
       /* ignore */
     }
   }
@@ -1079,7 +1080,7 @@ export async function listSchemas(connection: PGConfig) {
   } catch (err) {
     try {
       await client.release();
-    } catch (e) {}
+    } catch {}
     throw err;
   }
 }
@@ -1105,7 +1106,7 @@ export async function getTableDetails(connection: PGConfig, schemaName: string, 
 
     return result;
   } catch (err) {
-    // ... (Error handling)
+    console.log("[Postgres] Error fetching table details:", err);
     throw err;
   }
 }
@@ -1234,6 +1235,7 @@ export async function createIndexes(
 
     return true;
   } catch (error) {
+    console.log("[Postgres] Error creating indexes:", error);
     throw error;
   } finally {
     await client.release();
@@ -1398,6 +1400,7 @@ export async function ensureMigrationTable(client: PGConfig) {
   try {
     await connection.query(PG_CREATE_MIGRATION_TABLE);
   } catch (error) {
+    console.log("[Postgres] Error creating migration table:", error);
     throw error;
   } finally {
     await connection.release();
@@ -1412,6 +1415,7 @@ export async function hasAnyMigrations(connection: PGConfig): Promise<boolean> {
     const { rows } = await client.query(PG_CHECK_MIGRATIONS_EXIST);
     return rows.length > 0;
   } catch (error) {
+    console.log("[Postgres] Error checking for existing migrations:", error);
     throw error;
   } finally {
     await client.release();
@@ -1430,6 +1434,7 @@ export async function insertBaseline(
     await client.query(PG_INSERT_MIGRATION, [version, name, checksum]);
     return true;
   } catch (error) {
+    console.log("[Postgres] Error inserting baseline migration:", error);
     throw error;
   } finally {
     await client.release();
@@ -1670,8 +1675,8 @@ export async function insertRow(
     throw new Error(`Failed to insert row into ${schemaName}.${tableName}: ${error}`);
   } finally {
     try {
-      await client.release();
-    } catch (_) {}
+      client.release();
+    } catch {}
   }
 }
 
@@ -1743,7 +1748,7 @@ export async function updateRow(
   } finally {
     try {
       await client.release();
-    } catch (_) {}
+    } catch {}
   }
 }
 
@@ -1803,7 +1808,7 @@ export async function deleteRow(
   } finally {
     try {
       await client.release();
-    } catch (_) {}
+    } catch {}
   }
 }
 
@@ -1858,7 +1863,7 @@ export async function searchTable(
 
       // Build OR clause for all columns cast to text
       whereClause = columns
-        .map((col, i) => `"${col.replace(/"/g, '""')}"::text ILIKE $1`)
+        .map((col, _i) => `"${col.replace(/"/g, '""')}"::text ILIKE $1`)
         .join(" OR ");
       values = [searchPattern];
     }
@@ -1887,7 +1892,7 @@ export async function searchTable(
   } finally {
     try {
       await client.release();
-    } catch (_) {}
+    } catch {}
   }
 }
 
@@ -1907,6 +1912,6 @@ export async function listSchemaNames(connection: PGConfig): Promise<string[]> {
   } finally {
     try {
       await client.release();
-    } catch (e) {}
+    } catch {}
   }
 }

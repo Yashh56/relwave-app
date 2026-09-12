@@ -407,7 +407,7 @@ export class GitService {
             refs: refs || "",
           };
         });
-    } catch (err: any) {
+    } catch {
       return [];
     }
   }
@@ -1169,7 +1169,7 @@ export class GitService {
       try {
         await this.git(projectPath, "add", file);
         stagedPaths.push(file);
-      } catch (err) {
+      } catch {
         // Ignore if path doesn't exist
       }
     }
@@ -1267,7 +1267,7 @@ export class GitService {
             autoPush = true;
           }
         }
-      } catch (err) {
+      } catch {
         // Ignore config read errors
       }
 

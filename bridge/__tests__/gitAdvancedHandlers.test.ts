@@ -302,7 +302,7 @@ describe("GitAdvancedHandlers — Error Forwarding", () => {
       ["revert", () => handlers.handleRevert({ dir: "/r", hash: "abc" }, 1)],
     ];
 
-    for (const [name, fn] of testCases) {
+    for (const [_name, fn] of testCases) {
       rpc = createMockRpc();
       handlers = new GitAdvancedHandlers(rpc, undefined, gitService);
       await fn();

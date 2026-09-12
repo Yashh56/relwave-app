@@ -15,7 +15,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -246,7 +245,7 @@ function ModelSelector({
           {(["fast", "balanced", "powerful"] as ModelTier[]).map((tier) => {
             const tierOptions = byTier[tier];
             if (tierOptions.length === 0) return null;
-            const { label, icon: Icon, className: badgeCls } = TIER_CONFIG[tier];
+            const { label, icon: Icon } = TIER_CONFIG[tier];
             return (
               <div key={tier}>
                 <DropdownMenuLabel

@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ColumnDetails, ForeignKeyInfo } from "@/features/database/types";
+import { ColumnDetails } from "@/features/database/types";
 import { useInsertDataDialog } from "../hooks/useInsertDataDialog";
 
 interface InsertDataDialogProps {
@@ -29,11 +29,6 @@ interface InsertDataDialogProps {
   schemaName: string;
   tableName: string;
   onSuccess?: () => void;
-}
-
-interface FKOption {
-  value: string;
-  label: string;
 }
 
 export default function InsertDataDialog({
@@ -46,7 +41,6 @@ export default function InsertDataDialog({
 }: InsertDataDialogProps) {
   const {
     columns,
-    foreignKeys,
     formData,
     nullFields,
     loading,

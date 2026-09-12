@@ -104,7 +104,7 @@ export function parseConnectionUrl(url: string): ParsedConnectionUrl | null {
       ssl,
       sslmode,
     };
-  } catch (error) {
+  } catch {
     // Invalid URL format
     return null;
   }

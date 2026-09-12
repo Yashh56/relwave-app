@@ -6,15 +6,7 @@ import { Progress } from "@/components/ui/progress";
 import { Download, RefreshCw, CheckCircle, XCircle, Loader2 } from "lucide-react";
 
 export function UpdateNotification() {
-  const {
-    status,
-    updateInfo,
-    downloadProgress,
-    error,
-    checkForUpdates,
-    downloadAndInstall,
-    relaunchApp,
-  } = useUpdater();
+  const { status, updateInfo, error, downloadAndInstall, relaunchApp } = useUpdater();
 
   // Show toast notifications based on status
   useEffect(() => {

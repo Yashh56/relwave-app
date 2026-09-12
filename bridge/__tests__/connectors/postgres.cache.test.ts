@@ -1,5 +1,5 @@
-import { postgresCache, PostgresCacheManager } from "../../src/connectors/postgres";
-import { describe, it, expect, test, beforeEach } from "@jest/globals";
+import { postgresCache } from "../../src/connectors/postgres";
+import { describe, it, expect, beforeEach } from "@jest/globals";
 
 // Mock PGConfig for testing
 const mockConnection = {
@@ -77,7 +77,6 @@ describe("PostgresCacheManager", () => {
 
     it("should expire table list cache after TTL", async () => {
       // Create a cache manager with very short TTL for testing
-      const shortTtlCache = new PostgresCacheManager();
 
       // We'll manually test the expiration logic
       postgresCache.setTableList(mockConnection, mockTables);
@@ -389,9 +388,7 @@ describe("PostgresCacheManager", () => {
       }));
 
       // Time the set operation
-      const setStart = performance.now();
       postgresCache.setTableList(mockConnection, largeDataset);
-      const setTime = performance.now() - setStart;
 
       // Time the get operations (multiple times)
       const getStart = performance.now();

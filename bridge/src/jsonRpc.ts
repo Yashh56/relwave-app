@@ -68,7 +68,7 @@ export class JsonStdio extends EventEmitter {
       const parseErr = { code: "PARSE_ERROR", message: String(err), raw: line };
       try {
         this.sendNotification("bridge.parse_error", parseErr);
-      } catch (e) {
+      } catch {
         // ignore
       }
       logger.warn({ err, raw: line }, "invalid JSON from stdin");

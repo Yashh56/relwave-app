@@ -5,7 +5,6 @@ import {
   Search,
   GitBranch,
   GitCommitHorizontal,
-  Settings,
   Layers,
   Terminal,
   History,

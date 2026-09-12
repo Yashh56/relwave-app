@@ -1,15 +1,10 @@
 import { afterEach, beforeEach, describe, expect, jest, test } from "@jest/globals";
-import { ProjectStore, ProjectMetadata, SchemaSnapshot } from "../src/services/projectStore";
+import { ProjectStore, SchemaSnapshot } from "../src/services/projectStore";
 import fs from "fs/promises";
 import fsSync from "fs";
 import path from "path";
-import os from "os";
 
 // ─── Test Setup ──────────────────────────────────────
-
-const TEST_ROOT = path.join(os.tmpdir(), "projectstore-test-" + Date.now());
-const PROJECTS_DIR = path.join(TEST_ROOT, "projects");
-const INDEX_FILE = path.join(PROJECTS_DIR, "index.json");
 
 /**
  * ProjectStore uses `getProjectDir()` from config.ts, which is hardcoded.

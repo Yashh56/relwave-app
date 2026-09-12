@@ -1,7 +1,6 @@
 import { useState } from "react";
-import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Plus, Database, Trash2, Settings } from "lucide-react";
+import { Plus, Database, Trash2, Settings } from "lucide-react";
 import CreateTableDialog from "./CreateTableDialog";
 import AddIndexesDialog from "./AddIndexesDialog";
 import DropTableDialog from "./DropTableDialog";

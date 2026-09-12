@@ -55,7 +55,7 @@ export class StatsHandlers {
         });
       }
 
-      let totalStats = { tables: 0, rows: 0, sizeBytes: 0 };
+      const totalStats = { tables: 0, rows: 0, sizeBytes: 0 };
 
       for (const db of dbs) {
         try {

@@ -1,33 +1,11 @@
 import { AlertCircle, RefreshCw, Download, Wifi, WifiOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Spinner } from "@/components/ui/spinner";
-import {
-  ColumnDetails,
-  DatabaseSchemaDetails,
-  SchemaGroup,
-  TableSchemaDetails,
-} from "@/features/database/types";
 import SchemaExplorerHeader from "./SchemaExplorerHeader";
 import MetaDataPanel from "./MetaDataPanel";
 import { useSchemaExplorerPanel } from "../hooks/useSchemaExplorerPanel";
 import { TreeViewPanel } from "@/features/tree";
 import { SchemaExplorerPanelLoadingState } from "./SchemaExplorerPanelLoadingState";
-
-interface Column extends ColumnDetails {
-  foreignKeyRef?: string;
-}
-
-interface TableSchema extends TableSchemaDetails {
-  columns: Column[];
-}
-
-interface Schema extends SchemaGroup {
-  tables: TableSchema[];
-}
-
-interface DatabaseSchema extends DatabaseSchemaDetails {
-  schemas: Schema[];
-}
 
 interface SchemaExplorerPanelProps {
   dbId: string;

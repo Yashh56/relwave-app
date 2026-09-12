@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { arrayMove } from "@dnd-kit/sortable";
 
 export interface ConnectionGroup {
@@ -116,7 +116,6 @@ export function useConnectionGroups(allConnectionIds: string[]) {
       const activeGroup = prevGroups.find((g) => g.connectionIds.includes(connectionId));
 
       // If dropping over a group header or the group container itself
-      const isTargetingGroupHeader = prevGroups.some((g) => g.id === overId);
       const targetGroup = prevGroups.find(
         (g) => g.id === overId || g.connectionIds.includes(overId),
       );

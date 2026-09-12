@@ -1,9 +1,4 @@
-import {
-  SchemaFile,
-  SchemaSnapshot,
-  TableSnapshot,
-  ColumnSnapshot,
-} from "../../services/projectStore";
+import { SchemaFile } from "../../services/projectStore";
 
 export interface SchemaContextOptions {
   excludeTables?: string[];

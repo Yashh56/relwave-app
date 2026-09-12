@@ -1,4 +1,4 @@
-import { describe, expect, test, beforeEach, jest } from "@jest/globals";
+import { describe, expect, test, beforeEach } from "@jest/globals";
 import { mysqlCache } from "../../src/connectors/mysql";
 
 // Mock MySQL config for testing

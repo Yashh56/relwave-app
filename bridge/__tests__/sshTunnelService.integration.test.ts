@@ -137,7 +137,7 @@ describeOrSkip("SSHTunnelService Integration Tests", () => {
 
       // 3. Verify connection fails
       const socket = new net.Socket();
-      const connectionPromise = new Promise((resolve, reject) => {
+      const connectionPromise = new Promise((resolve, _reject) => {
         socket.setTimeout(1000);
         socket.connect(localPort, "127.0.0.1", () => {
           socket.destroy();

@@ -1,4 +1,4 @@
-import { Maximize2, Minus, Square, X } from "lucide-react";
+import { Maximize2, Minus, X } from "lucide-react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import BridgeStatus from "./BridgeStatus";
 

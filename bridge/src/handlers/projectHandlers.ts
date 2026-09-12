@@ -208,7 +208,7 @@ export class ProjectHandlers {
       try {
         const oldSchemaFile = await projectStoreInstance.getSchema(projectId);
         oldHash = (oldSchemaFile as any)?.schemaHash || "";
-      } catch (e) {
+      } catch {
         // Initial creation
       }
 
@@ -346,14 +346,12 @@ export class ProjectHandlers {
 
       // 3. Read lock file
       let lockFileStatus: "valid" | "tampered" | "missing" = "missing";
-      let tamperedFiles: string[] = [];
-      let appliedVersions: string[] = [];
+      const tamperedFiles: string[] = [];
       if (project.databaseId) {
         const { readMigrationLock } = await import("../services/migrationLock");
         const lock = await readMigrationLock(project.databaseId);
         if (lock) {
           lockFileStatus = lock.schemaHash === schemaHash ? "valid" : "tampered";
-          appliedVersions = lock.appliedMigrations || [];
         }
       }
 

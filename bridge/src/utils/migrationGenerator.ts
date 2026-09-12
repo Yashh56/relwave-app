@@ -314,6 +314,3 @@ function quoteIdent(name: string, dbType: "mysql" | "postgres" | "mariadb" | "sq
 /**
  * Helper: Typo fix for quoteIdent
  */
-function quoteQuote(name: string, dbType: "mysql" | "postgres" | "mariadb" | "sqlite"): string {
-  return quoteIdent(name, dbType);
-}

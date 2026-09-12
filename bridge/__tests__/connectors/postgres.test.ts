@@ -1,4 +1,4 @@
-import { describe, it, expect, test, jest } from "@jest/globals";
+import { describe, expect, test, jest } from "@jest/globals";
 import * as postgresConnector from "../../src/connectors/postgres";
 
 const invalidConfig: postgresConnector.PGConfig = {
@@ -89,7 +89,7 @@ describe("Postgres Connector", () => {
       "SELECT * FROM public.student;",
       1000,
       // onBatch callback
-      (batch, columns) => {
+      (batch, _columns) => {
         rows.push(...batch);
       },
       // onDone callback
@@ -130,7 +130,7 @@ describe("Postgres Connector", () => {
 
     try {
       await promise;
-    } catch (err) {
+    } catch {
       errorCaught = true;
     }
 

@@ -1,5 +1,3 @@
-import { useState } from "react";
-import { toast } from "sonner";
 import {
   Dialog,
   DialogContent,
@@ -21,7 +19,6 @@ import {
 import { Loader2, Settings, Plus, Trash2 } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AlterTableOperation, CreateTableColumn } from "@/features/database/types";
-import { migrationService } from "@/services/bridge/migration";
 import { useAlterTableDialog } from "../hooks/useAlterTableDialog";
 
 const DATA_TYPES = [

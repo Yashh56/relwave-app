@@ -1,5 +1,5 @@
-import { sqliteCache, SQLiteCacheManager } from "../../src/connectors/sqlite";
-import { describe, it, expect, test, beforeEach } from "@jest/globals";
+import { sqliteCache } from "../../src/connectors/sqlite";
+import { describe, it, expect, beforeEach } from "@jest/globals";
 import { SQLiteConfig } from "../../src/types/sqlite";
 
 const mockConfig: SQLiteConfig = {

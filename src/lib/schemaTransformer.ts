@@ -97,13 +97,6 @@ export const transformSchemaToER = (
 
   // Colors
   const PRIMARY_CYAN = "#06B6D4"; // Tailwind cyan-500
-  const SCHEMA_COLORS: Record<string, string> = {
-    public: "#3B82F6", // blue
-    private: "#8B5CF6", // purple
-    auth: "#10B981", // emerald
-    analytics: "#F59E0B", // amber
-  };
-
   // Build a map of column -> foreign key info for quick lookup
   const buildFkMap = (foreignKeys: ForeignKeyInfo[] = []): Map<string, ForeignKeyInfo> => {
     const map = new Map<string, ForeignKeyInfo>();
@@ -121,8 +114,6 @@ export const transformSchemaToER = (
 
   // First pass: Create all nodes with enriched column data
   schema.schemas.forEach((schemaGroup) => {
-    const schemaColor = SCHEMA_COLORS[schemaGroup.name] || "#6B7280";
-
     schemaGroup.tables.forEach((table) => {
       const tableName = `${schemaGroup.name}.${table.name}`;
       const fkMap = buildFkMap(table.foreignKeys);

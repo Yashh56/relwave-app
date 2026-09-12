@@ -29,7 +29,6 @@ export default function MigrationsPanel({ migrations, baselined, dbId }: Migrati
   const {
     allMigrations,
     applied,
-    local,
     selectedMigration,
     showSQLDialog,
     sqlContent,

@@ -119,11 +119,10 @@ export function useDatabaseDetails({
   const [queryRowCount, setQueryRowCount] = useState<number>(0);
   const [queryError, setQueryError] = useState<string | null>(null);
   const [hasExecutedQuery, setHasExecutedQuery] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, _setError] = useState<string | null>(null);
 
   // Combined loading state
   const loading = loadingTables || isLoadingTableData;
-  const isTableDataLoading = isFetchingTableData;
 
   const handleTableSelect = useCallback(
     async (tableName: string, schemaName: string) => {

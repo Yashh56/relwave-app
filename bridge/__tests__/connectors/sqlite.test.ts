@@ -1,4 +1,4 @@
-import { describe, it, expect, test, jest, beforeAll, afterAll } from "@jest/globals";
+import { describe, expect, test, jest, beforeAll, afterAll } from "@jest/globals";
 import * as sqliteConnector from "../../src/connectors/sqlite";
 import { SQLiteConfig } from "../../src/types/sqlite";
 import fs from "fs";
@@ -320,7 +320,7 @@ describe("SQLite Connector", () => {
         validConfig,
         "SELECT * FROM persons;",
         100,
-        (batch, columns) => {
+        (batch, _columns) => {
           rows.push(...batch);
         },
         () => {

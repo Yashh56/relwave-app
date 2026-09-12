@@ -7,9 +7,7 @@ import {
   DatabaseStats,
   DiscoveredDatabase,
   MonitoringSnapshot,
-  RunQueryParams,
   SSHConfig,
-  TableRow,
   UpdateDatabaseParams,
 } from "@/features/database/types";
 import { bridgeRequest } from "./bridgeClient";

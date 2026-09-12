@@ -312,7 +312,6 @@ const ERDiagramContent: React.FC<ERDiagramContentProps> = ({ nodeTypes, projectI
   // Fit view to filtered nodes
   const fitToFiltered = useCallback(() => {
     if (filteredNodes.length > 0 && reactFlowInstance) {
-      const nodeIds = filteredNodes.map((n) => n.id);
       reactFlowInstance.fitView({
         nodes: filteredNodes,
         padding: 0.2,

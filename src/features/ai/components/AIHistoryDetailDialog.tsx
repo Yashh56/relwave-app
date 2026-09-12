@@ -311,7 +311,7 @@ function FormattedResponseRenderer({ feature, content }: { feature: string; cont
         {JSON.stringify(data, null, 2)}
       </pre>
     );
-  } catch (e) {
+  } catch {
     // Not valid JSON, fallback to markdown renderer (used by schema-analysis, query-explanation)
     return <MarkdownRenderer content={content} />;
   }

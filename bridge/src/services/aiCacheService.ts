@@ -9,7 +9,6 @@
 
 import crypto from "crypto";
 import { aiHistoryStore, type AIHistoryInsert } from "./aiHistoryStore";
-import { AIProvider } from "../ai/providers/types";
 import {
   AISettings,
   SchemaAnalysisInput,

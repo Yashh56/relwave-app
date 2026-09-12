@@ -1,4 +1,4 @@
-import { describe, it, expect, test } from "@jest/globals";
+import { describe, expect, test } from "@jest/globals";
 import * as mysqlConnector from "../../src/connectors/mysql";
 
 const invalidConfig: mysqlConnector.MySQLConfig = {

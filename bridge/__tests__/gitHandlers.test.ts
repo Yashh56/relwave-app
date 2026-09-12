@@ -140,7 +140,7 @@ describe("GitHandlers — requireDir validation", () => {
   });
 
   test("sends BAD_REQUEST when dir is missing", async () => {
-    for (const [name, fn] of handlerNames) {
+    for (const [_name, fn] of handlerNames) {
       rpc = createMockRpc();
       gitService = createMockGitService();
       handlers = new GitHandlers(rpc, logger, gitService);
@@ -491,7 +491,7 @@ describe("GitHandlers — Error Forwarding", () => {
       ["ensureIgnore", () => handlers.handleEnsureIgnore({ dir: "/r" }, 1)],
     ];
 
-    for (const [name, fn] of testCases) {
+    for (const [_name, fn] of testCases) {
       rpc = createMockRpc();
       handlers = new GitHandlers(rpc, logger, gitService);
       await fn();

@@ -43,8 +43,6 @@ const DatabaseDetail = () => {
     activePanel,
     // ... rest of imports ...
     setActivePanel,
-    migrationsOpen,
-    setMigrationsOpen,
     chartOpen,
     setChartOpen,
     insertDialogOpen,

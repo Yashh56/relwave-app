@@ -32,7 +32,7 @@ export const useChartVisualization = (selectedTable: SelectedTable, dbId?: strin
   const [rowData, setRowData] = useState<QueryResultRow[]>([]);
   const [querySessionId, setQuerySessionId] = useState<string | null>(null);
   const [isExecuting, setIsExecuting] = useState(false);
-  const [queryProgress, setQueryProgress] = useState<any>(null);
+  const [setQueryProgress] = useState<any>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
   const handleExport = async (format: "png" | "svg") => {
@@ -55,7 +55,7 @@ export const useChartVisualization = (selectedTable: SelectedTable, dbId?: strin
       link.click();
 
       toast.success(`Chart exported as ${format.toUpperCase()}`);
-    } catch (error) {
+    } catch {
       toast.error("Failed to export chart");
       setErrorMessage("Failed to export chart");
     }
@@ -77,7 +77,7 @@ export const useChartVisualization = (selectedTable: SelectedTable, dbId?: strin
               });
             }
           });
-        } catch (error) {
+        } catch {
           toast.error("Failed to fetch table schema");
           setErrorMessage("Failed to fetch table schema");
         }

@@ -25,7 +25,7 @@ export class MigrationHandlers {
         });
       }
 
-      const { conn, dbType } = await this.dbService.getDatabaseConnection(dbId);
+      const { dbType } = await this.dbService.getDatabaseConnection(dbId);
       const migrationsDir = await projectStoreInstance.resolveMigrationsDir(dbId);
 
       // Generate migration file
@@ -66,7 +66,7 @@ export class MigrationHandlers {
         });
       }
 
-      const { conn, dbType } = await this.dbService.getDatabaseConnection(dbId);
+      const { dbType } = await this.dbService.getDatabaseConnection(dbId);
       const migrationsDir = await projectStoreInstance.resolveMigrationsDir(dbId);
 
       // Generate migration file
@@ -106,7 +106,7 @@ export class MigrationHandlers {
         });
       }
 
-      const { conn, dbType } = await this.dbService.getDatabaseConnection(dbId);
+      const { dbType } = await this.dbService.getDatabaseConnection(dbId);
       const migrationsDir = await projectStoreInstance.resolveMigrationsDir(dbId);
 
       // Generate migration file
@@ -223,7 +223,8 @@ export class MigrationHandlers {
 
   async handleApplyMigrations(params: any, id: number | string) {
     try {
-      let { dbId, projectId } = params || {};
+      const { projectId } = params || {};
+      let { dbId } = params || {};
 
       // Resolve dbId from projectId if not directly provided
       if (!dbId && projectId) {
@@ -306,7 +307,8 @@ export class MigrationHandlers {
 
   async handleApplySnapshot(params: any, id: number | string) {
     try {
-      let { dbId, projectId } = params || {};
+      const { projectId } = params || {};
+      let { dbId } = params || {};
       const { projectStoreInstance } = await import("../services/projectStore");
 
       // Resolve dbId from projectId if not directly provided

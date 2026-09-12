@@ -114,7 +114,7 @@ export class DatabaseHandlers {
 
   async handleGetSchema(params: any, id: number | string) {
     try {
-      const { id: dbId, schema } = params || {};
+      const { id: dbId } = params || {};
       if (!dbId) {
         return this.rpc.sendError(id, {
           code: "BAD_REQUEST",
@@ -139,11 +139,7 @@ export class DatabaseHandlers {
           message: "Missing id",
         });
       }
-      const { conn, dbType } = await this.dbService.getDatabaseConnection(dbId);
-      // stats were in statsHandlers, but some methods might be here.
-      // Actually handleGetStats is usually in StatsHandlers.
-      // I'll check if I missed any method.
-    } catch (e) {}
+    } catch {}
   }
 
   async handleUpdateDatabase(params: any, id: number | string) {

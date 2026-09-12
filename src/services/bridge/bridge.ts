@@ -8,7 +8,7 @@ class BridgeService {
     try {
       const result = await bridgeRequest("ping", {});
       return result?.ok === true;
-    } catch (error) {
+    } catch {
       return false;
     }
   }

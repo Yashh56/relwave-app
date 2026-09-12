@@ -4,12 +4,7 @@ import { useState, useCallback, useMemo, useEffect } from "react";
 import { toast } from "sonner";
 import { useNavigate, useLocation } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
-import {
-  useDatabases,
-  useAddDatabase,
-  useDeleteDatabase,
-  usePrefetch,
-} from "@/features/project/hooks/useDbQueries";
+import { useDatabases, useAddDatabase, usePrefetch } from "@/features/project/hooks/useDbQueries";
 import { projectKeys, useProjects } from "@/features/project/hooks/useProjectQueries";
 import { ConnectionFormData, REQUIRED_FIELDS, SQLITE_REQUIRED_FIELDS } from "@/features/home/types";
 import { useDatabaseStats } from "../../database/hooks/useDatabaseStats";
@@ -19,7 +14,6 @@ import { projectService } from "@/services/bridge/project";
 import { analyticsService } from "@/services/analytics";
 import { useDeleteConnection } from "./useDeleteConnection";
 import { DatabaseConnection } from "@/features/database/types";
-import { useWelcomeMessage } from "@/features/database/hooks/useWelcomeMessage";
 
 export const useIndexPage = (bridgeReady: boolean) => {
   const navigate = useNavigate();

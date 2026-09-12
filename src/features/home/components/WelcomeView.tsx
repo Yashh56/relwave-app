@@ -1,14 +1,5 @@
 import { useState } from "react";
-import {
-  Plus,
-  Database,
-  Clock,
-  HardDrive,
-  Sparkles,
-  CircleDot,
-  ChevronRight,
-  Layers,
-} from "lucide-react";
+import { Plus, Database, Clock, HardDrive, CircleDot, ChevronRight, Layers } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn, formatRelativeTime } from "@/lib/utils";
 import { WelcomeViewProps } from "../types";

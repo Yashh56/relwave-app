@@ -32,7 +32,6 @@ export default tseslint.config(
       "no-unused-vars": "off",
 
       "no-empty": ["warn", { allowEmptyCatch: true }],
-      "no-useless-catch": "error",
       "prefer-const": "error",
 
       "@typescript-eslint/no-explicit-any": "off",

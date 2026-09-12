@@ -8,7 +8,6 @@ import { CacheEntry, CACHE_TTL, STATS_CACHE_TTL, SCHEMA_CACHE_TTL } from "../typ
 import {
   TableInfo,
   DBStats,
-  SchemaInfo,
   ColumnDetail,
   PrimaryKeyInfo,
   ForeignKeyInfo,
@@ -319,12 +318,6 @@ class MariaDBCacheManager {
 export const mariadbCache = new MariaDBCacheManager();
 
 // Legacy cache support (for backward compatibility)
-const tableListCache = new Map<string, { data: TableInfo[]; timestamp: number }>();
-
-function getCacheKey(cfg: MariaDBConfig): string {
-  return `${cfg.host}:${cfg.port}:${cfg.database}`;
-}
-
 export function createPoolConfig(cfg: MariaDBConfig): PoolOptions {
   if (cfg.ssl === true) {
     const config = {
@@ -364,7 +357,7 @@ export async function testConnection(
     if (connection) {
       try {
         await connection.end();
-      } catch (e) {
+      } catch {
         // Ignore
       }
     }
@@ -478,12 +471,12 @@ export async function mariadbKillQuery(cfg: MariaDBConfig, targetPid: number) {
   try {
     await conn.execute(KILL_QUERY, [targetPid]);
     return true;
-  } catch (error) {
+  } catch {
     return false;
   } finally {
     try {
       await conn.end();
-    } catch (e) {
+    } catch {
       // Ignore
     }
   }
@@ -548,7 +541,7 @@ export function streamQueryCancelable(
       query = raw.query(sql);
 
       let columns: FieldPacket[] | null = null;
-      let buffer: RowDataPacket[] = [];
+      const buffer: RowDataPacket[] = [];
 
       const flush = async () => {
         if (buffer.length === 0) return;
@@ -642,13 +635,13 @@ export async function getDBStats(cfg: MariaDBConfig): Promise<{
     if (connection) {
       try {
         connection.release();
-      } catch (e) {
+      } catch {
         // Ignore
       }
     }
     try {
       await pool.end();
-    } catch (e) {
+    } catch {
       // Ignore
     }
   }
@@ -680,13 +673,13 @@ export async function listSchemas(cfg: MariaDBConfig): Promise<{ name: string }[
     if (connection) {
       try {
         connection.release();
-      } catch (e) {
+      } catch {
         // Ignore
       }
     }
     try {
       await pool.end();
-    } catch (e) {
+    } catch {
       // Ignore
     }
   }
@@ -734,13 +727,13 @@ export async function listTables(cfg: MariaDBConfig, schemaName?: string): Promi
     if (connection) {
       try {
         connection.release();
-      } catch (e) {
+      } catch {
         // Ignore
       }
     }
     try {
       await pool.end();
-    } catch (e) {
+    } catch {
       // Ignore
     }
   }
@@ -785,13 +778,13 @@ export async function getTableDetails(
     if (connection) {
       try {
         connection.release();
-      } catch (e) {
+      } catch {
         // Ignore
       }
     }
     try {
       await pool.end();
-    } catch (e) {
+    } catch {
       // Ignore
     }
   }
@@ -1016,13 +1009,13 @@ export async function getSchemaMetadataBatch(
     if (connection) {
       try {
         connection.release();
-      } catch (e) {
+      } catch {
         // Ignore
       }
     }
     try {
       await pool.end();
-    } catch (e) {
+    } catch {
       // Ignore
     }
   }
@@ -1374,6 +1367,7 @@ export async function baselineIfNeeded(
 
     return { baselined: true, version };
   } catch (err) {
+    console.log("[MariaDB] Baseline error:", err);
     throw err;
   }
 }

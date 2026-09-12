@@ -1,5 +1,3 @@
-import { SYSTEM_CONTEXT } from "./shared";
-
 export function buildNLSQLPrompt(
   schemaContext: string,
   dialect: string,

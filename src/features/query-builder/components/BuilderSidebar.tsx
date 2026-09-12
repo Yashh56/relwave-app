@@ -1,4 +1,3 @@
-import { Node } from "reactflow";
 import {
   Table2,
   ChevronRight,

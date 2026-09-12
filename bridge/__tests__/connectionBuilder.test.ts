@@ -1,6 +1,6 @@
 // __tests__/ConnectionBuilder.test.ts
-import { describe, it, expect, test } from "@jest/globals";
-import { ConnectionBuilder, BuildResult } from "../src/services/connectionBuilder"; // Adjust path as needed
+import { describe, expect, test } from "@jest/globals";
+import { ConnectionBuilder } from "../src/services/connectionBuilder"; // Adjust path as needed
 import { DatabaseConfig, DBType } from "../src/types";
 import { SQLiteConfig } from "../src/types/sqlite";
 

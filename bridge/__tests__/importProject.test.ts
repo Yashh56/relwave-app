@@ -8,8 +8,6 @@ import os from "os";
 // ─── Test Setup ──────────────────────────────────────
 
 const TEST_ROOT = path.join(os.tmpdir(), "import-test-" + Date.now());
-const PROJECTS_DIR = path.join(TEST_ROOT, "projects");
-const INDEX_FILE = path.join(PROJECTS_DIR, "index.json");
 const SOURCE_DIR = path.join(TEST_ROOT, "cloned-repo");
 
 /**
@@ -63,7 +61,7 @@ jest.mock("../src/services/dbStore", () => {
 import { dbStoreInstance } from "../src/services/dbStore";
 const mockAddDB = dbStoreInstance.addDB as jest.Mock;
 
-import { PROJECTS_FOLDER, PROJECTS_INDEX_FILE, getProjectDir } from "../src/utils/config";
+import { PROJECTS_FOLDER, PROJECTS_INDEX_FILE } from "../src/utils/config";
 
 // ─── Helpers ──────────────────────────────────────
 

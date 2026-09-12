@@ -9,7 +9,7 @@ import {
 } from "@/features/project/hooks/useProjectQueries";
 import { snapshotToSchemaDetails, schemaGroupsToSnapshots } from "@/lib/schemaConverters";
 import type { DatabaseSchemaDetails } from "@/features/database/types";
-import type { ERDiagramFile, ERNode } from "@/features/project/types";
+import type { ERDiagramFile } from "@/features/project/types";
 import { projectService } from "@/services/bridge/project";
 import { databaseService } from "@/services/bridge/database";
 

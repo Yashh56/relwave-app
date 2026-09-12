@@ -756,7 +756,7 @@ export class ProjectStore {
           migrationsCount = lock.appliedMigrations.length;
         }
       }
-    } catch (e) {
+    } catch {
       // Ignore if lock file logic fails
     }
 
@@ -875,7 +875,7 @@ export class ProjectStore {
     const file: SchemaFile = {
       version: 2,
       projectId,
-      databaseId: meta.databaseId,
+      databaseId: meta.databaseId || "",
       dialect: (dialect ||
         (meta.engine === "postgresql"
           ? "postgresql"

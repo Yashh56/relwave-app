@@ -10,12 +10,9 @@ import {
   Clock,
   ArrowUp,
   ArrowDown,
-  ChevronRight,
   Eye,
   RotateCcw,
-  User,
   RefreshCw,
-  UploadCloud,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -32,7 +29,7 @@ import {
 import { useGitRevert } from "@/features/git/hooks/useGitAdvanced";
 import { Spinner } from "@/components/ui/spinner";
 import { toast } from "sonner";
-import type { GitFileChange, GitLogEntry } from "@/features/git/types";
+import type { GitFileChange } from "@/features/git/types";
 import { gitService } from "@/services/bridge/git";
 import { projectService } from "@/services/bridge/project";
 import { GitHistoryGraph } from "./GitHistoryGraph";
@@ -79,18 +76,6 @@ function statusLabel(status: string) {
   }
 }
 
-function timeAgo(dateStr: string): string {
-  const diff = Date.now() - new Date(dateStr).getTime();
-  const mins = Math.floor(diff / 60000);
-  if (mins < 1) return "just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return `${hrs}h ago`;
-  const days = Math.floor(hrs / 24);
-  if (days < 30) return `${days}d ago`;
-  return new Date(dateStr).toLocaleDateString();
-}
-
 // ─── Component ────────────────────────────────────────
 
 interface GitStatusPanelProps {
@@ -117,7 +102,6 @@ export default function GitStatusPanel({ projectDir, projectId }: GitStatusPanel
   const [diffLoading, setDiffLoading] = useState(false);
 
   const [syncing, setSyncing] = useState(false);
-  const [pushing, setPushing] = useState(false);
 
   if (!projectDir) {
     return (
@@ -482,64 +466,6 @@ function FileRow({ file, onViewDiff }: { file: GitFileChange; onViewDiff: () => 
         </TooltipTrigger>
         <TooltipContent side="left">View Diff</TooltipContent>
       </Tooltip>
-    </div>
-  );
-}
-
-// ─── Commit Row Sub-Component ─────────────────────────
-
-function CommitRow({
-  entry,
-  isLatest,
-  onRevert,
-  reverting,
-}: {
-  entry: GitLogEntry;
-  isLatest: boolean;
-  onRevert: () => void;
-  reverting: boolean;
-}) {
-  return (
-    <div className="group flex items-start gap-3 px-3 py-2.5 rounded-md hover:bg-muted/50 transition-colors">
-      {/* Timeline dot */}
-      <div className="flex flex-col items-center pt-1">
-        <div
-          className={`h-2.5 w-2.5 rounded-full shrink-0 ${
-            isLatest ? "bg-primary" : "bg-muted-foreground/40"
-          }`}
-        />
-      </div>
-
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium truncate flex-1">{entry.subject}</span>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="h-6 w-6 opacity-0 group-hover:opacity-100 transition-opacity shrink-0"
-                onClick={onRevert}
-                disabled={reverting}
-              >
-                <RotateCcw className="h-3.5 w-3.5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="left">Rollback to this commit</TooltipContent>
-          </Tooltip>
-        </div>
-        <div className="flex items-center gap-3 mt-0.5 text-[11px] text-muted-foreground">
-          <span className="font-mono">{entry.hash}</span>
-          <span className="flex items-center gap-1">
-            <User className="h-3 w-3" />
-            {entry.author}
-          </span>
-          <span className="flex items-center gap-1">
-            <Clock className="h-3 w-3" />
-            {timeAgo(entry.date)}
-          </span>
-        </div>
-      </div>
     </div>
   );
 }

@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { useBridgeQuery } from "@/services/bridge/useBridgeQuery";
 import { useDatabaseDetails } from "@/features/database/hooks/useDatabaseDetails";
-import { Spinner } from "@/components/ui/spinner";
 import { WorkspaceHeader } from "./WorkspaceHeader";
 import { WorkspaceSidebar } from "./WorkspaceSidebar";
 import { QueryTabBar } from "./QueryTabBar";

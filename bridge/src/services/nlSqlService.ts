@@ -1,4 +1,4 @@
-import { SchemaFile, projectStoreInstance } from "./projectStore";
+import { projectStoreInstance } from "./projectStore";
 import { aiHistoryStore } from "./aiHistoryStore";
 import { buildSchemaContext } from "../ai/utils/schemaContext";
 import { buildNLSQLPrompt } from "../ai/prompts/nl-sql";
@@ -84,7 +84,6 @@ export class NLSqlService {
       databaseId,
       schemaHash: schemaFile.schemaHash,
     });
-    const cachedItems = await aiHistoryStore.list({ feature: "nl_to_sql", limit: 100 });
     // Look for our hash. Note: Since `list` doesn't return full prompt/response in AIHistoryListItem,
     // we need to query the DB directly if we wanted to use aiHistoryStore proper.
     // Given the constraints, I will skip direct cache lookup here if it's too complex and just let it generate,
@@ -110,7 +109,7 @@ export class NLSqlService {
 
     const provider = aiImpl.resolveProvider(settings);
 
-    let rawResponse: string;
+    let rawResponse = "";
     try {
       console.log("\n====== NL to SQL: Context going to LLM ======");
       console.log(fullPrompt);
@@ -268,7 +267,7 @@ export class NLSqlService {
               interpreterPrompt.system,
               interpreterPrompt.user,
             );
-          } catch (e) {
+          } catch {
             interpretation = "Failed to interpret results due to an AI error.";
           }
         }

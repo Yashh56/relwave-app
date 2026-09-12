@@ -1,5 +1,5 @@
 import { ColumnDetails, ForeignKeyInfo, TableSchemaDetails } from "@/features/database/types";
-import { ChevronDown, ChevronRight, Key, Table2 } from "lucide-react";
+import { ChevronDown, ChevronRight, Table2 } from "lucide-react";
 import React, { useState } from "react";
 import { Handle, Position } from "reactflow";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -18,14 +18,6 @@ interface TableNodeData {
   checkConstraints?: TableSchemaDetails["checkConstraints"];
   isHighlighted?: boolean;
 }
-
-// Schema color mapping
-const SCHEMA_COLORS: Record<string, string> = {
-  public: "border-l-blue-500",
-  private: "border-l-purple-500",
-  auth: "border-l-emerald-500",
-  analytics: "border-l-amber-500",
-};
 
 const TableNode: React.FC<{ data: TableNodeData }> = ({ data }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -52,7 +44,6 @@ const TableNode: React.FC<{ data: TableNodeData }> = ({ data }) => {
     ? data.columns.filter((col) => col.isPrimaryKey || col.isForeignKey)
     : data.columns;
 
-  const schemaColorClass = SCHEMA_COLORS[data.schema] || "border-l-gray-500";
   const highlightClass = data.isHighlighted
     ? "ring-2 ring-cyan-500 ring-offset-2 ring-offset-background"
     : "";

@@ -22,7 +22,7 @@ export async function readMigrationLock(dbId: string): Promise<MigrationLock | n
   try {
     const raw = await fs.readFile(lockPath, "utf8");
     return JSON.parse(raw) as MigrationLock;
-  } catch (err) {
+  } catch {
     return null;
   }
 }

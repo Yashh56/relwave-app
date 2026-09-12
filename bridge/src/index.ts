@@ -44,7 +44,7 @@ rpc.on("notification", (n: any) => {
 // Fallback request handler: handles methods not registered via rpc.register()
 // Only truly built-in methods should be here.
 rpc.on("request", async (req: any) => {
-  const { id, method, params } = req;
+  const { id, method } = req;
   logger.info({ id, method }, "unregistered request (fallback handler)");
 
   try {

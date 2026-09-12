@@ -50,7 +50,6 @@ import {
   SQLITE_DELETE_MIGRATION,
 } from "../queries/sqlite/migrations";
 import { SQLITE_GET_TABLE_SQL } from "../queries/sqlite/constraints";
-import { sqliteQuoteIdentifier } from "../queries/sqlite/crud";
 import { SchemaFile } from "../services/projectStore";
 
 // ============================================
@@ -705,7 +704,7 @@ export async function getDBStats(cfg: SQLiteConfig): Promise<DBStats> {
     const pageSize = db.pragma("page_size", { simple: true }) as number;
     const totalSizeMB = (pageCount * pageSize) / (1024 * 1024); // Count total rows across all tables.
     // Removed because better-sqlite3 is synchronous and SELECT COUNT(*) blocks the Node event loop.
-    let totalRows = -1;
+    const totalRows = -1;
 
     const result: DBStats = {
       total_tables: totalTables,
@@ -731,7 +730,7 @@ export async function listSchemas(cfg: SQLiteConfig): Promise<SchemaInfo[]> {
 }
 
 /** List schema names */
-export async function listSchemaNames(cfg: SQLiteConfig): Promise<string[]> {
+export async function listSchemaNames(_cfg: SQLiteConfig): Promise<string[]> {
   return ["main"];
 }
 
@@ -916,7 +915,7 @@ export function streamQueryCancelable(
       const stmt = db.prepare(sql);
       const iter = stmt.iterate();
       let columns: { name: string }[] | null = null;
-      let buffer: any[] = [];
+      const buffer: any[] = [];
 
       for (const row of iter) {
         if (cancelled) break;
@@ -1039,6 +1038,7 @@ export async function createTable(
     sqliteCache.clearForConnection(cfg);
     return true;
   } catch (err) {
+    console.log("[SQLite] Error creating table:", err);
     throw err;
   } finally {
     db.close();
@@ -1116,6 +1116,7 @@ export async function alterTable(
     sqliteCache.clearForConnection(cfg);
     return true;
   } catch (err) {
+    console.log("[SQLite] Error altering table:", err);
     throw err;
   } finally {
     db.close();
@@ -1295,6 +1296,7 @@ export async function applyMigration(
     sqliteCache.clearForConnection(cfg);
     return true;
   } catch (error) {
+    console.log("[SQLite] Error applying migration:", error);
     throw error;
   } finally {
     db.close();
@@ -1321,6 +1323,7 @@ export async function rollbackMigration(
     sqliteCache.clearForConnection(cfg);
     return true;
   } catch (error) {
+    console.log("[SQLite] Error rolling back migration:", error);
     throw error;
   } finally {
     db.close();

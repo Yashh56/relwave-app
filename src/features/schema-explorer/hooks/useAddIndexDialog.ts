@@ -112,9 +112,11 @@ export function useAddIndexDialog({
 
       invalidateDatabase(dbId);
 
-      toast.success("Indexes created successfully", {
-        description: `${indexes.length} index(es) created for table "${tableName}".`,
-      });
+      if (res) {
+        toast.success("Indexes created successfully", {
+          description: `${indexes.length} index(es) created for table "${tableName}".`,
+        });
+      }
 
       resetForm();
       onOpenChange(false);

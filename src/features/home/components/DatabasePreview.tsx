@@ -1,8 +1,5 @@
 import {
   Database,
-  Clock,
-  Table2,
-  HardDrive,
   Zap,
   ExternalLink,
   MoreHorizontal,
