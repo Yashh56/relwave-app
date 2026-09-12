@@ -9,8 +9,8 @@ export class DatabaseHandlers {
     private rpc: Rpc,
     private logger: Logger,
     private dbService: DatabaseService,
-    private queryExecutor: QueryExecutor
-  ) { }
+    private queryExecutor: QueryExecutor,
+  ) {}
 
   async handleListDatabases(params: any, id: number | string) {
     try {
@@ -140,10 +140,10 @@ export class DatabaseHandlers {
         });
       }
       const { conn, dbType } = await this.dbService.getDatabaseConnection(dbId);
-      // stats were in statsHandlers, but some methods might be here. 
-      // Actually handleGetStats is usually in StatsHandlers. 
+      // stats were in statsHandlers, but some methods might be here.
+      // Actually handleGetStats is usually in StatsHandlers.
       // I'll check if I missed any method.
-    } catch (e) { }
+    } catch (e) {}
   }
 
   async handleUpdateDatabase(params: any, id: number | string) {
@@ -200,7 +200,7 @@ export class DatabaseHandlers {
         const buildResult = await ConnectionBuilder.buildConnection(
           connection,
           connection.password ?? null,
-          dbType
+          dbType,
         );
         conn = buildResult.config;
         tunnelToClose = buildResult.tunnel;
@@ -208,7 +208,7 @@ export class DatabaseHandlers {
       const result = await this.queryExecutor.testConnection(conn, dbType);
       this.rpc.sendResponse(id, { ok: true, data: result });
     } catch (err: any) {
-      this.logger.error({ err }, '[Handler] testConnection error');
+      this.logger.error({ err }, "[Handler] testConnection error");
       this.rpc.sendResponse(id, { ok: false, message: String(err) });
     } finally {
       if (tunnelToClose) {

@@ -61,14 +61,8 @@ export function UpdateNotification() {
 
 // Standalone update checker button for settings
 export function UpdateCheckerButton() {
-  const {
-    status,
-    updateInfo,
-    downloadProgress,
-    checkForUpdates,
-    downloadAndInstall,
-    relaunchApp,
-  } = useUpdater();
+  const { status, updateInfo, downloadProgress, checkForUpdates, downloadAndInstall, relaunchApp } =
+    useUpdater();
 
   const getButtonContent = () => {
     switch (status) {

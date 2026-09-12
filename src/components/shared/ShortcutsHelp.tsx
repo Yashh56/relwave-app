@@ -1,10 +1,5 @@
 import * as React from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
 
 interface ShortcutItem {
@@ -51,7 +46,13 @@ const shortcutGroups: ShortcutGroup[] = [
   },
 ];
 
-export function ShortcutsHelp({ open, onOpenChange }: { open?: boolean, onOpenChange?: (open: boolean) => void }) {
+export function ShortcutsHelp({
+  open,
+  onOpenChange,
+}: {
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}) {
   const [internalOpen, setInternalOpen] = React.useState(false);
 
   // Sync with prop if provided, otherwise manage internally
